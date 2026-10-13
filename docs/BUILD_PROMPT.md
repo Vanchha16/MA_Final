@@ -71,6 +71,7 @@ Advanced search & filtering. **Implement all five.**
 | Logo | `mobile/assets/logo.png` (original), `mobile/assets/logo_centered.png` (used in app), app icons via `flutter_launcher_icons` |
 | Web preview | `device_preview` is enabled only on web (`enabled: kIsWeb`), default device Google Pixel 9 |
 | Currency | USD, formatted with `intl` (`$1,234.50`) |
+| Buttons | **Solid fills only — no gradients on buttons.** Primary = solid sky blue `#0284C7` pill with soft shadow (`PillButton`) |
 | Icons | **Material icons only — never use emoji** in UI text, labels or designs (e.g. "Welcome back!" + `Icons.waving_hand_rounded`, ratings with `Icons.star_rounded`) |
 | Repo layout | `backend/`, `mobile/`, `docs/` at the root |
 
