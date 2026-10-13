@@ -27,3 +27,12 @@ def register_error_handlers(app):
     @jwt.expired_token_loader
     def expired_token(header, payload):
         return error("Token has expired, please log in again", 401)
+
+    # Special-purpose tokens (e.g. password reset) must not work as a login token
+    @jwt.token_verification_loader
+    def only_login_tokens(header, payload):
+        return payload.get("purpose") is None
+
+    @jwt.token_verification_failed_loader
+    def wrong_token_type(header, payload):
+        return error("Invalid token", 401)
