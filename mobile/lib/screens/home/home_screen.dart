@@ -16,7 +16,8 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Home'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            tooltip: auth.isLoggedIn ? 'Log out' : 'Log in',
+            icon: Icon(auth.isLoggedIn ? Icons.logout : Icons.login),
             onPressed: () async {
               await auth.logout();
               if (!context.mounted) return;
