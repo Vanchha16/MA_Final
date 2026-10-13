@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/app_theme.dart';
-
-/// Pill button with the brand sky -> aqua gradient and a soft glow
-/// (Figma: Button / Primary, pill style).
-class GradientButton extends StatelessWidget {
+/// Primary pill button: solid brand sky blue with a soft shadow
+/// (Figma: Button / Primary, pill style). Buttons never use gradients.
+class PillButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final bool loading;
@@ -13,7 +11,7 @@ class GradientButton extends StatelessWidget {
   /// What screen readers announce, e.g. "Log in" for a playful "Let's go!" label.
   final String? semanticLabel;
 
-  const GradientButton({
+  const PillButton({
     super.key,
     required this.label,
     required this.onPressed,
@@ -25,6 +23,7 @@ class GradientButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !loading;
+    final scheme = Theme.of(context).colorScheme;
     const shape = StadiumBorder();
 
     return Semantics(
@@ -38,14 +37,10 @@ class GradientButton extends StatelessWidget {
         child: DecoratedBox(
           decoration: ShapeDecoration(
             shape: shape,
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppTheme.primaryDark, AppTheme.accent],
-            ),
+            color: scheme.primary,
             shadows: [
               BoxShadow(
-                color: AppTheme.primaryDark.withValues(alpha: 0.30),
+                color: scheme.primary.withValues(alpha: 0.25),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -61,25 +56,25 @@ class GradientButton extends StatelessWidget {
                 height: 52,
                 child: Center(
                   child: loading
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 22,
                           width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                          child: CircularProgressIndicator(strokeWidth: 2.5, color: scheme.onPrimary),
                         )
                       : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               label,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: scheme.onPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             if (trailingIcon != null) ...[
                               const SizedBox(width: 8),
-                              Icon(trailingIcon, color: Colors.white, size: 20),
+                              Icon(trailingIcon, color: scheme.onPrimary, size: 20),
                             ],
                           ],
                         ),

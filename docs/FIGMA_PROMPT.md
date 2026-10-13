@@ -68,7 +68,7 @@ LAYOUT
 - Minimum touch target 48 x 48. Text contrast WCAG AA.
 
 COMPONENTS (with variants and states: default, pressed, disabled, loading, error)
-- Buttons: Primary filled (full width, 52 high), Secondary outlined, Text button, Icon button, FAB
+- Buttons: Primary filled with SOLID #0284C7 (never a gradient; full width, 52 high, pill), Secondary outlined, Text button, Icon button, FAB
 - Inputs: text field with label, prefix icon, suffix (show/hide password), helper and error text; search bar; OTP 6-box input
 - Product card (grid, 2 columns): image 1:1 with rounded top, coral "-15%" badge top-left, heart toggle top-right,
   "Sold out" overlay variant, series name (aqua caption), product name (2 lines), price + old price, rating stars + count, small "+ cart" icon button
