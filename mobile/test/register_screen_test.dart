@@ -42,8 +42,10 @@ void main() {
   testWidgets('shows friendly header and all fields', (tester) async {
     await _pump(tester, const RegisterScreen());
 
-    expect(find.text('Nice to meet you! 🎉'), findsOneWidget);
-    expect(find.text('Create account ✨'), findsOneWidget);
+    expect(find.text('Nice to meet you!'), findsOneWidget);
+    expect(find.byIcon(Icons.celebration_rounded), findsOneWidget);
+    expect(find.text('Create account'), findsWidgets); // title + button
+    expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
     for (final label in ['Full name', 'Email', 'Phone (optional)', 'Password', 'Confirm password']) {
       expect(find.text(label), findsOneWidget);
     }
@@ -90,7 +92,7 @@ void main() {
   testWidgets('strength meter appears and updates while typing', (tester) async {
     await _pump(tester, const RegisterScreen());
     // Meter is hidden while the password is empty
-    for (final label in ['Weak password', 'Fair password', 'Good password', 'Strong password 💪']) {
+    for (final label in ['Weak password', 'Fair password', 'Good password', 'Strong password']) {
       expect(find.text(label), findsNothing);
     }
 
@@ -100,7 +102,8 @@ void main() {
 
     await tester.enterText(find.byKey(const Key('register_password')), 'Abcdef12!long');
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Strong password 💪'), findsOneWidget);
+    expect(find.text('Strong password'), findsOneWidget);
+    expect(find.byIcon(Icons.verified_rounded), findsOneWidget);
   });
 
   testWidgets('checking terms clears the terms error', (tester) async {
@@ -121,13 +124,13 @@ void main() {
     await tester.tap(find.byKey(const Key('login_to_register')));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('Create account ✨'), findsOneWidget);
+    expect(find.byIcon(Icons.celebration_rounded), findsOneWidget);
 
     await tester.ensureVisible(find.byKey(const Key('register_to_login')));
     await tester.tap(find.byKey(const Key('register_to_login')));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('Welcome back! 👋'), findsOneWidget);
-    expect(find.text('Create account ✨'), findsNothing);
+    expect(find.text('Welcome back!'), findsOneWidget);
+    expect(find.byIcon(Icons.celebration_rounded), findsNothing);
   });
 }

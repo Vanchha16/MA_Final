@@ -18,7 +18,7 @@ int passwordStrength(String password) {
 /// Four animated bars + a label ("Weak", "Fair", "Good", "Strong").
 /// Hidden while the password is empty. (Figma: 04 - Register)
 class PasswordStrengthMeter extends StatelessWidget {
-  static const _labels = ['', 'Weak password', 'Fair password', 'Good password', 'Strong password 💪'];
+  static const _labels = ['', 'Weak password', 'Fair password', 'Good password', 'Strong password'];
   static const _amber = Color(0xFFF59E0B);
   static const _green = Color(0xFF16A34A);
 
@@ -65,6 +65,10 @@ class PasswordStrengthMeter extends StatelessWidget {
                     _labels[score],
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color),
                   ),
+                  if (score == 4) ...[
+                    const SizedBox(width: 4),
+                    Icon(Icons.verified_rounded, size: 14, color: color),
+                  ],
                 ],
               ),
             ),

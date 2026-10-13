@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../../core/network/api_client.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/error_banner.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/gradient_button.dart';
+import '../../widgets/icon_title.dart';
 import '../../widgets/mascot_greeting.dart';
 import '../../widgets/pill_text_field.dart';
 import '../../widgets/playful_backdrop.dart';
@@ -114,11 +116,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const MascotGreeting(message: 'Hi again! ✨'),
+                            const MascotGreeting(message: 'Hi again!', icon: Icons.auto_awesome),
                             const SizedBox(height: 22),
-                            Text(
-                              'Welcome back! 👋',
-                              style: text.headlineMedium?.copyWith(fontSize: 30, fontWeight: FontWeight.bold),
+                            const IconTitle(
+                              'Welcome back!',
+                              icon: Icons.waving_hand_rounded,
+                              iconColor: AppTheme.amber,
+                              fontSize: 30,
                             ),
                             const SizedBox(height: 6),
                             Text(
