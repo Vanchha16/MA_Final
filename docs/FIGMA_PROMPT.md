@@ -34,6 +34,7 @@ rounded cards, soft shadows, sky-blue to aqua gradients for hero areas, subtle s
 decorations inspired by anime (used sparingly). Do NOT use real anime characters or official logos;
 use neutral placeholder product images (figure boxes, card packs).
 Use auto layout everywhere, and build reusable components with variants.
+Never use emoji anywhere in the UI; use Material Symbols (rounded) icons instead.
 ```
 
 ## Prompt B — Design system (paste second)
@@ -114,7 +115,7 @@ Using the Anime World Shop design system, design these screens:
 ```
 Design these Anime World Shop screens with the bottom navigation bar visible (active tab highlighted):
 
-8. Home: top row with "Hi, Dara 👋" and "What are you collecting today?", notification bell with
+8. Home: top row with "Hi, Dara" + waving-hand icon and "What are you collecting today?", notification bell with
    red dot; search bar (tap opens Search); promo banner carousel with brand gradient
    ("TCG Week - up to 20% off booster boxes", "Shop now" button) and page dots;
    horizontal category chips (Scale Figures, Chibi Figures, Prize Figures, Plush & Merch, Model Kits,
@@ -144,13 +145,13 @@ Design these Anime World Shop screens:
     Price low to high, Price high to low, Name A-Z); sticky "Show 24 results" primary button.
 14. Product Details: large image gallery (swipeable, page dots, back and heart buttons floating
     over the image); series chip "One Piece" (aqua) and brand "Good Smile Company";
-    name "Monkey D. Luffy Gear 5 1/7 Scale Figure"; rating 4.8 ★ (24 reviews);
+    name "Monkey D. Luffy Gear 5 1/7 Scale Figure"; rating 4.8 with star icon (24 reviews);
     price "$169.00", old price "$189.00" strike-through, coral badge "-11%";
     stock text "Only 5 left" in amber; expandable description; "Reviews" preview with 2 reviews
     and "See all"; "You may also like" horizontal list; sticky bottom bar with quantity stepper
     and "Add to Cart" primary button. Variant: Sold out (button disabled "Sold out", coral label).
 15. Image Gallery: black background, full-screen zoomable image, close button, thumbnails row.
-16. Reviews: average 4.8 big number with stars, 5★-1★ horizontal bars with counts, list of
+16. Reviews: average 4.8 big number with stars, 5-star to 1-star horizontal bars with counts, list of
     reviews (avatar, name, stars, date, comment), "Write a review" button.
 17. Write Review: product mini card, large tappable 5-star rating, comment text area, "Submit".
 ```

@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/gradient_button.dart';
+import '../../widgets/icon_title.dart';
 import '../../widgets/mascot_greeting.dart';
 import '../../widgets/password_strength_meter.dart';
 import '../../widgets/pill_text_field.dart';
@@ -132,12 +133,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                             child: _BackButton(onPressed: () => Navigator.of(context).maybePop()),
                           ),
                           const SizedBox(height: 16),
-                          const MascotGreeting(message: 'Nice to meet you! 🎉', logoSize: 76),
+                          const MascotGreeting(message: 'Nice to meet you!', icon: Icons.celebration_rounded, logoSize: 76),
                           const SizedBox(height: 16),
-                          Text(
-                            'Create account ✨',
-                            style: text.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                          ),
+                          const IconTitle('Create account', icon: Icons.auto_awesome, iconColor: AppTheme.accent),
                           const SizedBox(height: 6),
                           Text(
                             'Start your anime collection today',

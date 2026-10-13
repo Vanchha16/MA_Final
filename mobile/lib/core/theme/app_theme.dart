@@ -5,6 +5,7 @@ class AppTheme {
   static const Color primaryDark = Color(0xFF0284C7); // darker sky - use behind white text
   static const Color accent = Color(0xFF06B6D4); // aqua
   static const Color coral = Color(0xFFF43F5E); // sale badges, wishlist heart, sold out
+  static const Color amber = Color(0xFFF59E0B); // friendly accents (waving hand), warnings
 
   static ThemeData light = _build(Brightness.light);
   static ThemeData dark = _build(Brightness.dark);

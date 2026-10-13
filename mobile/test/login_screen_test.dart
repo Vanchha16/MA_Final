@@ -58,8 +58,10 @@ void main() {
   testWidgets('shows the friendly playful layout', (tester) async {
     await _pumpLogin(tester);
 
-    expect(find.text('Hi again! ✨'), findsOneWidget);
-    expect(find.text('Welcome back! 👋'), findsOneWidget);
+    expect(find.text('Hi again!'), findsOneWidget);
+    expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
+    expect(find.text('Welcome back!'), findsOneWidget);
+    expect(find.byIcon(Icons.waving_hand_rounded), findsOneWidget);
     expect(find.text('Login'), findsOneWidget);
     expect(find.text('Just browsing'), findsOneWidget);
     expect(find.bySemanticsLabel('Login'), findsOneWidget);
