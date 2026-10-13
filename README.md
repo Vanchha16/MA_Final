@@ -44,6 +44,17 @@ flask --app run seed
 
 Demo logins: `demo@shop.com` / `demo123` (customer), `admin@shop.com` / `demo123` (admin).
 
+Run the backend tests:
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+Forgot-password emails: with `MAIL_MODE=console` (default) the code is printed in the
+server terminal, and in debug mode the app shows a "Dev code" chip to tap. For real email
+set `MAIL_MODE=smtp` and the `MAIL_*` values in `.env` (see `.env.example`).
+
 Start the API:
 
 ```bash
@@ -92,6 +103,9 @@ git push origin main                          # or open a Pull Request on GitHub
 | POST | `/api/auth/register` | - | `full_name`, `email`, `password`, `phone?` |
 | POST | `/api/auth/login` | - | `email`, `password` -> `token`, `user` |
 | GET | `/api/auth/me` | Bearer | Current user |
+| POST | `/api/auth/forgot-password` | - | `email` -> emails a 6-digit code (10 min). Same reply whether or not the email exists |
+| POST | `/api/auth/verify-otp` | - | `email`, `code` -> `reset_token` (15 min, cannot be used to log in) |
+| POST | `/api/auth/reset-password` | - | `reset_token`, `new_password` |
 | GET | `/api/categories` | - | All categories with `product_count` |
 | GET | `/api/series` | - | Anime series (One Piece, Pokemon, ...) |
 | GET | `/api/brands` | - | Distinct brands, for the filter screen |
