@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/network/api_client.dart';
-import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/error_banner.dart';
 import '../../widgets/gradient_button.dart';
+import '../../widgets/mascot_greeting.dart';
 import '../../widgets/pill_text_field.dart';
-import '../../widgets/sparkle.dart';
-import '../../widgets/speech_bubble.dart';
+import '../../widgets/playful_backdrop.dart';
 import '../home/home_screen.dart';
+import 'register_screen.dart';
 
 /// Friendly login (Figma: "03 - Login · B · Playful"): soft color blobs,
 /// logo mascot with a speech bubble, pill fields and a gradient button.
@@ -20,7 +21,7 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   static final _emailRe = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   final _formKey = GlobalKey<FormState>();
@@ -37,27 +38,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   late final _intro = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))
     ..forward();
   late final _contentFade = CurvedAnimation(parent: _intro, curve: const Interval(0, 0.6, curve: Curves.easeOut));
-  late final _bubblePop = CurvedAnimation(parent: _intro, curve: const Interval(0.35, 1, curve: Curves.easeOutBack));
-
-  /// Gentle floating logo + twinkling sparkles. Not started when the user has
-  /// turned off animations (accessibility) - see didChangeDependencies.
-  late final _float = AnimationController(vsync: this, duration: const Duration(milliseconds: 2600));
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    if (reduceMotion) {
-      _float.stop();
-    } else if (!_float.isAnimating) {
-      _float.repeat(reverse: true);
-    }
-  }
-
   @override
   void dispose() {
     _intro.dispose();
-    _float.dispose();
     _email.dispose();
     _password.dispose();
     super.dispose();
@@ -116,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(child: _Backdrop(dark: dark, twinkle: _float)),
+          const Positioned.fill(child: PlayfulBackdrop.login()),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -131,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _mascot(),
+                            const MascotGreeting(message: 'Hi again! ✨'),
                             const SizedBox(height: 22),
                             Text(
                               'Welcome back! 👋',
@@ -188,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               ),
                             ),
                             if (_error != null) ...[
-                              _ErrorBanner(message: _error!),
+                              ErrorBanner(message: _error!),
                               const SizedBox(height: 12),
                             ],
                             GradientButton(
@@ -214,7 +197,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               children: [
                                 Text('New here?', style: text.bodyMedium),
                                 TextButton(
-                                  onPressed: () => _comingSoon('Sign up'), // TODO: Register screen
+                                  key: const Key('login_to_register'),
+                                  onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                                  ),
                                   child: const Text('Create an account', style: TextStyle(fontWeight: FontWeight.w600)),
                                 ),
                               ],
@@ -237,107 +223,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  /// Logo "mascot" floating gently, with a speech bubble that pops in.
-  Widget _mascot() {
-    return Row(
-      children: [
-        AnimatedBuilder(
-          animation: _float,
-          builder: (_, child) => Transform.translate(
-            offset: Offset(0, -4 + 8 * Curves.easeInOut.transform(_float.value)),
-            child: child,
-          ),
-          child: Image.asset('assets/logo_centered.png', width: 112, height: 112),
-        ),
-        const SizedBox(width: 4),
-        ScaleTransition(
-          scale: _bubblePop,
-          alignment: Alignment.bottomLeft,
-          child: const SpeechBubble(text: 'Hi again! ✨'),
-        ),
-      ],
-    );
-  }
-}
-
-/// Soft radial color blobs + a few sparkles behind the form.
-class _Backdrop extends StatelessWidget {
-  final bool dark;
-  final Animation<double> twinkle;
-
-  const _Backdrop({required this.dark, required this.twinkle});
-
-  @override
-  Widget build(BuildContext context) {
-    final k = dark ? 0.55 : 1.0; // calmer blobs in dark mode
-    return LayoutBuilder(
-      builder: (context, c) {
-        final w = c.maxWidth, h = c.maxHeight;
-        Widget blob(Color color, double alpha, double left, double top, double size) => Positioned(
-              left: left * w,
-              top: top * h,
-              width: size * w,
-              height: size * w,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [color.withValues(alpha: alpha * k), color.withValues(alpha: 0)],
-                  ),
-                ),
-              ),
-            );
-        Widget sparkle(double left, double top, double size, Color color, double opacity) => Positioned(
-              left: left * w,
-              top: top * h,
-              child: FadeTransition(
-                opacity: Tween(begin: opacity * 0.4, end: opacity).animate(twinkle),
-                child: Sparkle(size: size, color: color),
-              ),
-            );
-
-        return IgnorePointer(
-          child: Stack(
-            children: [
-              // Positions are fractions of the 412 x 917 Figma frame
-              blob(const Color(0xFF22D3EE), 0.35, -0.29, -0.10, 0.87),
-              blob(const Color(0xFFFB7185), 0.22, 0.61, 0.36, 0.68),
-              blob(const Color(0xFF38BDF8), 0.30, -0.34, 0.70, 0.92),
-              sparkle(0.80, 0.076, 18, AppTheme.accent, 0.8),
-              sparkle(0.10, 0.33, 14, AppTheme.coral, 0.8),
-              sparkle(0.87, 0.83, 16, AppTheme.primary, 0.6),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  final String message;
-
-  const _ErrorBanner({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: scheme.errorContainer,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.sentiment_dissatisfied_outlined, color: scheme.onErrorContainer, size: 20),
-          const SizedBox(width: 10),
-          Expanded(child: Text(message, style: TextStyle(color: scheme.onErrorContainer))),
         ],
       ),
     );
