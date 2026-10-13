@@ -193,8 +193,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             ],
                             GradientButton(
                               key: const Key('login_submit'),
-                              label: "Let's go!",
-                              semanticLabel: 'Log in',
+                              label: 'Login',
                               trailingIcon: Icons.arrow_forward_rounded,
                               loading: loading,
                               onPressed: _submit,
