@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'speech_bubble.dart';
 
 /// The logo "mascot" floating gently, with a speech bubble that pops in.
-/// Used at the top of the auth screens ("Hi again! ✨", "Nice to meet you! 🎉").
+/// Used at the top of the auth screens ("Hi again!", "Nice to meet you!").
 class MascotGreeting extends StatefulWidget {
   final String message;
+  final IconData? icon;
   final double logoSize;
 
-  const MascotGreeting({super.key, required this.message, this.logoSize = 112});
+  const MascotGreeting({super.key, required this.message, this.icon, this.logoSize = 112});
 
   @override
   State<MascotGreeting> createState() => _MascotGreetingState();
@@ -55,7 +56,7 @@ class _MascotGreetingState extends State<MascotGreeting> with TickerProviderStat
           child: ScaleTransition(
             scale: _bubbleScale,
             alignment: Alignment.bottomLeft,
-            child: SpeechBubble(text: widget.message),
+            child: SpeechBubble(text: widget.message, icon: widget.icon),
           ),
         ),
       ],

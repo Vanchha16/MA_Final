@@ -71,6 +71,7 @@ Advanced search & filtering. **Implement all five.**
 | Logo | `mobile/assets/logo.png` (original), `mobile/assets/logo_centered.png` (used in app), app icons via `flutter_launcher_icons` |
 | Web preview | `device_preview` is enabled only on web (`enabled: kIsWeb`), default device Google Pixel 9 |
 | Currency | USD, formatted with `intl` (`$1,234.50`) |
+| Icons | **Material icons only — never use emoji** in UI text, labels or designs (e.g. "Welcome back!" + `Icons.waving_hand_rounded`, ratings with `Icons.star_rounded`) |
 | Repo layout | `backend/`, `mobile/`, `docs/` at the root |
 
 **API response envelope (every endpoint):**
@@ -268,9 +269,9 @@ lib/
 ### 5.4 Screens (target 30; the brief requires ≥ 20)
 | # | Screen | Content / behaviour | API |
 |---|---|---|---|
-| 1 | Splash ✅ | gradient + logo, auto-login, first-launch → Onboarding | `/auth/me` |
+| 1 | Splash (done) | gradient + logo, auto-login, first-launch → Onboarding | `/auth/me` |
 | 2 | Onboarding | 3 slides (Figures / Trading Cards / Fast delivery), skip, shown once | – |
-| 3 | Login ✅ (wire links) | email, password, show/hide, "Forgot password?", "Sign up", "Continue as guest" | `/auth/login` |
+| 3 | Login (done) | email, password, show/hide, "Forgot password?", "Sign up", "Continue as guest" | `/auth/login` |
 | 4 | Register | name, email, phone, password, confirm, terms checkbox, field errors from API | `/auth/register` |
 | 5 | Forgot Password | email → send code | `/auth/forgot-password` |
 | 6 | Verify OTP | 6 boxes, resend countdown 60 s | `/auth/verify-otp` |
@@ -283,7 +284,7 @@ lib/
 | 13 | Filter (bottom sheet / page) | category, series, brand (multi from `/brands`), price RangeSlider, in-stock switch, sort, reset/apply, active-filter count | `/products` |
 | 14 | Product Details | Hero image, PageView gallery + dots, name, series & brand chips, price + strike-through + coral -% badge, rating, stock ("Only 2 left", "Sold out"), description, reviews preview, related row, sticky bottom bar: quantity stepper + Add to Cart, heart toggle | `/products/<id>`, cart, favorites |
 | 15 | Image Gallery | full-screen zoom (photo_view), swipe | – |
-| 16 | Reviews | list + average breakdown (5★..1★ bars), "Write a review" if `can_review` | reviews |
+| 16 | Reviews | list + average breakdown (5-star..1-star bars), "Write a review" if `can_review` | reviews |
 | 17 | Write Review | star picker + comment | `POST reviews` |
 | 18 | Wishlist | grid, remove, move to cart, empty state | favorites |
 | 19 | Cart | items with image, price, quantity stepper (update), swipe-to-delete with undo, subtotal / shipping (free-shipping progress bar "Add $X more for free shipping") / total, Checkout button, empty state | cart |
