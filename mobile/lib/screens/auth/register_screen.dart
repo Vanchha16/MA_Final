@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
 import '../../widgets/icon_title.dart';
@@ -128,7 +129,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                         children: [
                           Align(
                             alignment: Alignment.centerLeft,
-                            child: _BackButton(onPressed: () => Navigator.of(context).maybePop()),
+                            child: CircleBackButton(),
                           ),
                           const SizedBox(height: 16),
                           const MascotGreeting(message: 'Nice to meet you!', icon: Icons.celebration_rounded, logoSize: 76),
@@ -316,38 +317,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Round white back button with a soft shadow (Figma: Back Button).
-class _BackButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const _BackButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          if (!dark)
-            BoxShadow(color: AppTheme.primaryDark.withValues(alpha: 0.12), blurRadius: 14, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: IconButton.filled(
-        tooltip: 'Back',
-        onPressed: onPressed,
-        style: IconButton.styleFrom(
-          backgroundColor: dark ? scheme.surfaceContainerHigh : Colors.white,
-          foregroundColor: scheme.onSurface,
-          fixedSize: const Size(44, 44),
-        ),
-        icon: const Icon(Icons.arrow_back),
       ),
     );
   }

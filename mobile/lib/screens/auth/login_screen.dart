@@ -11,6 +11,7 @@ import '../../widgets/icon_title.dart';
 import '../../widgets/mascot_greeting.dart';
 import '../../widgets/pill_text_field.dart';
 import '../home/home_screen.dart';
+import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
 /// Friendly login (Figma: "03 - Login"): clean solid light background,
@@ -75,12 +76,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   void _goHome() {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
-  }
-
-  void _comingSoon(String feature) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('$feature is coming in the next update')));
   }
 
   void _fillDemo() {
@@ -168,7 +163,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                onPressed: () => _comingSoon('Forgot password'), // TODO: Forgot Password screen
+                                key: const Key('login_to_forgot'),
+                                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => ForgotPasswordScreen(initialEmail: _email.text.trim()),
+                                )),
                                 child: const Text('Forgot password?'),
                               ),
                             ),
