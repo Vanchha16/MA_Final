@@ -60,9 +60,9 @@ void main() {
 
     expect(find.text('Hi again! ✨'), findsOneWidget);
     expect(find.text('Welcome back! 👋'), findsOneWidget);
-    expect(find.text("Let's go!"), findsOneWidget);
+    expect(find.text('Login'), findsOneWidget);
     expect(find.text('Just browsing'), findsOneWidget);
-    expect(find.bySemanticsLabel('Log in'), findsOneWidget);
+    expect(find.bySemanticsLabel('Login'), findsOneWidget);
   });
 
   testWidgets('demo account button fills the form (debug builds)', (tester) async {
