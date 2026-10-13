@@ -4,7 +4,7 @@ from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_requir
 from ..extensions import bcrypt, db
 from ..models import User
 from ..utils.responses import error, success
-from ..utils.validators import is_valid_email, require_fields
+from ..utils.validators import is_valid_email, is_valid_phone, normalize_phone, require_fields
 
 bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -22,6 +22,9 @@ def register():
         errors["email"] = "Email is not valid"
     if data.get("password") and len(data["password"]) < 6:
         errors["password"] = "Password must be at least 6 characters"
+    phone = normalize_phone(data.get("phone"))
+    if phone and not is_valid_phone(phone):
+        errors["phone"] = "Phone number is not valid"
     if errors:
         return error("Validation failed", 422, errors)
 
@@ -32,7 +35,7 @@ def register():
     user = User(
         full_name=data["full_name"].strip(),
         email=email,
-        phone=data.get("phone"),
+        phone=phone,
         password_hash=bcrypt.generate_password_hash(data["password"]).decode(),
     )
     db.session.add(user)
