@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
 import '../home/home_screen.dart';
+import '../../widgets/sparkle.dart';
 
 /// Light & clean splash: pale sky background, twinkling sparkles and an aqua
 /// progress bar. Dark mode uses a navy version.
@@ -106,7 +107,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   opacity: _textFade,
                   child: FadeTransition(
                     opacity: Tween(begin: s.minOpacity, end: 1.0).animate(_twinkle),
-                    child: _Sparkle(size: s.size, color: s.color),
+                    child: Sparkle(size: s.size, color: s.color),
                   ),
                 ),
               ),
@@ -196,37 +197,3 @@ const _sparkles = [
   _SparkleSpec(-0.62, 0.62, 16, _coral, 0.35),
   _SparkleSpec(0.30, 0.68, 14, AppTheme.primary, 0.5),
 ];
-
-/// Four-point anime-style sparkle.
-class _Sparkle extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const _Sparkle({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) =>
-      CustomPaint(size: Size.square(size), painter: _SparklePainter(color));
-}
-
-class _SparklePainter extends CustomPainter {
-  final Color color;
-
-  _SparklePainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width, h = size.height, cx = w / 2, cy = h / 2;
-    final path = Path()
-      ..moveTo(cx, 0)
-      ..quadraticBezierTo(cx, cy, w, cy)
-      ..quadraticBezierTo(cx, cy, cx, h)
-      ..quadraticBezierTo(cx, cy, 0, cy)
-      ..quadraticBezierTo(cx, cy, cx, 0)
-      ..close();
-    canvas.drawPath(path, Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(_SparklePainter old) => old.color != color;
-}

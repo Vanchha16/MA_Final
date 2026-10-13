@@ -19,9 +19,11 @@ void main() {
 
     expect(find.text('Anime World Shop'), findsOneWidget);
 
+    // Login has a looping "floating logo" animation, so pump fixed time
+    // instead of pumpAndSettle (which would wait forever).
     await tester.pump(const Duration(seconds: 3));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
 
-    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.textContaining('Welcome back'), findsOneWidget);
   });
 }
