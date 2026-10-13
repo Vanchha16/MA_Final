@@ -1,11 +1,10 @@
 """SQLAlchemy models. These mirror docs/database/schema.sql - keep the two in sync."""
-from datetime import datetime
-
 from .extensions import db
+from .utils.clock import utcnow
 
 
 class TimestampMixin:
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
 
 class User(TimestampMixin, db.Model):
@@ -19,7 +18,7 @@ class User(TimestampMixin, db.Model):
     avatar_url = db.Column(db.String(255))
     role = db.Column(db.Enum("customer", "admin", name="user_role"), nullable=False, default="customer")
     is_active = db.Column(db.Boolean, nullable=False, default=True)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     addresses = db.relationship("Address", backref="user", cascade="all, delete-orphan")
     cart_items = db.relationship("CartItem", backref="user", cascade="all, delete-orphan")
@@ -46,6 +45,7 @@ class PasswordReset(TimestampMixin, db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     code_hash = db.Column(db.String(255), nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
+    attempts = db.Column(db.Integer, nullable=False, default=0)  # wrong codes entered
     used = db.Column(db.Boolean, nullable=False, default=False)
 
 
@@ -128,7 +128,7 @@ class Product(TimestampMixin, db.Model):
     stock = db.Column(db.Integer, nullable=False, default=0)
     is_featured = db.Column(db.Boolean, nullable=False, default=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     images = db.relationship(
         "ProductImage", backref="product", cascade="all, delete-orphan",
@@ -225,7 +225,7 @@ class Order(TimestampMixin, db.Model):
         nullable=False, default="unpaid",
     )
     note = db.Column(db.String(255))
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     items = db.relationship("OrderItem", backref="order", cascade="all, delete-orphan")
 

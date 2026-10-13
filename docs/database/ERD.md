@@ -37,6 +37,7 @@ erDiagram
         int user_id FK
         varchar code_hash
         datetime expires_at
+        int attempts
         bool used
     }
     ADDRESSES {

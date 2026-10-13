@@ -28,6 +28,7 @@ CREATE TABLE password_resets (
   user_id     INT UNSIGNED NOT NULL,
   code_hash   VARCHAR(255) NOT NULL,
   expires_at  DATETIME     NOT NULL,
+  attempts    INT UNSIGNED NOT NULL DEFAULT 0,   -- wrong codes entered (max 5)
   used        BOOLEAN      NOT NULL DEFAULT FALSE,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
