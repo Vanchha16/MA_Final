@@ -6,7 +6,7 @@ import '../../core/network/api_client.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/error_banner.dart';
 import '../../core/theme/app_theme.dart';
-import '../../widgets/gradient_button.dart';
+import '../../widgets/pill_button.dart';
 import '../../widgets/icon_title.dart';
 import '../../widgets/mascot_greeting.dart';
 import '../../widgets/pill_text_field.dart';
@@ -15,7 +15,7 @@ import '../home/home_screen.dart';
 import 'register_screen.dart';
 
 /// Friendly login (Figma: "03 - Login · B · Playful"): soft color blobs,
-/// logo mascot with a speech bubble, pill fields and a gradient button.
+/// logo mascot with a speech bubble, pill fields and a solid pill button.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -178,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               ErrorBanner(message: _error!),
                               const SizedBox(height: 12),
                             ],
-                            GradientButton(
+                            PillButton(
                               key: const Key('login_submit'),
                               label: 'Login',
                               trailingIcon: Icons.arrow_forward_rounded,

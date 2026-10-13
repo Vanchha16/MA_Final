@@ -6,7 +6,7 @@ import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/error_banner.dart';
-import '../../widgets/gradient_button.dart';
+import '../../widgets/pill_button.dart';
 import '../../widgets/icon_title.dart';
 import '../../widgets/mascot_greeting.dart';
 import '../../widgets/password_strength_meter.dart';
@@ -288,7 +288,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                             ErrorBanner(message: _error!),
                             const SizedBox(height: 12),
                           ],
-                          GradientButton(
+                          PillButton(
                             key: const Key('register_submit'),
                             label: 'Create account',
                             trailingIcon: Icons.arrow_forward_rounded,
