@@ -10,11 +10,10 @@ import '../../widgets/pill_button.dart';
 import '../../widgets/icon_title.dart';
 import '../../widgets/mascot_greeting.dart';
 import '../../widgets/pill_text_field.dart';
-import '../../widgets/playful_backdrop.dart';
 import '../home/home_screen.dart';
 import 'register_screen.dart';
 
-/// Friendly login (Figma: "03 - Login · B · Playful"): soft color blobs,
+/// Friendly login (Figma: "03 - Login"): clean solid light background,
 /// logo mascot with a speech bubble, pill fields and a solid pill button.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -101,7 +100,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     return Scaffold(
       body: Stack(
         children: [
-          const Positioned.fill(child: PlayfulBackdrop.login()),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -196,8 +194,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               label: const Text('Just browsing'),
                             ),
                             const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            Wrap(
+                              // Wrap (not Row) so the link drops to a new line with large text instead of overflowing
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 Text('New here?', style: text.bodyMedium),
                                 TextButton(

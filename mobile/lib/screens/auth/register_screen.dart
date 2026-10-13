@@ -11,7 +11,6 @@ import '../../widgets/icon_title.dart';
 import '../../widgets/mascot_greeting.dart';
 import '../../widgets/password_strength_meter.dart';
 import '../../widgets/pill_text_field.dart';
-import '../../widgets/playful_backdrop.dart';
 import '../home/home_screen.dart';
 
 /// Create account (Figma: "04 - Register"), same playful style as Login.
@@ -114,7 +113,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     return Scaffold(
       body: Stack(
         children: [
-          const Positioned.fill(child: PlayfulBackdrop.register()),
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -296,8 +294,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                             onPressed: _submit,
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Wrap(
+                            // Wrap (not Row) so the link drops to a new line with large text instead of overflowing
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Text('Already have an account?', style: text.bodyMedium),
                               TextButton(
