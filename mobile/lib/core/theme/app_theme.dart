@@ -10,7 +10,15 @@ class AppTheme {
   static ThemeData dark = _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
-    final scheme = ColorScheme.fromSeed(seedColor: primary, brightness: brightness);
+    final dark = brightness == Brightness.dark;
+    // fromSeed alone turns #0EA5E9 into a muted steel blue (#256489), so pin the
+    // brand blue: darker sky in light mode (white text stays readable), light sky in dark mode.
+    final scheme = ColorScheme.fromSeed(seedColor: primary, brightness: brightness).copyWith(
+      primary: dark ? const Color(0xFF38BDF8) : primaryDark,
+      onPrimary: dark ? const Color(0xFF082F49) : Colors.white,
+      secondary: accent,
+      onSecondary: Colors.white,
+    );
     final radius = BorderRadius.circular(12);
     const buttonSize = Size.fromHeight(52);
     final buttonShape = RoundedRectangleBorder(borderRadius: radius);
