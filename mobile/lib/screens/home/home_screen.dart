@@ -13,6 +13,7 @@ import '../../widgets/product_feed.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/shop_search_bar.dart';
 import '../../widgets/sort_header.dart';
+import '../catalog/product_list_screen.dart';
 import 'widgets/filter_sheet.dart';
 import 'widgets/promo_carousel.dart';
 import 'widgets/series_tabs.dart';
@@ -42,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Series> _series = [];
   List<Category> _categories = [];
+  List<String> _brands = [];
 
   ProductQuery _query = const ProductQuery();
   late final _feed = ProductFeed((page) => _catalog.products(_query, page: page, perPage: HomeScreen.pageSize));
@@ -64,11 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Each is optional: the screen still works if one fails.
   Future<void> _loadExtras() async {
     Future<T?> safe<T>(Future<T> f) => f.then<T?>((v) => v).catchError((_) => null);
-    final (series, categories) = await (safe(_catalog.series()), safe(_catalog.categories())).wait;
+    final (series, categories, brands) = await (safe(_catalog.series()), safe(_catalog.categories()), safe(_catalog.brands())).wait;
     if (!mounted) return;
     setState(() {
       _series = series ?? _series;
       _categories = categories ?? _categories;
+      _brands = brands ?? _brands;
     });
   }
 
@@ -96,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openFilters() async {
     if (_categories.isEmpty) await _loadExtras();
     if (!mounted) return;
-    final result = await FilterSheet.show(context, query: _query, categories: _categories);
+    final result = await FilterSheet.show(context, query: _query, categories: _categories, brands: _brands);
     if (result != null) _setQuery(result);
   }
 
@@ -195,6 +198,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       subtitle: _query.isFiltered && total != null ? '$total ${total == 1 ? 'item' : 'items'}' : null,
                       sort: _query.sort,
                       onSort: (s) => _setQuery(_query.copyWith(sort: s)),
+                      actions: [
+                        if (!_query.isFiltered)
+                          TextButton(
+                            key: const Key('home_see_all'),
+                            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => ProductListScreen(
+                                title: 'All products',
+                                query: ProductQuery(sort: _query.sort),
+                                catalogService: widget.catalogService,
+                              ),
+                            )),
+                            child: const Text('See all'),
+                          ),
+                      ],
                     ),
                   ),
                 ),

@@ -34,6 +34,9 @@ class FakeCatalogService extends CatalogService {
   @override
   Future<List<Category>> categories() async => [figures, boosters];
 
+  @override
+  Future<List<String>> brands() async => ['Bandai', 'Good Smile Company', 'The Pokemon Company'];
+
   bool detailFails = false;
 
   @override
@@ -59,6 +62,7 @@ class FakeCatalogService extends CatalogService {
       if (query.q.isNotEmpty && !p.name.toLowerCase().contains(query.q.toLowerCase())) return false;
       if (query.seriesId != null && p.series?.id != query.seriesId) return false;
       if (query.categoryId != null && p.category.id != query.categoryId) return false;
+      if (query.brand != null && p.brand != query.brand) return false;
       if (query.inStockOnly && p.soldOut) return false;
       return true;
     }).toList();
