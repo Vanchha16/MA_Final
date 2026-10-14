@@ -64,6 +64,19 @@ def test_reimport_replaces_old_photos(app, uploads):
     assert len(os.listdir(uploads / "catalog")) == 1
 
 
+def test_photos_of_a_renamed_product_are_cleaned_up(app, uploads):
+    p = _product("old-name")
+    _photo(uploads / "products" / "old-name", "1.jpg")
+    import_product_images()
+    p.slug = "new-name"
+    db.session.commit()
+    os.rename(uploads / "products" / "old-name", uploads / "products" / "new-name")
+
+    import_product_images()
+    files = os.listdir(uploads / "catalog")
+    assert len(files) == 1 and files[0].startswith("new-name-1-")
+
+
 def test_reports_unknown_folders_bad_files_and_missing_products(app, uploads):
     with_photo, without = _product("with-photo"), _product("without-photo")
     _photo(uploads / "products" / with_photo.slug, "1.jpg")

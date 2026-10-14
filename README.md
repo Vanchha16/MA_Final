@@ -117,3 +117,11 @@ git push origin main                          # or open a Pull Request on GitHub
 `sort=newest|price_asc|price_desc|name`, `page`, `per_page` (max 50).
 
 Example: `/api/products?category_id=6&series_id=1&max_price=50&sort=price_asc`
+
+## Product photos
+
+Photos are not in git (`backend/uploads/` is ignored). Get the shared `uploads/products` folder from
+the team drive, put it in `backend/uploads/`, then run `flask --app run import-images`.
+See [docs/product-photos.md](docs/product-photos.md) for the folder list and the source of every photo.
+
+Product images belong to their respective owners and are used for educational purposes only.
