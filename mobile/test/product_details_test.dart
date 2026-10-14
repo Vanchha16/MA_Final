@@ -6,6 +6,7 @@ import 'package:ecommerce_app/providers/theme_provider.dart';
 import 'package:ecommerce_app/screens/catalog/product_details_screen.dart';
 import 'package:ecommerce_app/screens/catalog/product_list_screen.dart';
 import 'package:ecommerce_app/screens/home/home_screen.dart';
+import 'package:ecommerce_app/screens/shell/main_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -75,7 +76,38 @@ void main() {
 
     await _tap(tester, find.byKey(const Key('details_add')));
     expect(shop.cart, 2);
-    expect(find.text('Added 2 to cart'), findsOneWidget);
+    expect(find.byKey(const Key('added_sheet')), findsOneWidget);
+    expect(find.byKey(const Key('added_toast')), findsNothing); // the sheet replaces the toast here
+  });
+
+  testWidgets('the Added sheet shows the cart, free delivery and closes with Keep shopping', (tester) async {
+    final shop = FakeShopService();
+    await _pump(tester, _details(FakeCatalogService(), 0), shop: shop);
+    await _tap(tester, find.byKey(const Key('qty_plus')));
+    await _tap(tester, find.byKey(const Key('details_add')));
+
+    expect(find.text('Added to your cart'), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('added_sheet_summary'))).data, r'2 items · $338 in your cart');
+    expect(find.descendant(of: find.byKey(const Key('added_sheet')), matching: find.text('Monkey D. Luffy Gear 5 1/7 Scale Figure')), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('added_sheet_delivery'))).data, 'You get FREE delivery');
+
+    await _tap(tester, find.byKey(const Key('added_sheet_keep')));
+    expect(find.byKey(const Key('added_sheet')), findsNothing);
+    expect(find.byType(ProductDetailsScreen), findsOneWidget);
+    expect(MainShell.requestedTab.value, isNull);
+  });
+
+  testWidgets('a small cart shows how much more is needed; View cart opens the Cart tab', (tester) async {
+    addTearDown(() => MainShell.requestedTab.value = null);
+    await _pump(tester, _details(FakeCatalogService(), 2)); // a $5 pack
+    await _tap(tester, find.byKey(const Key('details_add')));
+
+    expect(tester.widget<Text>(find.byKey(const Key('added_sheet_summary'))).data, r'1 item · $5 in your cart');
+    expect(tester.widget<Text>(find.byKey(const Key('added_sheet_delivery'))).data, r'Add $45 more for free delivery');
+
+    await _tap(tester, find.byKey(const Key('added_sheet_view')));
+    expect(find.byKey(const Key('added_sheet')), findsNothing);
+    expect(MainShell.requestedTab.value, MainShell.cartTab);
   });
 
   testWidgets('the stepper stops at the stock', (tester) async {

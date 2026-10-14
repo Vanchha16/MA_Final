@@ -1,4 +1,5 @@
 import 'package:ecommerce_app/core/network/api_client.dart';
+import 'package:ecommerce_app/models/cart.dart';
 import 'package:ecommerce_app/models/catalog.dart';
 import 'package:ecommerce_app/services/catalog_service.dart';
 import 'package:ecommerce_app/services/shop_service.dart';
@@ -107,6 +108,14 @@ class FakeShopService extends ShopService {
   @override
   Future<int> cartCount() async => cart;
 
+  /// What was added through this fake, for the cart totals (free delivery from $50, else $2).
+  double subtotal = 0;
+
   @override
-  Future<int> addToCart(int productId, {int quantity = 1}) async => cart += quantity;
+  Future<Cart> addToCart(int productId, {int quantity = 1}) async {
+    cart += quantity;
+    subtotal += demoProducts.firstWhere((p) => p.id == productId).finalPrice * quantity;
+    final shipping = subtotal >= 50 ? 0.0 : 2.0;
+    return Cart(count: cart, subtotal: subtotal, shippingFee: shipping, total: subtotal + shipping);
+  }
 }
