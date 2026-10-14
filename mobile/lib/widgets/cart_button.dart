@@ -4,11 +4,11 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/app_theme.dart';
 import '../providers/shop_provider.dart';
-import 'cart_fly.dart';
+import 'cart_drive.dart';
 import 'round_icon_button.dart';
 
 /// Round cart button with a coral badge showing the live cart count.
-/// Added products fly into it, and it bounces when they land.
+/// The add-to-cart cart drives into it (on pages without the tab bar) and it bounces.
 class CartButton extends StatefulWidget {
   final VoidCallback? onPressed;
 
@@ -25,12 +25,12 @@ class _CartButtonState extends State<CartButton> {
   @override
   void initState() {
     super.initState();
-    CartFly.register(_target, () => _bounce?.forward(from: 0));
+    CartDrive.register(_target, () => _bounce?.forward(from: 0));
   }
 
   @override
   void dispose() {
-    CartFly.unregister(_target);
+    CartDrive.unregister(_target);
     super.dispose();
   }
 
