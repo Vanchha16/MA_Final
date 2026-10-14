@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/format.dart';
 import '../../models/catalog.dart';
 import '../../services/catalog_service.dart';
 import '../../widgets/circle_back_button.dart';
@@ -8,8 +10,9 @@ import '../../widgets/product_feed.dart';
 import '../../widgets/sort_header.dart';
 import '../home/widgets/filter_sheet.dart';
 
-/// Products of one category, series or search, with sort, filters and
-/// paging (BUILD_PROMPT screen 11: Product List).
+/// Products of one category, series, search or "All products" (BUILD_PROMPT
+/// screen 11, Figma: 10 Product List): grid or list view, sort, filters on
+/// top of the starting query shown as removable chips, and paging.
 class ProductListScreen extends StatefulWidget {
   final String title;
 
@@ -18,6 +21,9 @@ class ProductListScreen extends StatefulWidget {
   final CatalogService? catalogService;
 
   const ProductListScreen({super.key, required this.title, required this.query, this.catalogService});
+
+  /// Remembers grid or list view on this device.
+  static const viewPrefKey = 'product_list_view';
 
   @override
   State<ProductListScreen> createState() => _ProductListScreenState();
@@ -30,6 +36,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
   late ProductQuery _query = widget.query;
   late final _feed = ProductFeed((page) => _catalog.products(_query, page: page, perPage: pageSize));
   List<Category> _categories = [];
+  List<String> _brands = [];
+  bool _listView = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadViewPref();
+  }
 
   @override
   void dispose() {
@@ -37,30 +51,78 @@ class _ProductListScreenState extends State<ProductListScreen> {
     super.dispose();
   }
 
+  Future<void> _loadViewPref() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getBool(ProductListScreen.viewPrefKey) ?? false;
+      if (mounted && list != _listView) setState(() => _listView = list);
+    } catch (_) {
+      // Grid view is fine when the setting cannot be read
+    }
+  }
+
+  Future<void> _toggleView() async {
+    setState(() => _listView = !_listView);
+    try {
+      (await SharedPreferences.getInstance()).setBool(ProductListScreen.viewPrefKey, _listView);
+    } catch (_) {
+      // Only a convenience
+    }
+  }
+
   void _setQuery(ProductQuery query) {
     setState(() => _query = query);
     _feed.refresh();
   }
 
-  /// Filters chosen here, on top of the screen's own category/series/search.
-  int get _extraFilters => _query.activeFilterCount - widget.query.activeFilterCount;
-
   Future<void> _openFilters() async {
-    if (_categories.isEmpty) {
-      try {
-        _categories = await _catalog.categories();
-      } catch (_) {
-        // The sheet still works without the category chips
+    try {
+      if (_categories.isEmpty || _brands.isEmpty) {
+        final results = await Future.wait([_catalog.categories(), _catalog.brands()]);
+        _categories = results[0] as List<Category>;
+        _brands = results[1] as List<String>;
       }
+    } catch (_) {
+      // The sheet still works without category and brand chips
     }
     if (!mounted) return;
-    final result = await FilterSheet.show(context, query: _query, categories: _categories);
+    final result = await FilterSheet.show(context, query: _query, categories: _categories, brands: _brands);
     if (result != null) _setQuery(result);
   }
 
+  /// Filters chosen on this screen, on top of the screen's own category/series/search.
+  List<_ActiveFilter> get _activeFilters {
+    final base = widget.query;
+    final q = _query;
+    final filters = <_ActiveFilter>[];
+    if (q.categoryId != null && q.categoryId != base.categoryId) {
+      final name = _categories.where((c) => c.id == q.categoryId).map((c) => c.name).firstOrNull ?? 'Category';
+      filters.add(_ActiveFilter('category', name, q.copyWith(categoryId: () => base.categoryId)));
+    }
+    if (q.brand != null && q.brand != base.brand) {
+      filters.add(_ActiveFilter('brand', q.brand!, q.copyWith(brand: () => base.brand)));
+    }
+    if ((q.minPrice != null || q.maxPrice != null) && (q.minPrice != base.minPrice || q.maxPrice != base.maxPrice)) {
+      final label = q.minPrice != null && q.maxPrice != null
+          ? '${formatPrice(q.minPrice!)} - ${formatPrice(q.maxPrice!)}'
+          : q.maxPrice != null
+              ? 'Under ${formatPrice(q.maxPrice!)}'
+              : '${formatPrice(q.minPrice!)}+';
+      filters.add(_ActiveFilter('price', label, q.copyWith(minPrice: () => base.minPrice, maxPrice: () => base.maxPrice)));
+    }
+    if (q.inStockOnly && !base.inStockOnly) {
+      filters.add(_ActiveFilter('stock', 'In stock', q.copyWith(inStockOnly: false)));
+    }
+    return filters;
+  }
+
+  void _clearFilters() => _setQuery(widget.query.copyWith(sort: _query.sort));
+
   @override
   Widget build(BuildContext context) {
-    final filterCount = _extraFilters.clamp(0, 9);
+    final scheme = Theme.of(context).colorScheme;
+    final filters = _activeFilters;
+
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -85,8 +147,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         ),
                       ),
                       Badge(
-                        isLabelVisible: filterCount > 0,
-                        label: Text('$filterCount'),
+                        isLabelVisible: filters.isNotEmpty,
+                        label: Text('${filters.length}'),
                         backgroundColor: AppTheme.coral,
                         child: IconButton.filled(
                           key: const Key('list_filter'),
@@ -105,7 +167,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 14),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
                 sliver: SliverToBoxAdapter(
                   child: ValueListenableBuilder<int?>(
                     valueListenable: _feed.total,
@@ -113,15 +175,52 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       title: total == null ? 'Products' : '$total ${total == 1 ? 'product' : 'products'}',
                       sort: _query.sort,
                       onSort: (s) => _setQuery(_query.copyWith(sort: s)),
+                      actions: [
+                        IconButton(
+                          key: const Key('list_view_toggle'),
+                          tooltip: _listView ? 'Show as grid' : 'Show as list',
+                          onPressed: _toggleView,
+                          icon: Icon(_listView ? Icons.grid_view_rounded : Icons.view_agenda_outlined, color: scheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
                     ),
                   ),
                 ),
               ),
+              if (filters.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        for (final f in filters)
+                          InputChip(
+                            key: Key('active_${f.id}'),
+                            label: Text(f.label),
+                            onDeleted: () => _setQuery(f.without),
+                            deleteButtonTooltipMessage: 'Remove ${f.label}',
+                            labelStyle: TextStyle(fontWeight: FontWeight.w600, color: scheme.primary),
+                            backgroundColor: scheme.primary.withValues(alpha: 0.08),
+                            side: BorderSide.none,
+                            shape: const StadiumBorder(),
+                          ),
+                        if (filters.length > 1)
+                          TextButton(key: const Key('active_clear_all'), onPressed: _clearFilters, child: const Text('Clear all')),
+                      ],
+                    ),
+                  ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 14)),
               ProductFeedGrid(
                 feed: _feed,
                 catalogService: widget.catalogService,
-                onClear: _extraFilters > 0 ? () => _setQuery(widget.query.copyWith(sort: _query.sort)) : null,
-                emptyMessage: _extraFilters > 0 ? 'Try clearing the filters.' : 'Nothing here yet. Check back soon!',
+                listView: _listView,
+                onClear: filters.isNotEmpty ? _clearFilters : null,
+                emptyMessage: filters.isNotEmpty ? 'Try removing a filter.' : 'Nothing here yet. Check back soon!',
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 28)),
             ],
@@ -130,4 +229,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
     );
   }
+}
+
+class _ActiveFilter {
+  final String id;
+  final String label;
+
+  /// The query with this filter removed.
+  final ProductQuery without;
+
+  const _ActiveFilter(this.id, this.label, this.without);
 }

@@ -13,6 +13,7 @@ import 'error_banner.dart';
 import 'icon_circle.dart';
 import 'pill_button.dart';
 import 'product_card.dart';
+import 'product_tile.dart';
 
 /// Loads products page by page (infinite_scroll_pagination). Give it a
 /// [load] function for one page; call [refresh] when the query changes.
@@ -73,6 +74,9 @@ class ProductFeedGrid extends StatelessWidget {
   /// Passed on to Product Details (tests inject a fake).
   final CatalogService? catalogService;
 
+  /// Rows (photo left, details right) instead of the 2-column grid.
+  final bool listView;
+
   /// Shown on the empty state ("Clear filters"); hidden when null.
   final VoidCallback? onClear;
   final String emptyTitle;
@@ -82,6 +86,7 @@ class ProductFeedGrid extends StatelessWidget {
     super.key,
     required this.feed,
     this.catalogService,
+    this.listView = false,
     this.onClear,
     this.emptyTitle = 'No products found',
     this.emptyMessage = 'Try another word or clear the filters.',
@@ -104,6 +109,60 @@ class ProductFeedGrid extends StatelessWidget {
             final width = (constraints.crossAxisExtent - _gap * (columns - 1)) / columns;
             final height = ProductCard.heightFor(width, scaler);
 
+            final delegate = PagedChildBuilderDelegate<Product>(
+              itemBuilder: (context, p, _) => listView
+                  ? ProductTile(
+                      product: p,
+                      wishlisted: shop.isWishlisted(p.id),
+                      onTap: () => ShopActions.openProduct(context, p, catalog: catalogService),
+                      onToggleWishlist: () => ShopActions.toggleWishlist(context, p),
+                      onAddToCart: () => ShopActions.addToCart(context, p),
+                    )
+                  : ProductCard(
+                      product: p,
+                      wishlisted: shop.isWishlisted(p.id),
+                      onTap: () => ShopActions.openProduct(context, p, catalog: catalogService),
+                      onToggleWishlist: () => ShopActions.toggleWishlist(context, p),
+                      onAddToCart: () => ShopActions.addToCart(context, p),
+                    ),
+              firstPageProgressIndicatorBuilder: (_) => _SkeletonRows(columns: columns, height: height),
+              firstPageErrorIndicatorBuilder: (_) => _ErrorState(error: state.error, onRetry: feed.refresh),
+              newPageErrorIndicatorBuilder: (_) => Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Center(
+                  child: TextButton.icon(
+                    onPressed: fetchNextPage,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Could not load more. Try again'),
+                  ),
+                ),
+              ),
+              noItemsFoundIndicatorBuilder: (_) => _EmptyState(title: emptyTitle, message: emptyMessage, onClear: onClear),
+              newPageProgressIndicatorBuilder: (_) => const Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: Center(child: SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2.5))),
+              ),
+              noMoreItemsIndicatorBuilder: (context) => (state.items?.length ?? 0) <= 10
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Center(
+                        child: Text(
+                          "You've seen everything",
+                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                    ),
+            );
+
+            if (listView) {
+              return PagedSliverList<int, Product>.separated(
+                state: state,
+                fetchNextPage: fetchNextPage,
+                separatorBuilder: (_, _) => const SizedBox(height: _gap),
+                builderDelegate: delegate,
+              );
+            }
             return PagedSliverGrid<int, Product>(
               state: state,
               fetchNextPage: fetchNextPage,
@@ -116,41 +175,7 @@ class ProductFeedGrid extends StatelessWidget {
                 crossAxisSpacing: _gap,
                 mainAxisExtent: height,
               ),
-              builderDelegate: PagedChildBuilderDelegate<Product>(
-                itemBuilder: (context, p, _) => ProductCard(
-                  product: p,
-                  wishlisted: shop.isWishlisted(p.id),
-                  onTap: () => ShopActions.openProduct(context, p, catalog: catalogService),
-                  onToggleWishlist: () => ShopActions.toggleWishlist(context, p),
-                  onAddToCart: () => ShopActions.addToCart(context, p),
-                ),
-                firstPageProgressIndicatorBuilder: (_) => _SkeletonRows(columns: columns, height: height),
-                firstPageErrorIndicatorBuilder: (_) => _ErrorState(error: state.error, onRetry: feed.refresh),
-                newPageErrorIndicatorBuilder: (_) => Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Center(
-                    child: TextButton.icon(
-                      onPressed: fetchNextPage,
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('Could not load more. Try again'),
-                    ),
-                  ),
-                ),
-                noItemsFoundIndicatorBuilder: (_) => _EmptyState(title: emptyTitle, message: emptyMessage, onClear: onClear),
-                newPageProgressIndicatorBuilder: (_) => const Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: Center(child: SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2.5))),
-                ),
-                noMoreItemsIndicatorBuilder: (context) => (state.items?.length ?? 0) <= 10
-                    ? const SizedBox.shrink()
-                    : Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: Center(
-                          child: Text("You've seen everything",
-                              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                        ),
-                      ),
-              ),
+              builderDelegate: delegate,
             );
           },
         ),
@@ -168,17 +193,23 @@ class _SkeletonRows extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget line() => SizedBox(
-          height: height,
-          child: Row(
-            children: [
-              for (var i = 0; i < columns; i++) ...[
-                if (i > 0) const SizedBox(width: ProductFeedGrid._gap),
-                const Expanded(child: ProductCardSkeleton()),
-              ],
-            ],
-          ),
-        );
-    return Column(children: [line(), const SizedBox(height: ProductFeedGrid._gap), line()]);
+      height: height,
+      child: Row(
+        children: [
+          for (var i = 0; i < columns; i++) ...[
+            if (i > 0) const SizedBox(width: ProductFeedGrid._gap),
+            const Expanded(child: ProductCardSkeleton()),
+          ],
+        ],
+      ),
+    );
+    return Column(
+      children: [
+        line(),
+        const SizedBox(height: ProductFeedGrid._gap),
+        line(),
+      ],
+    );
   }
 }
 
@@ -220,7 +251,11 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
-          Text(message, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: scheme.onSurfaceVariant),
+          ),
           if (onClear != null) ...[
             const SizedBox(height: 18),
             PillButton(key: const Key('feed_clear'), label: 'Clear filters', leadingIcon: Icons.filter_alt_off_rounded, onPressed: onClear),

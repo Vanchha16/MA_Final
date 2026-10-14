@@ -11,6 +11,8 @@ class CatalogService {
   Future<List<Series>> series() async =>
       [for (final s in await _api.get(ApiConstants.series) as List) Series.fromJson(s)];
 
+  Future<List<String>> brands() async => [for (final b in await _api.get(ApiConstants.brands) as List) b as String];
+
   Future<ProductDetail> product(int id) async =>
       ProductDetail.fromJson(await _api.get('${ApiConstants.products}/$id'));
 
