@@ -15,6 +15,10 @@ class ShopSearchBar extends StatelessWidget {
   final String hint;
   final Key fieldKey;
 
+  /// When set the field does not take typing; tapping it calls this
+  /// (e.g. opens the Search screen).
+  final VoidCallback? onTap;
+
   const ShopSearchBar({
     super.key,
     required this.controller,
@@ -25,6 +29,7 @@ class ShopSearchBar extends StatelessWidget {
     this.onFilter,
     this.hint = 'Search figures, cards, series...',
     this.fieldKey = const Key('home_search'),
+    this.onTap,
   });
 
   @override
@@ -44,6 +49,8 @@ class ShopSearchBar extends StatelessWidget {
             child: TextField(
               key: fieldKey,
               controller: controller,
+              readOnly: onTap != null,
+              onTap: onTap,
               textInputAction: TextInputAction.search,
               onChanged: onChanged,
               onSubmitted: onSubmitted,

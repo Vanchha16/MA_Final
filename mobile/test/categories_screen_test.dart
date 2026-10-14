@@ -6,6 +6,7 @@ import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/providers/theme_provider.dart';
 import 'package:ecommerce_app/screens/catalog/categories_screen.dart';
 import 'package:ecommerce_app/screens/catalog/product_list_screen.dart';
+import 'package:ecommerce_app/screens/search/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -79,7 +80,7 @@ void main() {
     expect(find.byKey(const Key('product_1')), findsNothing);
   });
 
-  testWidgets('a series circle and the search both open a product list', (tester) async {
+  testWidgets('a series circle opens its list and the search bar opens Search', (tester) async {
     final catalog = FakeCatalogService();
     await _pump(tester, CategoriesScreen(catalogService: catalog));
 
@@ -88,12 +89,9 @@ void main() {
     expect(find.text('1 product'), findsOneWidget);
     await _tap(tester, find.byTooltip('Back'));
 
-    await tester.enterText(find.byKey(const Key('categories_search')), 'luffy');
-    await tester.testTextInput.receiveAction(TextInputAction.search);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(catalog.lastQuery!.q, 'luffy');
-    expect(find.text('Results for "luffy"'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 400)); // let the back animation finish
+    await _tap(tester, find.byKey(const Key('categories_search')));
+    expect(find.byType(SearchScreen), findsOneWidget);
   });
 
   testWidgets('product list filters stack on top of the category and can be cleared', (tester) async {
