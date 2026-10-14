@@ -112,7 +112,7 @@ git push origin main                          # or open a Pull Request on GitHub
 | GET | `/api/products` | - | Search / filter / sort / paginate (see below) |
 | GET | `/api/products/<id>` | - | Product details + reviews + related products (same series) |
 
-`/api/products` query params (all optional): `q`, `category_id`, `series_id`, `brand`,
+`/api/products` query params (all optional): `q`, `category_id`, `series_id`, `brand` (repeat for several),
 `min_price`, `max_price`, `in_stock=1`, `featured=1`,
 `sort=newest|price_asc|price_desc|name`, `page`, `per_page` (max 50).
 

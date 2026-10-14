@@ -99,7 +99,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openFilters() async {
     if (_categories.isEmpty) await _loadExtras();
     if (!mounted) return;
-    final result = await FilterSheet.show(context, query: _query, categories: _categories, brands: _brands);
+    final result = await FilterSheet.show(
+      context,
+      query: _query,
+      categories: _categories,
+      series: _series,
+      brands: _brands,
+      countResults: _catalog.count,
+    );
     if (result != null) _setQuery(result);
   }
 

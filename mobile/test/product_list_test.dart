@@ -32,6 +32,11 @@ Future<void> _pump(WidgetTester tester, Widget home, {Map<String, Object> prefs 
 }
 
 Future<void> _tap(WidgetTester tester, Finder f) async {
+  // Long lists (e.g. the filter sheet) only build what is on screen: scroll to it first
+  if (f.evaluate().isEmpty) {
+    final sheet = find.descendant(of: find.byKey(const Key('filter_scroll')), matching: find.byType(Scrollable));
+    await tester.scrollUntilVisible(f, 200, scrollable: sheet.evaluate().isNotEmpty ? sheet.first : find.byType(Scrollable).first);
+  }
   await tester.ensureVisible(f);
   await tester.pump();
   await tester.tap(f);
@@ -69,17 +74,17 @@ void main() {
     await _tap(tester, find.byKey(const Key('filter_apply')));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(catalog.lastQuery!.brand, 'Bandai');
+    expect(catalog.lastQuery!.brands, ['Bandai']);
     expect(catalog.lastQuery!.inStockOnly, isTrue);
-    expect(find.byKey(const Key('active_brand')), findsOneWidget);
+    expect(find.byKey(const Key('active_brand_Bandai')), findsOneWidget);
     expect(find.byKey(const Key('active_stock')), findsOneWidget);
     expect(find.descendant(of: find.byType(Badge), matching: find.text('2')), findsOneWidget);
 
     // Remove just the brand
     await _tap(tester, find.byTooltip('Remove Bandai'));
-    expect(catalog.lastQuery!.brand, isNull);
+    expect(catalog.lastQuery!.brands, isEmpty);
     expect(catalog.lastQuery!.inStockOnly, isTrue);
-    expect(find.byKey(const Key('active_brand')), findsNothing);
+    expect(find.byKey(const Key('active_brand_Bandai')), findsNothing);
   });
 
   testWidgets('Clear all keeps the screen\'s own category', (tester) async {
@@ -95,7 +100,7 @@ void main() {
 
     await _tap(tester, find.byKey(const Key('active_clear_all')));
     expect(catalog.lastQuery!.categoryId, 6);
-    expect(catalog.lastQuery!.brand, isNull);
+    expect(catalog.lastQuery!.brands, isEmpty);
     expect(catalog.lastQuery!.inStockOnly, isFalse);
   });
 

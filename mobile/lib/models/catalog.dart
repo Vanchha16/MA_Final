@@ -197,7 +197,9 @@ class ProductQuery {
   final String q;
   final int? seriesId;
   final int? categoryId;
-  final String? brand;
+
+  /// Any of these brands (empty = all brands).
+  final List<String> brands;
   final double? minPrice;
   final double? maxPrice;
   final bool inStockOnly;
@@ -207,7 +209,7 @@ class ProductQuery {
     this.q = '',
     this.seriesId,
     this.categoryId,
-    this.brand,
+    this.brands = const [],
     this.minPrice,
     this.maxPrice,
     this.inStockOnly = false,
@@ -217,7 +219,7 @@ class ProductQuery {
   /// Filters chosen in the filter sheet (not search, series tab or sort).
   int get activeFilterCount =>
       (categoryId != null ? 1 : 0) +
-      (brand != null ? 1 : 0) +
+      (brands.isNotEmpty ? 1 : 0) +
       (minPrice != null || maxPrice != null ? 1 : 0) +
       (inStockOnly ? 1 : 0);
 
@@ -229,7 +231,7 @@ class ProductQuery {
     String? q,
     int? Function()? seriesId,
     int? Function()? categoryId,
-    String? Function()? brand,
+    List<String>? brands,
     double? Function()? minPrice,
     double? Function()? maxPrice,
     bool? inStockOnly,
@@ -239,7 +241,7 @@ class ProductQuery {
         q: q ?? this.q,
         seriesId: seriesId != null ? seriesId() : this.seriesId,
         categoryId: categoryId != null ? categoryId() : this.categoryId,
-        brand: brand != null ? brand() : this.brand,
+        brands: brands ?? this.brands,
         minPrice: minPrice != null ? minPrice() : this.minPrice,
         maxPrice: maxPrice != null ? maxPrice() : this.maxPrice,
         inStockOnly: inStockOnly ?? this.inStockOnly,
@@ -253,7 +255,7 @@ class ProductQuery {
         if (q.isNotEmpty) 'q': q,
         if (seriesId != null) 'series_id': seriesId,
         if (categoryId != null) 'category_id': categoryId,
-        if (brand != null) 'brand': brand,
+        if (brands.isNotEmpty) 'brand': brands,
         if (minPrice != null) 'min_price': minPrice,
         if (maxPrice != null) 'max_price': maxPrice,
         if (inStockOnly) 'in_stock': 1,

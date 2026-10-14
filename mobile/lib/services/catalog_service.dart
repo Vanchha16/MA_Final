@@ -16,6 +16,9 @@ class CatalogService {
   Future<ProductDetail> product(int id) async =>
       ProductDetail.fromJson(await _api.get('${ApiConstants.products}/$id'));
 
+  /// How many products match, for the filter's "Show 12 results".
+  Future<int> count(ProductQuery query) async => (await products(query, perPage: 1)).total;
+
   Future<ProductPage> products(ProductQuery query, {int page = 1, int perPage = 10}) async =>
       ProductPage.fromJson(await _api.get(ApiConstants.products, query: query.toParams(page: page, perPage: perPage)));
 }

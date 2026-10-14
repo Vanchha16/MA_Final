@@ -36,6 +36,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   late ProductQuery _query = widget.query;
   late final _feed = ProductFeed((page) => _catalog.products(_query, page: page, perPage: pageSize));
   List<Category> _categories = [];
+  List<Series> _series = [];
   List<String> _brands = [];
   bool _listView = false;
 
@@ -78,15 +79,23 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Future<void> _openFilters() async {
     try {
       if (_categories.isEmpty || _brands.isEmpty) {
-        final results = await Future.wait([_catalog.categories(), _catalog.brands()]);
+        final results = await Future.wait([_catalog.categories(), _catalog.series(), _catalog.brands()]);
         _categories = results[0] as List<Category>;
-        _brands = results[1] as List<String>;
+        _series = results[1] as List<Series>;
+        _brands = results[2] as List<String>;
       }
     } catch (_) {
       // The sheet still works without category and brand chips
     }
     if (!mounted) return;
-    final result = await FilterSheet.show(context, query: _query, categories: _categories, brands: _brands);
+    final result = await FilterSheet.show(
+      context,
+      query: _query,
+      categories: _categories,
+      series: _series,
+      brands: _brands,
+      countResults: _catalog.count,
+    );
     if (result != null) _setQuery(result);
   }
 
@@ -99,8 +108,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
       final name = _categories.where((c) => c.id == q.categoryId).map((c) => c.name).firstOrNull ?? 'Category';
       filters.add(_ActiveFilter('category', name, q.copyWith(categoryId: () => base.categoryId)));
     }
-    if (q.brand != null && q.brand != base.brand) {
-      filters.add(_ActiveFilter('brand', q.brand!, q.copyWith(brand: () => base.brand)));
+    if (q.seriesId != null && q.seriesId != base.seriesId) {
+      final name = _series.where((s) => s.id == q.seriesId).map((s) => s.name).firstOrNull ?? 'Series';
+      filters.add(_ActiveFilter('series', name, q.copyWith(seriesId: () => base.seriesId)));
+    }
+    for (final b in q.brands.where((b) => !base.brands.contains(b))) {
+      filters.add(_ActiveFilter('brand_$b', b, q.copyWith(brands: q.brands.where((x) => x != b).toList())));
     }
     if ((q.minPrice != null || q.maxPrice != null) && (q.minPrice != base.minPrice || q.maxPrice != base.maxPrice)) {
       final label = q.minPrice != null && q.maxPrice != null

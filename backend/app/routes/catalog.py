@@ -84,7 +84,7 @@ def list_products():
     """Search + filter + sort + paginate.
 
     Query params (all optional):
-      q, category_id, series_id, brand, min_price, max_price,
+      q, category_id, series_id, brand (repeatable), min_price, max_price,
       in_stock=1, featured=1, sort=newest|price_asc|price_desc|name, page, per_page
     """
     args = request.args
@@ -100,8 +100,9 @@ def list_products():
         query = query.filter(Product.category_id == category_id)
     if series_id := args.get("series_id", type=int):
         query = query.filter(Product.series_id == series_id)
-    if brand := args.get("brand"):
-        query = query.filter(Product.brand == brand)
+    # brand can repeat: ?brand=Bandai&brand=SEGA
+    if brands := [b for b in args.getlist("brand") if b]:
+        query = query.filter(Product.brand.in_(brands))
     if (min_price := args.get("min_price", type=float)) is not None:
         query = query.filter(final_price >= min_price)
     if (max_price := args.get("max_price", type=float)) is not None:

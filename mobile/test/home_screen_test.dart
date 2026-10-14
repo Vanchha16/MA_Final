@@ -35,6 +35,11 @@ Future<void> _pump(WidgetTester tester, FakeCatalogService catalog, {FakeShopSer
 }
 
 Future<void> _tap(WidgetTester tester, Finder f) async {
+  // Long lists (e.g. the filter sheet) only build what is on screen: scroll to it first
+  if (f.evaluate().isEmpty) {
+    final sheet = find.descendant(of: find.byKey(const Key('filter_scroll')), matching: find.byType(Scrollable));
+    await tester.scrollUntilVisible(f, 200, scrollable: sheet.evaluate().isNotEmpty ? sheet.first : find.byType(Scrollable).first);
+  }
   await tester.ensureVisible(f);
   await tester.pump();
   await tester.tap(f);
