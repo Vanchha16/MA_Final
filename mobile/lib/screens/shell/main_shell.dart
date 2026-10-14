@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../services/catalog_service.dart';
 import '../../services/profile_service.dart';
 import '../../widgets/icon_circle.dart';
 import '../home/home_screen.dart';
@@ -9,14 +10,16 @@ import '../profile/profile_screen.dart';
 /// The app after login / "Just browsing": 5 tabs with a bottom navigation
 /// bar (Figma: Bottom Nav). Tabs keep their state when switching.
 class MainShell extends StatefulWidget {
+  static const cartTab = 3;
   static const profileTab = 4;
 
   final int initialIndex;
 
   /// Injected in tests/screenshots; the real API otherwise.
   final ProfileService? profileService;
+  final CatalogService? catalogService;
 
-  const MainShell({super.key, this.initialIndex = 0, this.profileService});
+  const MainShell({super.key, this.initialIndex = 0, this.profileService, this.catalogService});
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -40,7 +43,7 @@ class _MainShellState extends State<MainShell> {
       body: IndexedStack(
         index: _index,
         children: [
-          const HomeScreen(),
+          HomeScreen(catalogService: widget.catalogService, onOpenCart: () => setState(() => _index = MainShell.cartTab)),
           const _ComingSoonTab(icon: Icons.widgets_rounded, title: 'Categories'),
           const _ComingSoonTab(icon: Icons.favorite_rounded, title: 'Wishlist'),
           const _ComingSoonTab(icon: Icons.shopping_cart_rounded, title: 'Cart'),
