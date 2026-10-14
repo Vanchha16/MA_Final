@@ -9,7 +9,10 @@ class SortHeader extends StatelessWidget {
   final ProductSort sort;
   final ValueChanged<ProductSort> onSort;
 
-  const SortHeader({super.key, required this.title, this.subtitle, required this.sort, required this.onSort});
+  /// Shown between the title and the sort menu, e.g. a grid/list toggle.
+  final List<Widget> actions;
+
+  const SortHeader({super.key, required this.title, this.subtitle, required this.sort, required this.onSort, this.actions = const []});
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +29,7 @@ class SortHeader extends StatelessWidget {
             ],
           ),
         ),
+        ...actions,
         PopupMenuButton<ProductSort>(
           key: const Key('home_sort'),
           tooltip: 'Sort',
@@ -42,7 +46,7 @@ class SortHeader extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(sort == ProductSort.newest ? 'Newest' : sort.label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(sort.short, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(width: 4),
                 Icon(Icons.swap_vert_rounded, size: 18, color: scheme.onSurfaceVariant),
               ],
