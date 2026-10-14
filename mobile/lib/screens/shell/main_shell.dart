@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../services/cart_service.dart';
 import '../../services/catalog_service.dart';
+import '../cart/cart_screen.dart';
 import '../../services/profile_service.dart';
 import '../../widgets/icon_circle.dart';
 import '../catalog/categories_screen.dart';
@@ -23,8 +25,9 @@ class MainShell extends StatefulWidget {
   /// Injected in tests/screenshots; the real API otherwise.
   final ProfileService? profileService;
   final CatalogService? catalogService;
+  final CartService? cartService;
 
-  const MainShell({super.key, this.initialIndex = 0, this.profileService, this.catalogService});
+  const MainShell({super.key, this.initialIndex = 0, this.profileService, this.catalogService, this.cartService});
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -70,7 +73,7 @@ class _MainShellState extends State<MainShell> {
           HomeScreen(catalogService: widget.catalogService, onOpenCart: () => setState(() => _index = MainShell.cartTab)),
           CategoriesScreen(catalogService: widget.catalogService, onOpenCart: () => setState(() => _index = MainShell.cartTab)),
           const _ComingSoonTab(icon: Icons.favorite_rounded, title: 'Wishlist'),
-          const _ComingSoonTab(icon: Icons.shopping_cart_rounded, title: 'Cart'),
+          CartScreen(cartService: widget.cartService, catalogService: widget.catalogService),
           ProfileScreen(service: widget.profileService),
         ],
       ),

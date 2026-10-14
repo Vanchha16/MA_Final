@@ -71,8 +71,9 @@ def create_app(config_class=Config):
     @app.cli.command("seed-demo")
     def seed_demo():
         """Add the demo customer's sample orders and wishlist (safe to run twice)."""
-        from .seed import seed_demo_orders
+        from .seed import seed_coupons, seed_demo_orders
 
+        seed_coupons()
         seed_demo_orders()
 
     return app

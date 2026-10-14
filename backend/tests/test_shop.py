@@ -72,3 +72,72 @@ def test_add_to_cart_validates_body(client, user):
     assert client.post("/api/cart", json={"product_id": p.id, "quantity": 0}, headers=h).status_code == 422
     inactive = _product(active=False)
     assert client.post("/api/cart", json={"product_id": inactive.id}, headers=h).status_code == 404
+
+
+# ---------- quantity, remove, clear, delivery, promo codes ----------
+
+def _coupons():
+    from app.seed import seed_coupons
+    seed_coupons()
+
+
+def test_update_quantity_respects_stock_and_owner(client, user):
+    p = _product(stock=3, price=10)
+    h = _auth(client)
+    item_id = client.post("/api/cart", json={"product_id": p.id}, headers=h).get_json()["data"]["items"][0]["id"]
+
+    data = client.put(f"/api/cart/{item_id}", json={"quantity": 3}, headers=h).get_json()["data"]
+    assert data["count"] == 3
+    res = client.put(f"/api/cart/{item_id}", json={"quantity": 4}, headers=h)
+    assert res.status_code == 409 and "Only 3" in res.get_json()["message"]
+    assert client.put(f"/api/cart/{item_id}", json={"quantity": 0}, headers=h).status_code == 422
+    assert client.put("/api/cart/9999", json={"quantity": 1}, headers=h).status_code == 404
+
+
+def test_remove_and_clear(client, user):
+    a, b = _product(price=10), _product(price=20)
+    h = _auth(client)
+    client.post("/api/cart", json={"product_id": a.id}, headers=h)
+    items = client.post("/api/cart", json={"product_id": b.id}, headers=h).get_json()["data"]["items"]
+
+    data = client.delete(f"/api/cart/{items[0]['id']}", headers=h).get_json()["data"]
+    assert len(data["items"]) == 1
+    assert client.delete("/api/cart", headers=h).get_json()["data"]["count"] == 0
+
+
+def test_delivery_is_free_from_50(client, user):
+    small, big = _product(price=20), _product(price=60)
+    h = _auth(client)
+    data = client.post("/api/cart", json={"product_id": small.id}, headers=h).get_json()["data"]
+    assert (data["subtotal"], data["shipping_fee"], data["total"]) == (20, 2, 22)
+    data = client.post("/api/cart", json={"product_id": big.id}, headers=h).get_json()["data"]
+    assert (data["shipping_fee"], data["total"], data["free_shipping_min"]) == (0, 80, 50)
+
+
+def test_percent_coupon_with_cap_and_sale_savings(client, user):
+    _coupons()
+    p = _product(price=300, discount=250, stock=5)
+    h = _auth(client)
+    client.post("/api/cart", json={"product_id": p.id}, headers=h)
+
+    data = client.post("/api/cart/coupon", json={"code": "welcome10"}, headers=h).get_json()["data"]
+    assert data["coupon"]["code"] == "WELCOME10"
+    assert data["discount"] == 20  # 10% of 250 = 25, capped at 20
+    assert data["total"] == 230
+    assert data["savings"] == 70  # 50 sale + 20 promo
+    # The app passes the applied code when it reloads the cart
+    assert client.get("/api/cart?coupon=WELCOME10", headers=h).get_json()["data"]["discount"] == 20
+
+
+def test_coupon_errors(client, user):
+    _coupons()
+    p = _product(price=10)
+    h = _auth(client)
+    client.post("/api/cart", json={"product_id": p.id}, headers=h)
+
+    for code, message in [("NOPE", "does not exist"), ("OLDCODE", "expired"), ("ANIME5", "Spend $30")]:
+        res = client.post("/api/cart/coupon", json={"code": code}, headers=h)
+        assert res.status_code == 422 and message in res.get_json()["message"], code
+    # A code that stops applying (cart got smaller) comes back as coupon_error, not a failure
+    data = client.get("/api/cart?coupon=ANIME5", headers=h).get_json()["data"]
+    assert data["discount"] == 0 and "Spend $30" in data["coupon_error"]

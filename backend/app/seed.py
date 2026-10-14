@@ -9,7 +9,7 @@ from datetime import timedelta
 from slugify import slugify
 
 from .extensions import bcrypt, db
-from .models import Category, Favorite, Order, OrderItem, Product, Review, Series, User
+from .models import Category, Coupon, Favorite, Order, OrderItem, Product, Review, Series, User
 from .utils.clock import utcnow
 
 
@@ -114,7 +114,31 @@ PRODUCTS = [
 ]
 
 
+# (code, description, type, value, min subtotal, max discount, days until it expires; negative = expired)
+COUPONS = [
+    ("WELCOME10", "10% off your order (up to $20)", "percent", 10, 0, 20, None),
+    ("ANIME5", "$5 off orders from $30", "fixed", 5, 30, None, None),
+    ("BIGSALE40", "$40 off orders from $300", "fixed", 40, 300, None, None),
+    ("OLDCODE", "Expired example code", "fixed", 10, 0, None, -30),
+]
+
+
+def seed_coupons():
+    """Idempotent: adds the demo promo codes that are missing."""
+    added = 0
+    for code, desc, kind, value, min_sub, cap, days in COUPONS:
+        if Coupon.query.filter_by(code=code).first():
+            continue
+        db.session.add(Coupon(code=code, description=desc, discount_type=kind, value=value, min_subtotal=min_sub,
+                              max_discount=cap, expires_at=utcnow() + timedelta(days=days) if days is not None else None))
+        added += 1
+    db.session.commit()
+    if added:
+        print(f"Seeded {added} promo codes.")
+
+
 def seed_data():
+    seed_coupons()
     if Category.query.first():
         print("Database already has data - skipping catalog seed.")
         seed_demo_orders()

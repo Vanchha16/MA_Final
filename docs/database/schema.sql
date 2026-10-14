@@ -189,3 +189,18 @@ CREATE TABLE reviews (
   FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE,
   UNIQUE KEY uq_review_user_product (user_id, product_id)
 );
+
+-- Promo codes for the cart (WELCOME10, ANIME5 ...). A coupon stands alone:
+-- the cart sends its code, the server checks it and works out the discount.
+CREATE TABLE coupons (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  code          VARCHAR(30)   NOT NULL UNIQUE,          -- upper case
+  description   VARCHAR(150)  NOT NULL,
+  discount_type ENUM('percent','fixed') NOT NULL,
+  value         DECIMAL(10,2) NOT NULL,                 -- 10 = 10% or $10
+  min_subtotal  DECIMAL(10,2) NOT NULL DEFAULT 0,
+  max_discount  DECIMAL(10,2) NULL,                     -- cap for percent coupons
+  expires_at    DATETIME      NULL,
+  is_active     BOOLEAN       NOT NULL DEFAULT TRUE,
+  created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
