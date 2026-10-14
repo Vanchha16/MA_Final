@@ -10,6 +10,9 @@ class PillButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool loading;
   final IconData? leadingIcon;
+
+  /// Custom leading widget (e.g. an animated icon); used instead of [leadingIcon].
+  final Widget? leading;
   final IconData? trailingIcon;
   final Color? color;
   final Color? foregroundColor;
@@ -23,6 +26,7 @@ class PillButton extends StatelessWidget {
     required this.onPressed,
     this.loading = false,
     this.leadingIcon,
+    this.leading,
     this.trailingIcon,
     this.color,
     this.foregroundColor,
@@ -36,6 +40,7 @@ class PillButton extends StatelessWidget {
     required this.onPressed,
     this.loading = false,
     this.leadingIcon,
+    this.leading,
     this.trailingIcon,
     this.semanticLabel,
   })  : color = AppTheme.danger,
@@ -87,8 +92,8 @@ class PillButton extends StatelessWidget {
                       : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (leadingIcon != null) ...[
-                              Icon(leadingIcon, color: fg, size: 20),
+                            if (leading != null || leadingIcon != null) ...[
+                              leading ?? Icon(leadingIcon, color: fg, size: 20),
                               const SizedBox(width: 8),
                             ],
                             Text(

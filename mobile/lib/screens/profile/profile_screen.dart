@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/profile_summary.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/profile_service.dart';
+import '../../widgets/animated_logout_icon.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/menu_card.dart';
 import '../../widgets/pill_button.dart';
@@ -130,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               PillButton.danger(
                 key: const Key('profile_logout'),
                 label: 'Log out',
-                leadingIcon: Icons.logout_rounded,
+                leading: const AnimatedLogoutIcon(size: 20, color: Colors.white),
                 onPressed: _confirmLogout,
               ),
             ],
@@ -258,7 +259,10 @@ Future<bool?> showLogoutDialog(BuildContext context) {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(color: AppTheme.danger.withValues(alpha: 0.12), shape: BoxShape.circle),
-                child: const Icon(Icons.logout_rounded, size: 30, color: AppTheme.danger),
+                // Plays continuously while the dialog is open
+                child: const Center(
+                  child: AnimatedLogoutIcon(size: 30, color: AppTheme.danger, pause: Duration(milliseconds: 500)),
+                ),
               ),
               const SizedBox(height: 14),
               const Text('Log out?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
