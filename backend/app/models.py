@@ -315,3 +315,29 @@ class Review(TimestampMixin, db.Model):
     comment = db.Column(db.Text)
 
     user = db.relationship("User")
+
+
+class Coupon(TimestampMixin, db.Model):
+    """Promo code for the cart, e.g. WELCOME10 (10% off) or ANIME5 ($5 off)."""
+    __tablename__ = "coupons"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(30), nullable=False, unique=True)  # stored upper case
+    description = db.Column(db.String(150), nullable=False)
+    discount_type = db.Column(db.Enum("percent", "fixed", name="coupon_type"), nullable=False)
+    value = db.Column(db.Numeric(10, 2), nullable=False)  # 10 = 10% or $10
+    min_subtotal = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    max_discount = db.Column(db.Numeric(10, 2))  # cap for percent coupons
+    expires_at = db.Column(db.DateTime)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+    def discount_for(self, subtotal):
+        """Money off for this subtotal (never more than the subtotal)."""
+        subtotal = float(subtotal)
+        if self.discount_type == "percent":
+            off = subtotal * float(self.value) / 100
+            if self.max_discount is not None:
+                off = min(off, float(self.max_discount))
+        else:
+            off = float(self.value)
+        return round(min(off, subtotal), 2)
