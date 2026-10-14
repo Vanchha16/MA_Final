@@ -1,6 +1,7 @@
 import 'package:dotted_border/dotted_border.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
@@ -12,6 +13,7 @@ import '../../models/cart.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/cart_service.dart';
 import '../../services/catalog_service.dart';
+import '../../widgets/confirm_dialog.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/icon_circle.dart';
 import '../../widgets/pill_button.dart';
@@ -167,28 +169,36 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Future<void> _clear() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Empty your cart?'),
-        content: const Text('All items will be removed.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(
-            key: const Key('cart_clear_confirm'),
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.danger),
-            child: const Text('Empty cart'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
+    final cart = _cart;
+    if (cart == null || cart.isEmpty) return;
+    final ok = await showEmptyCartDialog(context, cart);
+    if (ok != true || !mounted) return;
+    final removed = cart.lines; // for Undo
+    final coupon = _coupon;
     try {
       _show(await _service.clear());
       await _saveCoupon(null);
+      _snack(
+        'Cart emptied',
+        action: SnackBarAction(label: 'Undo', onPressed: () => _restore(removed, coupon)),
+      );
     } on ApiException catch (e) {
       _snack(e.message);
+    }
+  }
+
+  /// Undo for "Empty cart": puts every line back (oldest first keeps the order).
+  Future<void> _restore(List<CartLine> lines, String? coupon) async {
+    try {
+      Cart? cart;
+      for (final line in lines.reversed) {
+        cart = await _service.add(line.product.id, quantity: line.quantity, coupon: coupon);
+      }
+      await _saveCoupon(coupon);
+      if (cart != null) _show(cart);
+    } on ApiException catch (e) {
+      _snack(e.message);
+      await _load();
     }
   }
 
@@ -314,6 +324,80 @@ class _CartScreenState extends State<CartScreen> {
         ),
       ),
       bottomNavigationBar: cart == null || cart.isEmpty || !signedIn ? null : _CheckoutBar(cart: cart, onCheckout: _checkout),
+    );
+  }
+}
+
+/// "Empty your cart?" pop-up, styled like Log out: a shaking cart icon, how
+/// much is in the cart, Cancel and a solid red Empty cart button.
+Future<bool?> showEmptyCartDialog(BuildContext context, Cart cart) {
+  final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+  Widget icon = const Icon(Icons.remove_shopping_cart_outlined, size: 30, color: AppTheme.danger);
+  if (!reduceMotion) {
+    icon = icon
+        .animate(onPlay: (c) => c.repeat(period: const Duration(milliseconds: 1600)))
+        .shake(hz: 4, rotation: 0.12, duration: const Duration(milliseconds: 500));
+  }
+  final products = cart.lines.length;
+  return showConfirmDialog(
+    context,
+    icon: icon,
+    title: 'Empty your cart?',
+    message: 'This removes $products ${products == 1 ? 'product' : 'products'} '
+        '(${cart.count} ${cart.count == 1 ? 'item' : 'items'}) from your cart.',
+    confirmLabel: 'Empty cart',
+    confirmKey: const Key('cart_clear_confirm'),
+    extra: _CartPreview(cart: cart),
+  );
+}
+
+/// Up to 3 photos side by side and the cart total, inside the pop-up.
+class _CartPreview extends StatelessWidget {
+  final Cart cart;
+
+  const _CartPreview({required this.cart});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final shown = cart.lines.take(3).toList();
+    final more = cart.lines.length - shown.length;
+    return Container(
+      key: const Key('empty_cart_preview'),
+      padding: const EdgeInsets.fromLTRB(10, 10, 14, 10),
+      decoration: BoxDecoration(
+        color: dark ? scheme.surfaceContainerHighest : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          for (final line in shown)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: SizedBox.square(
+                dimension: 40,
+                child: ProductImage(url: line.product.imageUrl, kind: line.product.category.kind, iconSize: 18, borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          if (more > 0)
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(10)),
+              child: Text('+$more', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurfaceVariant)),
+            ),
+          const Spacer(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('Cart total', style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+              Text(formatPrice(cart.total), style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: dark ? scheme.primary : AppTheme.primaryDark)),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

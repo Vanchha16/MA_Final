@@ -43,8 +43,8 @@ class PillButton extends StatelessWidget {
     this.leading,
     this.trailingIcon,
     this.semanticLabel,
-  })  : color = AppTheme.danger,
-        foregroundColor = Colors.white;
+  }) : color = AppTheme.danger,
+       foregroundColor = Colors.white;
 
   @override
   Widget build(BuildContext context) {
@@ -66,13 +66,7 @@ class PillButton extends StatelessWidget {
           decoration: ShapeDecoration(
             shape: shape,
             color: bg,
-            shadows: [
-              BoxShadow(
-                color: bg.withValues(alpha: 0.25),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            shadows: [BoxShadow(color: bg.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(0, 8))],
           ),
           child: Material(
             type: MaterialType.transparency,
@@ -82,34 +76,31 @@ class PillButton extends StatelessWidget {
               onTap: enabled ? onPressed : null,
               child: SizedBox(
                 height: 52,
-                child: Center(
-                  child: loading
-                      ? SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: fg),
-                        )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (leading != null || leadingIcon != null) ...[
-                              leading ?? Icon(leadingIcon, color: fg, size: 20),
-                              const SizedBox(width: 8),
-                            ],
-                            Text(
-                              label,
-                              style: TextStyle(
-                                color: fg,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Center(
+                    child: loading
+                        ? SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: fg))
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (leading != null || leadingIcon != null) ...[
+                                leading ?? Icon(leadingIcon, color: fg, size: 20),
+                                const SizedBox(width: 8),
+                              ],
+                              // Shrinks with "..." in narrow spots (half-width dialog buttons, big text)
+                              Flexible(
+                                child: Text(
+                                  label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: fg, fontSize: 16, fontWeight: FontWeight.w600),
+                                ),
                               ),
-                            ),
-                            if (trailingIcon != null) ...[
-                              const SizedBox(width: 8),
-                              Icon(trailingIcon, color: fg, size: 20),
+                              if (trailingIcon != null) ...[const SizedBox(width: 8), Icon(trailingIcon, color: fg, size: 20)],
                             ],
-                          ],
-                        ),
+                          ),
+                  ),
                 ),
               ),
             ),

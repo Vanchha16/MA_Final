@@ -135,6 +135,33 @@ void main() {
     expect(_shop.cartCount, 0);
   });
 
+  testWidgets('the Empty cart pop-up shows what is in the cart; Cancel keeps it', (tester) async {
+    await _pump(tester, FakeCartService(items: items));
+    await _tap(tester, find.byKey(const Key('cart_clear')));
+
+    expect(find.text('This removes 2 products (3 items) from your cart.'), findsOneWidget);
+    expect(find.byKey(const Key('empty_cart_preview')), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('empty_cart_preview')), matching: find.text(r'$179')), findsOneWidget);
+
+    await _tap(tester, find.byKey(const Key('confirm_cancel')));
+    expect(find.text('Empty your cart?'), findsNothing);
+    expect(find.text('2 products · 3 items'), findsOneWidget);
+  });
+
+  testWidgets('Undo after emptying puts every item back', (tester) async {
+    await _pump(tester, FakeCartService(items: items));
+    await _tap(tester, find.byKey(const Key('cart_clear')));
+    await _tap(tester, find.byKey(const Key('cart_clear_confirm')));
+    expect(find.text('Cart emptied'), findsOneWidget);
+    expect(_shop.cartCount, 0);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('2 products · 3 items'), findsOneWidget);
+    expect(_shop.cartCount, 3);
+  });
+
   testWidgets('guests are asked to log in', (tester) async {
     await _pump(tester, FakeCartService(), signedIn: false);
     expect(find.text('Log in to see your cart'), findsOneWidget);
