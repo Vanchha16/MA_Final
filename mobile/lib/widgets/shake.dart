@@ -1,15 +1,15 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
-/// Shakes its child left and right, like a head saying "no". Used to point
-/// at a field that still has an error. Call [ShakeState.shake] through a
-/// `GlobalKey<ShakeState>`. Does nothing when "reduce motion" is on.
+/// Shakes its child left and right (flutter_animate `shakeX`), like a head
+/// saying "no". Used to point at a field that still has an error. Call
+/// [ShakeState.shake] through a `GlobalKey<ShakeState>`. Does nothing when
+/// "reduce motion" is on.
 class Shake extends StatefulWidget {
   final Widget child;
 
-  /// How far the first swing goes, in pixels. Later swings get smaller.
+  /// How far each swing goes, in pixels.
   final double distance;
   final Duration duration;
 
@@ -24,36 +24,23 @@ class Shake extends StatefulWidget {
   State<Shake> createState() => ShakeState();
 }
 
-class ShakeState extends State<Shake> with SingleTickerProviderStateMixin {
-  late final _controller = AnimationController(vsync: this, duration: widget.duration);
+class ShakeState extends State<Shake> {
+  AnimationController? _controller;
 
   /// Starts a shake. Safe to call at any time, even during a build: the
   /// shake starts on the next frame.
   void shake() {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted || (MediaQuery.maybeDisableAnimationsOf(context) ?? false)) return;
-      _controller.forward(from: 0);
+      _controller?.forward(from: 0);
     });
     SchedulerBinding.instance.ensureVisualUpdate();
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      child: widget.child,
-      builder: (_, child) {
-        final t = _controller.value;
-        // Three left-right swings that fade out, ending back at 0
-        final dx = math.sin(t * math.pi * 6) * widget.distance * (1 - t);
-        return Transform.translate(offset: Offset(dx, 0), child: child);
-      },
-    );
+    return widget.child
+        .animate(autoPlay: false, onInit: (c) => _controller = c)
+        .shakeX(duration: widget.duration, hz: 6, amount: widget.distance);
   }
 }
