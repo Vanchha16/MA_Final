@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/theme/app_theme.dart';
+import 'shake.dart';
 
 /// Six rounded boxes for a one-time code (Figma: Code Boxes).
 ///
@@ -34,12 +35,20 @@ class OtpInput extends StatefulWidget {
 
 class _OtpInputState extends State<OtpInput> {
   final _focus = FocusNode();
+  final _shakeKey = GlobalKey<ShakeState>();
 
   @override
   void initState() {
     super.initState();
     _focus.addListener(_refresh);
     widget.controller.addListener(_refresh);
+  }
+
+  @override
+  void didUpdateWidget(OtpInput old) {
+    super.didUpdateWidget(old);
+    // Wrong or missing code: shake the boxes
+    if (!old.hasError && widget.hasError) _shakeKey.currentState?.shake();
   }
 
   @override
@@ -65,7 +74,7 @@ class _OtpInputState extends State<OtpInput> {
     final duration = reduceMotion ? Duration.zero : const Duration(milliseconds: 220);
     final activeIndex = code.length.clamp(0, widget.length - 1);
 
-    return Stack(
+    final boxes = Stack(
       children: [
         Row(
           children: [
@@ -129,5 +138,6 @@ class _OtpInputState extends State<OtpInput> {
         ),
       ],
     );
+    return Shake(key: _shakeKey, child: boxes);
   }
 }

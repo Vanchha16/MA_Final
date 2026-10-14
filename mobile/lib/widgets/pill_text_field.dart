@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
+import 'shake.dart';
 
 /// Rounded "pill" text field with a soft sky-blue shadow (Figma: Login · B).
 ///
 /// When focused it smoothly lifts a little, the shadow turns into a sky-blue
-/// glow and the leading icon turns blue with a small bounce. Animations are
-/// skipped when the system "reduce motion" setting is on.
+/// glow and the leading icon turns blue with a small bounce. When the field
+/// gets an error (its validator fails, or [errorText] appears) it shakes left
+/// and right. Animations are skipped when the system "reduce motion" setting
+/// is on.
 class PillTextField extends StatefulWidget {
   static const double height = 56;
   static const double radius = 28;
@@ -58,6 +61,7 @@ class _PillTextFieldState extends State<PillTextField> {
   FocusNode? _ownFocusNode;
   FocusNode get _focusNode => widget.focusNode ?? (_ownFocusNode ??= FocusNode());
   bool _focused = false;
+  final _shakeKey = GlobalKey<ShakeState>();
 
   @override
   void initState() {
@@ -72,6 +76,8 @@ class _PillTextFieldState extends State<PillTextField> {
       (old.focusNode ?? _ownFocusNode)?.removeListener(_onFocusChange);
       _focusNode.addListener(_onFocusChange);
     }
+    // A new error from the server, e.g. "Email already registered"
+    if (old.errorText == null && widget.errorText != null) _shakeKey.currentState?.shake();
   }
 
   @override
@@ -79,6 +85,14 @@ class _PillTextFieldState extends State<PillTextField> {
     _focusNode.removeListener(_onFocusChange);
     _ownFocusNode?.dispose();
     super.dispose();
+  }
+
+  /// Runs the screen's validator and shakes the field when it fails, so an
+  /// empty required field is easy to spot after tapping submit.
+  String? _validate(String? value) {
+    final error = widget.validator!(value);
+    if (error != null) _shakeKey.currentState?.shake();
+    return error;
   }
 
   void _onFocusChange() {
@@ -115,7 +129,7 @@ class _PillTextFieldState extends State<PillTextField> {
           );
     final iconColor = _focused ? scheme.primary : scheme.onSurfaceVariant;
 
-    return AnimatedScale(
+    final field = AnimatedScale(
       scale: _focused ? 1.015 : 1,
       duration: duration,
       curve: Curves.easeOutCubic,
@@ -144,7 +158,7 @@ class _PillTextFieldState extends State<PillTextField> {
             autofillHints: widget.autofillHints,
             onChanged: widget.onChanged,
             onFieldSubmitted: widget.onFieldSubmitted,
-            validator: widget.validator,
+            validator: widget.validator == null ? null : _validate,
             decoration: InputDecoration(
               labelText: widget.label,
               hintText: widget.hint,
@@ -180,5 +194,6 @@ class _PillTextFieldState extends State<PillTextField> {
         ],
       ),
     );
+    return Shake(key: _shakeKey, child: field);
   }
 }
