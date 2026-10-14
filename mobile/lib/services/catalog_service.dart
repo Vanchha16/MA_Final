@@ -13,10 +13,4 @@ class CatalogService {
 
   Future<ProductPage> products(ProductQuery query, {int page = 1, int perPage = 10}) async =>
       ProductPage.fromJson(await _api.get(ApiConstants.products, query: query.toParams(page: page, perPage: perPage)));
-
-  /// Featured products for the Home banner.
-  Future<List<Product>> featured({int limit = 5}) async {
-    final data = await _api.get(ApiConstants.products, query: {'featured': 1, 'per_page': limit});
-    return ProductPage.fromJson(data).items;
-  }
 }

@@ -15,12 +15,12 @@ import '../../widgets/pill_button.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/round_icon_button.dart';
 import '../shop/shop_actions.dart';
-import 'widgets/featured_banner.dart';
 import 'widgets/filter_sheet.dart';
+import 'widgets/promo_carousel.dart';
 import 'widgets/series_tabs.dart';
 
 /// Home tab (Figma: Home C - Series Tabs Feed): brand bar with bell and
-/// cart, search with filters, series tabs, featured banner and a product
+/// cart, search with filters, series tabs, promo banner slider and a product
 /// grid that loads more as you scroll. Pull down to refresh.
 class HomeScreen extends StatefulWidget {
   static const pageSize = 10;
@@ -45,7 +45,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Series> _series = [];
   List<Category> _categories = [];
-  List<Product> _featured = [];
 
   ProductQuery _query = const ProductQuery();
   List<Product> _items = [];
@@ -73,20 +72,15 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  /// Series tabs, categories for the filter sheet and banner products.
+  /// Series tabs and categories (filter sheet, banner links).
   /// Each is optional: the screen still works if one fails.
   Future<void> _loadExtras() async {
     Future<T?> safe<T>(Future<T> f) => f.then<T?>((v) => v).catchError((_) => null);
-    final (series, categories, featured) = await (
-      safe(_catalog.series()),
-      safe(_catalog.categories()),
-      safe(_catalog.featured()),
-    ).wait;
+    final (series, categories) = await (safe(_catalog.series()), safe(_catalog.categories())).wait;
     if (!mounted) return;
     setState(() {
       _series = series ?? _series;
       _categories = categories ?? _categories;
-      _featured = featured ?? _featured;
     });
   }
 
@@ -159,10 +153,29 @@ class _HomeScreenState extends State<HomeScreen> {
     await Future.wait([_loadProducts(), _loadExtras(), context.read<ShopProvider>().refresh()]);
   }
 
+  /// Banner tap: show that category's products, or the slide's info.
+  Future<void> _openPromo(PromoSlide slide) async {
+    if (slide.categorySlug == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(slide.info ?? slide.title), behavior: SnackBarBehavior.floating));
+      return;
+    }
+    if (_categories.isEmpty) await _loadExtras();
+    final category = _categories.where((c) => c.slug == slide.categorySlug).firstOrNull;
+    if (category == null || !mounted) return;
+    _search.clear();
+    _setQuery(_query.cleared().copyWith(categoryId: () => category.id));
+  }
+
   String get _title {
     if (_query.q.isNotEmpty) return 'Results for "${_query.q}"';
     if (_query.seriesId != null) {
       return _series.where((s) => s.id == _query.seriesId).map((s) => s.name).firstOrNull ?? 'Series';
+    }
+    final onlyCategory = _query.categoryId != null && _query.activeFilterCount == 1;
+    if (onlyCategory) {
+      return _categories.where((c) => c.id == _query.categoryId).map((c) => c.name).firstOrNull ?? 'Filtered results';
     }
     if (_query.activeFilterCount > 0) return 'Filtered results';
     return 'Popular now';
@@ -170,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final showBanner = !_query.isFiltered && _featured.isNotEmpty;
+    final showBanner = !_query.isFiltered;
 
     return Scaffold(
       body: SafeArea(
@@ -219,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
                   sliver: SliverToBoxAdapter(
-                    child: FeaturedBanner(products: _featured, onTap: (p) => ShopActions.openProduct(context, p)),
+                    child: PromoCarousel(onTap: _openPromo),
                   ),
                 ),
               SliverPadding(
