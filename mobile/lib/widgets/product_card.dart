@@ -30,6 +30,9 @@ class ProductCard extends StatefulWidget {
     this.onAddToCart,
   });
 
+  /// Shared with Product Details so the photo animates between the two.
+  static String heroTag(int productId) => 'product-photo-$productId';
+
   /// Grid row height for a card of [width], so photos stay square.
   static double heightFor(double width, TextScaler scaler) => width - 16 + 8 + scaler.scale(infoHeight);
 
@@ -92,7 +95,7 @@ class _ProductCardState extends State<ProductCard> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      ProductImage(url: p.imageUrl, kind: p.category.kind),
+                      Hero(tag: ProductCard.heroTag(p.id), child: ProductImage(url: p.imageUrl, kind: p.category.kind)),
                       if (p.soldOut)
                         DecoratedBox(
                           decoration: BoxDecoration(

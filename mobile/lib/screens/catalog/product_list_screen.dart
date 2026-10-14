@@ -119,6 +119,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               ),
               ProductFeedGrid(
                 feed: _feed,
+                catalogService: widget.catalogService,
                 onClear: _extraFilters > 0 ? () => _setQuery(widget.query.copyWith(sort: _query.sort)) : null,
                 emptyMessage: _extraFilters > 0 ? 'Try clearing the filters.' : 'Nothing here yet. Check back soon!',
               ),

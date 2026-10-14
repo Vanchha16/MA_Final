@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../models/catalog.dart';
 import '../providers/shop_provider.dart';
+import '../services/catalog_service.dart';
 import '../screens/shop/shop_actions.dart';
 import 'error_banner.dart';
 import 'icon_circle.dart';
@@ -69,6 +70,9 @@ class ProductFeed {
 class ProductFeedGrid extends StatelessWidget {
   final ProductFeed feed;
 
+  /// Passed on to Product Details (tests inject a fake).
+  final CatalogService? catalogService;
+
   /// Shown on the empty state ("Clear filters"); hidden when null.
   final VoidCallback? onClear;
   final String emptyTitle;
@@ -77,6 +81,7 @@ class ProductFeedGrid extends StatelessWidget {
   const ProductFeedGrid({
     super.key,
     required this.feed,
+    this.catalogService,
     this.onClear,
     this.emptyTitle = 'No products found',
     this.emptyMessage = 'Try another word or clear the filters.',
@@ -115,7 +120,7 @@ class ProductFeedGrid extends StatelessWidget {
                 itemBuilder: (context, p, _) => ProductCard(
                   product: p,
                   wishlisted: shop.isWishlisted(p.id),
-                  onTap: () => ShopActions.openProduct(context, p),
+                  onTap: () => ShopActions.openProduct(context, p, catalog: catalogService),
                   onToggleWishlist: () => ShopActions.toggleWishlist(context, p),
                   onAddToCart: () => ShopActions.addToCart(context, p),
                 ),
