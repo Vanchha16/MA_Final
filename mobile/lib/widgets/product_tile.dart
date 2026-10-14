@@ -4,7 +4,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/format.dart';
 import '../models/catalog.dart';
-import 'cart_fly.dart';
+import 'cart_drive.dart';
 import 'product_card.dart';
 import 'product_image.dart';
 
@@ -32,6 +32,7 @@ class ProductTile extends StatefulWidget {
 
 class _ProductTileState extends State<ProductTile> {
   final _photo = GlobalKey();
+  final _row = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +43,7 @@ class _ProductTileState extends State<ProductTile> {
     final accent = dark ? scheme.primary : AppTheme.primaryDark;
 
     return DecoratedBox(
+      key: _row,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         boxShadow: [if (!dark) BoxShadow(color: AppTheme.primaryDark.withValues(alpha: 0.07), blurRadius: 16, offset: const Offset(0, 5))],
@@ -154,7 +156,7 @@ class _ProductTileState extends State<ProductTile> {
                               ],
                             ),
                           ),
-                          _AddButton(key: Key('add_${p.id}'), enabled: !p.soldOut, onAdd: widget.onAddToCart, product: p, photo: _photo),
+                          _AddButton(key: Key('add_${p.id}'), enabled: !p.soldOut, onAdd: widget.onAddToCart, product: p, photo: _photo, row: _row),
                         ],
                       ),
                     ],
@@ -174,10 +176,10 @@ class _AddButton extends StatefulWidget {
   final Future<void> Function()? onAdd;
   final Product product;
 
-  /// The photo that flies into the cart button after a successful add.
-  final GlobalKey photo;
+  /// The photo and the whole row, for the add-to-cart cart animation.
+  final GlobalKey photo, row;
 
-  const _AddButton({super.key, required this.enabled, this.onAdd, required this.product, required this.photo});
+  const _AddButton({super.key, required this.enabled, this.onAdd, required this.product, required this.photo, required this.row});
 
   @override
   State<_AddButton> createState() => _AddButtonState();
@@ -191,8 +193,8 @@ class _AddButtonState extends State<_AddButton> {
     setState(() => _busy = true);
     try {
       await widget.onAdd!();
-      final photo = widget.photo.currentContext;
-      if (photo != null && photo.mounted) CartFly.run(photo, widget.product);
+      final photo = widget.photo.currentContext, row = widget.row.currentContext;
+      if (photo != null && row != null && photo.mounted && row.mounted) CartDrive.run(photo: photo, card: row, product: widget.product);
     } catch (_) {
       // The caller already showed why
     } finally {
