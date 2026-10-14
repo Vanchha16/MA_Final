@@ -80,6 +80,14 @@ def make_folders():
     return created
 
 
+def _remove_unused_files():
+    """Delete catalog photos no product points to (e.g. after a product was renamed)."""
+    used = {os.path.basename(i.image_url) for i in ProductImage.query if i.image_url.startswith("/uploads/catalog/")}
+    for name in os.listdir(output_dir()):
+        if name.endswith(".webp") and name not in used:
+            os.remove(os.path.join(output_dir(), name))
+
+
 def import_product_images(dry_run=False):
     report = ImportReport()
     products = {p.slug: p for p in Product.query.filter_by(is_active=True)}
@@ -121,6 +129,7 @@ def import_product_images(dry_run=False):
 
     if not dry_run:
         db.session.commit()
+        _remove_unused_files()
 
     with_photos = {slug for slug, p in products.items() if p.images} | set(report.imported)
     report.missing = sorted(set(products) - with_photos, key=lambda s: products[s].id)
