@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ecommerce_app/core/network/api_client.dart';
 import 'package:ecommerce_app/models/profile_summary.dart';
 import 'package:ecommerce_app/models/user.dart';
@@ -52,6 +54,17 @@ class FakeProfileService extends ProfileService {
   }
 }
 
+/// Summary only arrives when [release] completes, to see the loading state.
+class SlowProfileService extends FakeProfileService {
+  final release = Completer<void>();
+
+  @override
+  Future<ProfileSummary> summary() async {
+    await release.future;
+    return super.summary();
+  }
+}
+
 Future<AuthProvider> _pump(WidgetTester tester, Widget home, {bool signedIn = true}) async {
   SharedPreferences.setMockInitialValues({});
   final auth = AuthProvider();
@@ -94,6 +107,19 @@ void main() {
     expect(find.text('1'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
     expect(find.text('DC'), findsOneWidget); // initials avatar
+  });
+
+  testWidgets('shows a shimmer skeleton until the summary loads', (tester) async {
+    final service = SlowProfileService();
+    await _pump(tester, ProfileScreen(service: service));
+    expect(find.byKey(const Key('collector_skeleton')), findsOneWidget);
+    expect(find.text('Silver Collector'), findsNothing);
+
+    service.release.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byKey(const Key('collector_skeleton')), findsNothing);
+    expect(find.text('Silver Collector'), findsOneWidget);
   });
 
   testWidgets('log out asks first, Cancel keeps you signed in, confirm logs out', (tester) async {
