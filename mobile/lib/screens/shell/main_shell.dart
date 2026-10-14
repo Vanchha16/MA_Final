@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../services/catalog_service.dart';
 import '../../services/profile_service.dart';
 import '../../widgets/icon_circle.dart';
+import '../catalog/categories_screen.dart';
 import '../home/home_screen.dart';
 import '../profile/profile_screen.dart';
 
@@ -44,7 +45,7 @@ class _MainShellState extends State<MainShell> {
         index: _index,
         children: [
           HomeScreen(catalogService: widget.catalogService, onOpenCart: () => setState(() => _index = MainShell.cartTab)),
-          const _ComingSoonTab(icon: Icons.widgets_rounded, title: 'Categories'),
+          CategoriesScreen(catalogService: widget.catalogService, onOpenCart: () => setState(() => _index = MainShell.cartTab)),
           const _ComingSoonTab(icon: Icons.favorite_rounded, title: 'Wishlist'),
           const _ComingSoonTab(icon: Icons.shopping_cart_rounded, title: 'Cart'),
           ProfileScreen(service: widget.profileService),

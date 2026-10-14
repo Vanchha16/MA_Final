@@ -3,10 +3,10 @@ import 'package:ecommerce_app/models/catalog.dart';
 import 'package:ecommerce_app/services/catalog_service.dart';
 import 'package:ecommerce_app/services/shop_service.dart';
 
-const figures = Category(id: 1, name: 'Scale Figures', slug: 'scale-figures');
-const boosters = Category(id: 6, name: 'TCG Boosters', slug: 'tcg-boosters');
-const onePiece = Series(id: 1, name: 'One Piece', slug: 'one-piece');
-const pokemon = Series(id: 2, name: 'Pokemon', slug: 'pokemon');
+const figures = Category(id: 1, name: 'Scale Figures', slug: 'scale-figures', productCount: 1);
+const boosters = Category(id: 6, name: 'TCG Boosters', slug: 'tcg-boosters', productCount: 11);
+const onePiece = Series(id: 1, name: 'One Piece', slug: 'one-piece', productCount: 11);
+const pokemon = Series(id: 2, name: 'Pokemon', slug: 'pokemon', productCount: 1);
 
 /// 12 products: 1 Luffy on sale, 1 sold-out Pokemon box, 10 One Piece packs.
 final demoProducts = <Product>[

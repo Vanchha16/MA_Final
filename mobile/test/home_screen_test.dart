@@ -103,7 +103,7 @@ void main() {
     await tester.pump();
     expect(find.text('No products found'), findsOneWidget);
 
-    await _tap(tester, find.byKey(const Key('home_clear')));
+    await _tap(tester, find.byKey(const Key('feed_clear')));
     expect(catalog.lastQuery!.q, '');
     expect(find.text('Popular now'), findsOneWidget);
   });
@@ -198,7 +198,7 @@ void main() {
     expect(find.text('Cannot connect to server. Check your internet connection.'), findsOneWidget);
 
     catalog.fail = false;
-    await _tap(tester, find.byKey(const Key('home_retry')));
+    await _tap(tester, find.byKey(const Key('feed_retry')));
     expect(find.byKey(const Key('product_1')), findsOneWidget);
   });
 }
