@@ -4,6 +4,7 @@ import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/providers/theme_provider.dart';
 import 'package:ecommerce_app/screens/home/home_screen.dart';
+import 'package:ecommerce_app/screens/search/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -88,29 +89,10 @@ void main() {
     expect(find.text('Popular now'), findsOneWidget);
   });
 
-  testWidgets('search waits for typing to pause, then shows results or an empty state', (tester) async {
-    final catalog = FakeCatalogService();
-    await _pump(tester, catalog);
-    final before = catalog.queries.length;
-
-    await tester.enterText(find.byKey(const Key('home_search')), 'luf');
-    await tester.pump(const Duration(milliseconds: 200));
-    await tester.enterText(find.byKey(const Key('home_search')), 'luffy');
-    await tester.pump(const Duration(milliseconds: 450));
-    await tester.pump();
-    expect(catalog.queries.length, before + 1); // one request, not one per key
-    expect(catalog.lastQuery!.q, 'luffy');
-    expect(find.text('Results for "luffy"'), findsOneWidget);
-    expect(find.byKey(const Key('product_1')), findsOneWidget);
-
-    await tester.enterText(find.byKey(const Key('home_search')), 'zzz');
-    await tester.pump(const Duration(milliseconds: 450));
-    await tester.pump();
-    expect(find.text('No products found'), findsOneWidget);
-
-    await _tap(tester, find.byKey(const Key('feed_clear')));
-    expect(catalog.lastQuery!.q, '');
-    expect(find.text('Popular now'), findsOneWidget);
+  testWidgets('tapping the search bar opens the Search screen', (tester) async {
+    await _pump(tester, FakeCatalogService());
+    await _tap(tester, find.byKey(const Key('home_search')));
+    expect(find.byType(SearchScreen), findsOneWidget);
   });
 
   testWidgets('tapping a banner slide opens its category', (tester) async {

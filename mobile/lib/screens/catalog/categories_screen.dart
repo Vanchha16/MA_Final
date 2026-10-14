@@ -10,6 +10,7 @@ import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
 import '../../widgets/product_image.dart';
 import '../../widgets/shop_search_bar.dart';
+import '../search/search_screen.dart';
 import 'product_list_screen.dart';
 
 /// Categories tab (Figma: Categories A - Photo Grid): a 2-column grid of
@@ -121,6 +122,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                         onChanged: (_) => setState(() {}),
                         onSubmitted: _searchAll,
                         onClear: () => setState(_search.clear),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => SearchScreen(catalogService: widget.catalogService)),
+                        ),
                       ),
                       const SizedBox(height: 20),
                     ],

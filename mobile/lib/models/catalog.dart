@@ -156,6 +156,23 @@ class ProductDetail {
       );
 }
 
+/// While typing in Search: GET /api/search/suggestions.
+class SearchSuggestions {
+  final List<Product> products;
+  final List<String> keywords;
+
+  /// All matching products (the "See all N results" button).
+  final int total;
+
+  const SearchSuggestions({this.products = const [], this.keywords = const [], this.total = 0});
+
+  factory SearchSuggestions.fromJson(Map<String, dynamic> json) => SearchSuggestions(
+        products: [for (final p in json['products'] as List? ?? []) Product.fromJson(p)],
+        keywords: [for (final k in json['keywords'] as List? ?? []) k as String],
+        total: json['total'] ?? 0,
+      );
+}
+
 /// One page of GET /api/products.
 class ProductPage {
   final List<Product> items;
