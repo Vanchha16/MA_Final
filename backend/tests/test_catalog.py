@@ -37,3 +37,13 @@ def test_series_skip_empty_and_most_products_first(client):
     assert [s["name"] for s in data] == ["One Piece", "Pokemon"]
     assert data[0]["product_count"] == 3
     assert data[0]["cover_image"].endswith("/luffy.webp")
+
+
+def test_products_filter_by_several_brands(client):
+    cat = Category(name="Figures", slug="figures")
+    for name, brand in [("A", "Bandai"), ("B", "SEGA"), ("C", "Konami")]:
+        db.session.add(Product(name=name, slug=name.lower(), category=cat, brand=brand, price=10, stock=1))
+    db.session.commit()
+    data = client.get("/api/products?brand=Bandai&brand=SEGA").get_json()["data"]
+    assert sorted(p["name"] for p in data["items"]) == ["A", "B"]
+    assert client.get("/api/products?brand=Konami").get_json()["data"]["total"] == 1
