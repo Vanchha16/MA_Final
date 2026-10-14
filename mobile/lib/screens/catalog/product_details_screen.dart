@@ -14,13 +14,13 @@ import '../../core/utils/format.dart';
 import '../../models/catalog.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/catalog_service.dart';
+import '../../widgets/added_to_cart_sheet.dart';
 import '../../widgets/cart_button.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/product_image.dart';
 import '../../widgets/quantity_stepper.dart';
-import '../shell/main_shell.dart';
 import '../shop/shop_actions.dart';
 import 'product_list_screen.dart';
 
@@ -77,7 +77,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Future<void> _addToCart() async {
     setState(() => _adding = true);
     try {
-      await ShopActions.addToCart(context, _product, quantity: _quantity);
+      final quantity = _quantity;
+      final cart = await ShopActions.addToCart(context, _product, quantity: quantity, toast: false);
+      if (!mounted) return;
+      setState(() => _adding = false);
+      final viewCart = await showAddedToCartSheet(context, product: _product, quantity: quantity, cart: cart);
+      if (viewCart == true && mounted) _openCart();
     } catch (_) {
       // ShopActions already told the user why
     } finally {
@@ -91,10 +96,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     ),
   );
 
-  void _openCart() {
-    Navigator.of(context).popUntil((route) => route.isFirst);
-    MainShell.requestedTab.value = MainShell.cartTab;
-  }
+  void _openCart() => ShopActions.openCart(Navigator.of(context));
 
   @override
   Widget build(BuildContext context) {
