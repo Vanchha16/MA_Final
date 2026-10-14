@@ -57,6 +57,16 @@ void main() {
     expect(find.text('Sold out'), findsOneWidget);
   });
 
+  testWidgets('add-to-cart button sits at the right edge of every card', (tester) async {
+    await _pump(tester, FakeCatalogService());
+    for (final id in [1, 2]) {
+      final card = tester.getRect(find.byKey(Key('product_$id')));
+      final add = tester.getRect(find.byKey(Key('add_$id')));
+      // card padding 8 + info padding 4
+      expect(card.right - add.right, closeTo(12, 0.5), reason: 'product $id');
+    }
+  });
+
   testWidgets('series tab filters the grid and hides the banner', (tester) async {
     final catalog = FakeCatalogService();
     await _pump(tester, catalog);
