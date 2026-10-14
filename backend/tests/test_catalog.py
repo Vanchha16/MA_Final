@@ -47,3 +47,21 @@ def test_products_filter_by_several_brands(client):
     data = client.get("/api/products?brand=Bandai&brand=SEGA").get_json()["data"]
     assert sorted(p["name"] for p in data["items"]) == ["A", "B"]
     assert client.get("/api/products?brand=Konami").get_json()["data"]["total"] == 1
+
+
+def test_search_suggestions_products_keywords_and_total(client):
+    _setup()  # Zoro, Luffy (featured), hidden, OP Box (One Piece), PK Box (Pokemon)
+    data = client.get("/api/search/suggestions?q=luf").get_json()["data"]
+    assert [p["name"] for p in data["products"]] == ["Luffy"]
+    assert data["keywords"] == ["luffy"]
+    assert data["total"] == 1
+
+    data = client.get("/api/search/suggestions?q=one").get_json()["data"]
+    assert data["total"] == 3  # by series name; the hidden product is not counted
+    assert data["products"][0]["name"] == "Luffy"  # featured first
+    assert "one piece" in data["keywords"]
+
+
+def test_search_suggestions_empty_query(client):
+    data = client.get("/api/search/suggestions?q=").get_json()["data"]
+    assert data == {"products": [], "keywords": [], "total": 0}

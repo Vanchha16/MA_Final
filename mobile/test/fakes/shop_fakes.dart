@@ -38,6 +38,19 @@ class FakeCatalogService extends CatalogService {
   Future<List<String>> brands() async => ['Bandai', 'Good Smile Company', 'The Pokemon Company'];
 
   bool detailFails = false;
+  final List<String> suggestionQueries = [];
+
+  @override
+  Future<SearchSuggestions> suggestions(String q) async {
+    suggestionQueries.add(q);
+    final matches = products_.where((p) => p.name.toLowerCase().contains(q.toLowerCase())).toList();
+    final words = {
+      for (final p in matches)
+        for (final w in p.name.split(' '))
+          if (w.toLowerCase().contains(q.toLowerCase())) w.toLowerCase(),
+    };
+    return SearchSuggestions(products: matches.take(5).toList(), keywords: words.take(5).toList(), total: matches.length);
+  }
 
   @override
   Future<ProductDetail> product(int id) async {
@@ -54,7 +67,7 @@ class FakeCatalogService extends CatalogService {
   }
 
   @override
-  Future<ProductPage> products(ProductQuery query, {int page = 1, int perPage = 10}) async {
+  Future<ProductPage> products(ProductQuery query, {int page = 1, int perPage = 10, bool featuredOnly = false}) async {
     queries.add(query);
     pages.add(page);
     if (fail) throw ApiException('Cannot connect to server. Check your internet connection.');
@@ -64,6 +77,7 @@ class FakeCatalogService extends CatalogService {
       if (query.categoryId != null && p.category.id != query.categoryId) return false;
       if (query.brands.isNotEmpty && !query.brands.contains(p.brand)) return false;
       if (query.inStockOnly && p.soldOut) return false;
+      if (featuredOnly && !p.isFeatured) return false;
       if (query.minPrice != null && p.finalPrice < query.minPrice!) return false;
       if (query.maxPrice != null && p.finalPrice > query.maxPrice!) return false;
       return true;

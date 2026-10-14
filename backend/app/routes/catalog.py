@@ -1,3 +1,5 @@
+import re
+
 from flask import Blueprint, request
 from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
@@ -79,6 +81,48 @@ def list_brands():
     return success([r[0] for r in rows])
 
 
+def _search_filter(query, q):
+    """Products whose name, brand or series contains q (case-insensitive)."""
+    like = f"%{q}%"
+    return query.outerjoin(Series).filter(or_(Product.name.ilike(like), Product.brand.ilike(like), Series.name.ilike(like)))
+
+
+def _keywords(texts, q, limit=5):
+    """Search phrases that start at the word matching q, e.g. 'luf' -> 'luffy', 'luffy gear 5'."""
+    q = q.lower()
+    found = []
+    for text in texts:
+        words = re.findall(r"[\w][\w.'!-]*", text or "")
+        for i in range(len(words)):
+            tail = " ".join(words[i:]).lower()
+            if q in words[i].lower() or tail.startswith(q):
+                for size in (1, 3):
+                    phrase = " ".join(words[i:i + size]).lower().strip(".-")
+                    if q in phrase and phrase not in found:
+                        found.append(phrase)
+                break
+    return sorted(found, key=len)[:limit]
+
+
+@bp.get("/search/suggestions")
+def search_suggestions():
+    """While typing: up to 5 matching products, search phrases and the total match count."""
+    q = request.args.get("q", "").strip()
+    if not q:
+        return success({"products": [], "keywords": [], "total": 0})
+    matches = _search_filter(Product.query.filter(Product.is_active.is_(True)), q)
+    total = matches.count()
+    products = _with_relations(matches).order_by(Product.is_featured.desc(), Product.id).limit(5).all()
+    names = [p.name for p in _with_relations(matches).limit(40).all()]
+    series = [s.name for s in Series.query.filter(Series.name.ilike(f"%{q}%")).all()]
+    brands = [b for (b,) in db.session.query(Product.brand).filter(Product.brand.ilike(f"%{q}%")).distinct()]
+    return success({
+        "products": [p.to_dict() for p in products],
+        "keywords": _keywords(series + brands + names, q),
+        "total": total,
+    })
+
+
 @bp.get("/products")
 def list_products():
     """Search + filter + sort + paginate.
@@ -92,10 +136,7 @@ def list_products():
     final_price = func.coalesce(Product.discount_price, Product.price)
 
     if q := args.get("q", "").strip():
-        like = f"%{q}%"
-        query = query.outerjoin(Series).filter(
-            or_(Product.name.ilike(like), Product.brand.ilike(like), Series.name.ilike(like))
-        )
+        query = _search_filter(query, q)
     if category_id := args.get("category_id", type=int):
         query = query.filter(Product.category_id == category_id)
     if series_id := args.get("series_id", type=int):
