@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,6 +12,7 @@ import '../../widgets/round_icon_button.dart';
 import '../../widgets/shop_search_bar.dart';
 import '../../widgets/sort_header.dart';
 import '../catalog/product_list_screen.dart';
+import '../search/search_screen.dart';
 import 'widgets/filter_sheet.dart';
 import 'widgets/promo_carousel.dart';
 import 'widgets/series_tabs.dart';
@@ -39,7 +38,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final CatalogService _catalog = widget.catalogService ?? CatalogService();
   final _search = TextEditingController();
-  Timer? _debounce;
 
   List<Series> _series = [];
   List<Category> _categories = [];
@@ -56,7 +54,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _debounce?.cancel();
     _search.dispose();
     _feed.dispose();
     super.dispose();
@@ -80,21 +77,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _feed.refresh();
   }
 
-  void _onSearchChanged(String text) {
-    setState(() {}); // shows/hides the clear button
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () => _submitSearch(text));
-  }
-
-  void _submitSearch(String text) {
-    _debounce?.cancel();
-    if (text.trim() != _query.q) _setQuery(_query.copyWith(q: text.trim()));
-  }
-
   void _clearAll() {
     _search.clear();
     _setQuery(_query.cleared());
   }
+
+  void _openSearch() => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => SearchScreen(catalogService: widget.catalogService)),
+      );
 
   Future<void> _openFilters() async {
     if (_categories.isEmpty) await _loadExtras();
@@ -164,13 +154,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ShopSearchBar(
                         controller: _search,
                         filterCount: _query.activeFilterCount,
-                        onChanged: _onSearchChanged,
-                        onSubmitted: _submitSearch,
-                        onClear: () {
-                          _search.clear();
-                          _submitSearch('');
-                          setState(() {});
-                        },
+                        onChanged: (_) {},
+                        onSubmitted: (_) {},
+                        onClear: () {},
+                        onTap: _openSearch,
                         onFilter: _openFilters,
                       ),
                     ],
