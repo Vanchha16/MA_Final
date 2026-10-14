@@ -205,7 +205,7 @@ void main() {
 
     await tester.tap(find.text('Cart'));
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Coming soon'), findsWidgets);
+    expect(find.text('Log in to see your cart'), findsOneWidget); // signed out
 
     await tester.tap(find.text('Profile'));
     await tester.pump(const Duration(milliseconds: 500));

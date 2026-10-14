@@ -59,6 +59,13 @@ class ShopProvider extends ChangeNotifier {
     }
   }
 
+  /// The Cart screen reports the count after each change it makes.
+  void setCartCount(int count) {
+    if (count == _cartCount) return;
+    _cartCount = count;
+    notifyListeners();
+  }
+
   Future<void> addToCart(int productId, {int quantity = 1}) async {
     _cartCount = await _service.addToCart(productId, quantity: quantity);
     notifyListeners();

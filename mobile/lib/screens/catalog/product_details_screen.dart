@@ -19,6 +19,7 @@ import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/product_image.dart';
+import '../../widgets/quantity_stepper.dart';
 import '../shell/main_shell.dart';
 import '../shop/shop_actions.dart';
 import 'product_list_screen.dart';
@@ -765,19 +766,6 @@ class _BottomBar extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final soldOut = product.soldOut;
 
-    Widget stepButton(IconData icon, String tooltip, Key key, VoidCallback? onPressed) => IconButton.filled(
-      key: key,
-      tooltip: tooltip,
-      onPressed: onPressed,
-      style: IconButton.styleFrom(
-        backgroundColor: dark ? scheme.surfaceContainerHighest : Colors.white,
-        foregroundColor: dark ? scheme.primary : AppTheme.primaryDark,
-        disabledBackgroundColor: Colors.transparent,
-        fixedSize: const Size(44, 44),
-      ),
-      icon: Icon(icon, size: 20),
-    );
-
     return Container(
       decoration: BoxDecoration(
         color: dark ? scheme.surfaceContainer : Colors.white,
@@ -792,39 +780,7 @@ class _BottomBar extends StatelessWidget {
           child: Row(
             children: [
               if (!soldOut) ...[
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: dark ? scheme.surfaceContainerHigh : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(26),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      stepButton(
-                        Icons.remove_rounded,
-                        'Less',
-                        const Key('qty_minus'),
-                        quantity > 1 ? () => onQuantity(quantity - 1) : null,
-                      ),
-                      SizedBox(
-                        width: 34,
-                        child: Text(
-                          '$quantity',
-                          key: const Key('qty_value'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      stepButton(
-                        Icons.add_rounded,
-                        'More',
-                        const Key('qty_plus'),
-                        quantity < maxQuantity ? () => onQuantity(quantity + 1) : null,
-                      ),
-                    ],
-                  ),
-                ),
+                QuantityStepper(value: quantity, max: maxQuantity, onChanged: onQuantity),
                 const SizedBox(width: 12),
               ],
               Expanded(

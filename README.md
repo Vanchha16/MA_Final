@@ -111,6 +111,15 @@ git push origin main                          # or open a Pull Request on GitHub
 | GET | `/api/brands` | - | Distinct brands, for the filter screen |
 | GET | `/api/products` | - | Search / filter / sort / paginate (see below) |
 | GET | `/api/products/<id>` | - | Product details + reviews + related products (same series) |
+| GET | `/api/search/suggestions?q=` | - | While typing: up to 5 products, search phrases, total matches |
+| GET | `/api/wishlist` | Bearer | Wishlist `ids` and `items` |
+| POST / DELETE | `/api/wishlist/<product_id>` | Bearer | Add / remove a product |
+| GET | `/api/cart?coupon=` | Bearer | Lines, `subtotal`, `discount`, `shipping_fee` (free from $50, else $2), `total`, `savings` |
+| POST | `/api/cart` | Bearer | `product_id`, `quantity?` (adds to the line; checks stock, max 20) |
+| PUT | `/api/cart/<item_id>` | Bearer | `quantity` |
+| DELETE | `/api/cart/<item_id>` | Bearer | Remove a line |
+| DELETE | `/api/cart` | Bearer | Empty the cart |
+| POST | `/api/cart/coupon` | Bearer | `code` -> cart with the discount, or 422 with the reason. Demo codes: WELCOME10, ANIME5, BIGSALE40 (OLDCODE is expired) |
 
 `/api/products` query params (all optional): `q`, `category_id`, `series_id`, `brand` (repeat for several),
 `min_price`, `max_price`, `in_stock=1`, `featured=1`,
