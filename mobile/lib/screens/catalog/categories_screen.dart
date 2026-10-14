@@ -63,8 +63,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   }
 
   void _open(String title, ProductQuery query) => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => ProductListScreen(title: title, query: query, catalogService: widget.catalogService)),
-      );
+    MaterialPageRoute(
+      builder: (_) => ProductListScreen(title: title, query: query, catalogService: widget.catalogService),
+    ),
+  );
 
   void _searchAll(String text) {
     final q = text.trim();
@@ -133,7 +135,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       children: [
                         ErrorBanner(message: _error!),
                         const SizedBox(height: 12),
-                        PillButton(key: const Key('categories_retry'), label: 'Try again', leadingIcon: Icons.refresh_rounded, onPressed: _load),
+                        PillButton(
+                          key: const Key('categories_retry'),
+                          label: 'Try again',
+                          leadingIcon: Icons.refresh_rounded,
+                          onPressed: _load,
+                        ),
                       ],
                     ),
                   ),
@@ -141,22 +148,29 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               else ...[
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 176 / (120 + MediaQuery.textScalerOf(context).scale(58)),
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (_, i) => categories == null
-                          ? const _TileSkeleton()
-                          : _CategoryTile(
-                              category: categories[i],
-                              onTap: () => _open(categories[i].name, ProductQuery(categoryId: categories[i].id)),
-                            ),
-                      childCount: categories?.length ?? 6,
-                    ),
+                  sliver: SliverLayoutBuilder(
+                    builder: (context, constraints) {
+                      const gap = 12.0;
+                      final width = (constraints.crossAxisExtent - gap) / 2;
+                      return SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: gap,
+                          crossAxisSpacing: gap,
+                          // Square photo (never cropped) + name and count
+                          mainAxisExtent: width + MediaQuery.textScalerOf(context).scale(_CategoryTile.infoHeight),
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (_, i) => categories == null
+                              ? const _TileSkeleton()
+                              : _CategoryTile(
+                                  category: categories[i],
+                                  onTap: () => _open(categories[i].name, ProductQuery(categoryId: categories[i].id)),
+                                ),
+                          childCount: categories?.length ?? 6,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 if (_series.isNotEmpty) ...[
@@ -196,13 +210,14 @@ BoxDecoration _cardDecoration(BuildContext context) {
   final dark = Theme.of(context).brightness == Brightness.dark;
   return BoxDecoration(
     borderRadius: BorderRadius.circular(22),
-    boxShadow: [
-      if (!dark) BoxShadow(color: AppTheme.primaryDark.withValues(alpha: 0.08), blurRadius: 18, offset: const Offset(0, 6)),
-    ],
+    boxShadow: [if (!dark) BoxShadow(color: AppTheme.primaryDark.withValues(alpha: 0.08), blurRadius: 18, offset: const Offset(0, 6))],
   );
 }
 
 class _CategoryTile extends StatelessWidget {
+  /// Height of the name and count under the square photo, at normal text size.
+  static const double infoHeight = 64;
+
   final Category category;
   final VoidCallback onTap;
 
@@ -225,31 +240,33 @@ class _CategoryTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: ProductImage(
-                  url: category.coverImage,
-                  kind: category.kind,
-                  iconSize: 44,
-                  borderRadius: BorderRadius.zero,
-                ),
+              AspectRatio(
+                aspectRatio: 1,
+                child: ProductImage(url: category.coverImage, kind: category.kind, iconSize: 44, borderRadius: BorderRadius.zero),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 10, 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(category.name,
-                              maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 2),
-                          Text('$count ${count == 1 ? 'item' : 'items'}', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                        ],
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              category.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 2),
+                            Text('$count ${count == 1 ? 'item' : 'items'}', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                          ],
+                        ),
                       ),
-                    ),
-                    Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
-                  ],
+                      Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -296,15 +313,26 @@ class _SeriesCircle extends StatelessWidget {
                 child: ClipOval(
                   child: series.coverImage == null
                       ? Center(
-                          child: Text(series.initials,
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: dark ? scheme.primary : AppTheme.primaryDark)),
+                          child: Text(
+                            series.initials,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: dark ? scheme.primary : AppTheme.primaryDark,
+                            ),
+                          ),
                         )
                       : ProductImage(url: series.coverImage, kind: ProductKind.figure, iconSize: 24, borderRadius: BorderRadius.zero),
                 ),
               ),
               const SizedBox(height: 6),
-              Text(series.name,
-                  maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+              Text(
+                series.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+              ),
             ],
           ),
         ),
@@ -325,7 +353,9 @@ class _TileSkeleton extends StatelessWidget {
       enabled: !reduceMotion,
       baseColor: dark ? scheme.surfaceContainerHighest : const Color(0xFFE8F1FA),
       highlightColor: dark ? scheme.surfaceContainerHigh : const Color(0xFFF7FBFF),
-      child: Container(decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22))),
+      child: Container(
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+      ),
     );
   }
 }
