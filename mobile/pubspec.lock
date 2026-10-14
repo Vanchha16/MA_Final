@@ -307,6 +307,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.35"
+  flutter_rating_bar:
+    dependency: "direct main"
+    description:
+      name: flutter_rating_bar
+      sha256: d2af03469eac832c591a1eba47c91ecc871fe5708e69967073c043b2d775ed93
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.1"
   flutter_shaders:
     dependency: transitive
     description:
@@ -661,6 +669,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.2"
+  photo_view:
+    dependency: "direct main"
+    description:
+      name: photo_view
+      sha256: "1fc3d970a91295fbd1364296575f854c9863f225505c28c46e0a03e48960c75e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.15.0"
   pinput:
     dependency: "direct main"
     description:
@@ -709,6 +725,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
+  readmore:
+    dependency: "direct main"
+    description:
+      name: readmore
+      sha256: e8fca2bd397b86342483b409e2ec26f06560a5963aceaa39b27f30722b506187
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
   record_use:
     dependency: transitive
     description:
@@ -802,6 +826,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.12"
+  smooth_page_indicator:
+    dependency: "direct main"
+    description:
+      name: smooth_page_indicator
+      sha256: ab2253be8d65ed7a341a43fe62d5cfba404b5969c23bc998964fe5aa8aae465c
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
   source_span:
     dependency: transitive
     description:
@@ -898,6 +930,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.10"
+  timeago:
+    dependency: "direct main"
+    description:
+      name: timeago
+      sha256: b05159406a97e1cbb2b9ee4faa9fb096fe0e2dfcd8b08fcd2a00553450d3422e
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.7.1"
   typed_data:
     dependency: transitive
     description:

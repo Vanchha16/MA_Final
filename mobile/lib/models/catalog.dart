@@ -65,6 +65,9 @@ class Product {
   final int stock;
   final bool isFeatured;
   final String? imageUrl;
+
+  /// All photos, main photo first (the gallery on Product Details).
+  final List<String> images;
   final Category category;
   final Series? series;
   final double rating;
@@ -80,6 +83,7 @@ class Product {
     required this.stock,
     this.isFeatured = false,
     this.imageUrl,
+    this.images = const [],
     required this.category,
     this.series,
     this.rating = 0,
@@ -96,6 +100,7 @@ class Product {
         stock: json['stock'] ?? 0,
         isFeatured: json['is_featured'] ?? false,
         imageUrl: json['image_url'],
+        images: [for (final i in json['images'] as List? ?? []) i as String],
         category: Category.fromJson(json['category']),
         series: json['series'] == null ? null : Series.fromJson(json['series']),
         rating: (json['rating'] as num? ?? 0).toDouble(),
@@ -108,6 +113,47 @@ class Product {
 
   /// Whole-number discount, e.g. 11 for $189 -> $169.
   int get discountPercent => onSale ? ((1 - discountPrice! / price) * 100).round() : 0;
+}
+
+class Review {
+  final int id;
+  final String user;
+  final int rating;
+  final String? comment;
+  final DateTime createdAt;
+
+  const Review({required this.id, required this.user, required this.rating, this.comment, required this.createdAt});
+
+  factory Review.fromJson(Map<String, dynamic> json) {
+    final raw = json['created_at'] as String;
+    // The API sends UTC without a zone marker
+    final hasZone = raw.endsWith('Z') || RegExp(r'[+-]\d\d:\d\d$').hasMatch(raw);
+    return Review(
+      id: json['id'],
+      user: json['user'],
+      rating: json['rating'],
+      comment: json['comment'],
+      createdAt: DateTime.parse(hasZone ? raw : '${raw}Z'),
+    );
+  }
+
+  /// "DC" for Demo Customer.
+  String get initials => user.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0].toUpperCase()).join();
+}
+
+/// GET /api/products/{id}: the product plus its reviews and related products.
+class ProductDetail {
+  final Product product;
+  final List<Review> reviews;
+  final List<Product> related;
+
+  const ProductDetail({required this.product, this.reviews = const [], this.related = const []});
+
+  factory ProductDetail.fromJson(Map<String, dynamic> json) => ProductDetail(
+        product: Product.fromJson(json),
+        reviews: [for (final r in json['reviews'] as List? ?? []) Review.fromJson(r)],
+        related: [for (final p in json['related'] as List? ?? []) Product.fromJson(p)],
+      );
 }
 
 /// One page of GET /api/products.
