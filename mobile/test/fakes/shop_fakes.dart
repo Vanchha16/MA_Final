@@ -34,6 +34,22 @@ class FakeCatalogService extends CatalogService {
   @override
   Future<List<Category>> categories() async => [figures, boosters];
 
+  bool detailFails = false;
+
+  @override
+  Future<ProductDetail> product(int id) async {
+    if (detailFails) throw ApiException('Cannot connect to server. Check your internet connection.');
+    final p = products_.firstWhere((p) => p.id == id);
+    return ProductDetail(
+      product: p,
+      reviews: [
+        Review(id: 1, user: 'Demo Customer', rating: 5, comment: 'Great quality, fast delivery!', createdAt: DateTime.now().subtract(const Duration(days: 14))),
+        Review(id: 2, user: 'Sok Dara', rating: 4, comment: 'Box arrived perfect.', createdAt: DateTime.now().subtract(const Duration(days: 3))),
+      ],
+      related: products_.where((o) => o.id != id && o.series?.id == p.series?.id).take(3).toList(),
+    );
+  }
+
   @override
   Future<ProductPage> products(ProductQuery query, {int page = 1, int perPage = 10}) async {
     queries.add(query);
