@@ -91,7 +91,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
-    final scheme = Theme.of(context).colorScheme;
 
     if (user == null) return _GuestProfile(topBar: _topBar(signedIn: false), infoItems: _infoItems);
 
@@ -128,18 +127,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ..._infoItems,
               ]),
               const SizedBox(height: 20),
-              // Red, but outlined so the rarely-used destructive action stays calm
-              OutlinedButton.icon(
+              PillButton.danger(
                 key: const Key('profile_logout'),
+                label: 'Log out',
+                leadingIcon: Icons.logout_rounded,
                 onPressed: _confirmLogout,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.danger,
-                  backgroundColor: Theme.of(context).brightness == Brightness.dark ? scheme.surfaceContainerHigh : Colors.white,
-                  side: const BorderSide(color: AppTheme.danger, width: 1.5),
-                  shape: const StadiumBorder(),
-                ),
-                icon: const Icon(Icons.logout_rounded),
-                label: const Text('Log out'),
               ),
             ],
           ),
