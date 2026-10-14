@@ -65,5 +65,6 @@ void main() {
     await tester.tap(find.byKey(const Key('email')));
     await tester.pump(); // a single frame, no animation time
     expect(_iconColor(tester, Icons.email_outlined), AppTheme.light.colorScheme.primary);
+    await tester.pump(Duration.zero); // runs flutter_animate's zero-delay start timer
   });
 }
