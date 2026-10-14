@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../../core/network/api_client.dart';
 import '../../models/catalog.dart';
 import '../../providers/shop_provider.dart';
+import '../../services/catalog_service.dart';
 import '../auth/login_screen.dart';
+import '../catalog/product_details_screen.dart';
 
 /// What happens when a product card's heart or plus is tapped, the same on
 /// every screen: guests are asked to log in, errors show in a SnackBar.
@@ -36,22 +38,22 @@ class ShopActions {
   }
 
   /// Throws when nothing was added, so the card keeps its plus icon.
-  static Future<void> addToCart(BuildContext context, Product product) async {
+  static Future<void> addToCart(BuildContext context, Product product, {int quantity = 1}) async {
     final shop = context.read<ShopProvider>();
     if (!shop.signedIn) {
       askToLogin(context, 'Log in to add items to your cart');
       throw StateError('not signed in');
     }
     try {
-      await shop.addToCart(product.id);
-      if (context.mounted) _snack(context, 'Added to cart');
+      await shop.addToCart(product.id, quantity: quantity);
+      if (context.mounted) _snack(context, quantity == 1 ? 'Added to cart' : 'Added $quantity to cart');
     } on ApiException catch (e) {
       if (context.mounted) _snack(context, e.message);
       rethrow;
     }
   }
 
-  /// Until the Product Details screen exists.
-  static void openProduct(BuildContext context, Product product) =>
-      _snack(context, 'Product details for "${product.name}" are coming next');
+  static void openProduct(BuildContext context, Product product, {CatalogService? catalog}) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ProductDetailsScreen(product: product, catalogService: catalog)),
+      );
 }

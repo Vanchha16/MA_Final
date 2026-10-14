@@ -199,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              ProductFeedGrid(feed: _feed, onClear: _clearAll),
+              ProductFeedGrid(feed: _feed, catalogService: widget.catalogService, onClear: _clearAll),
               const SliverToBoxAdapter(child: SizedBox(height: 28)),
             ],
           ),

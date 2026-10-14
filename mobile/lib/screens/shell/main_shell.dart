@@ -14,6 +14,10 @@ class MainShell extends StatefulWidget {
   static const cartTab = 3;
   static const profileTab = 4;
 
+  /// Asks the shell to show a tab. Pages pushed on top use this after
+  /// popping back, e.g. the cart button on Product Details.
+  static final requestedTab = ValueNotifier<int?>(null);
+
   final int initialIndex;
 
   /// Injected in tests/screenshots; the real API otherwise.
@@ -28,6 +32,25 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late int _index = widget.initialIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    MainShell.requestedTab.addListener(_onTabRequest);
+  }
+
+  @override
+  void dispose() {
+    MainShell.requestedTab.removeListener(_onTabRequest);
+    super.dispose();
+  }
+
+  void _onTabRequest() {
+    final tab = MainShell.requestedTab.value;
+    if (tab == null) return;
+    MainShell.requestedTab.value = null;
+    setState(() => _index = tab);
+  }
 
   static const _tabs = [
     (Icons.home_outlined, Icons.home_rounded, 'Home'),
