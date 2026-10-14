@@ -1,18 +1,14 @@
 """Sample data for development and the demo video.
 
 Run:  flask --app run seed
-Images are placeholders - replace them with real product photos later.
+Products start without photos: the app shows a branded placeholder tile until
+real product photos are uploaded.
 """
 from datetime import timedelta
-from urllib.parse import quote_plus
 
 from .extensions import bcrypt, db
-from .models import Category, Favorite, Order, OrderItem, Product, ProductImage, Review, Series, User
+from .models import Category, Favorite, Order, OrderItem, Product, Review, Series, User
 from .utils.clock import utcnow
-
-
-def _img(text):
-    return f"https://placehold.co/600x600/png?text={quote_plus(text)}"
 
 
 CATEGORIES = [
@@ -122,9 +118,9 @@ def seed_data():
         seed_demo_orders()
         return
 
-    categories = {slug: Category(name=n, slug=slug, description=d, image_url=_img(n))
+    categories = {slug: Category(name=n, slug=slug, description=d)
                   for n, slug, d in CATEGORIES}
-    series = {slug: Series(name=n, slug=slug, image_url=_img(n)) for n, slug in SERIES}
+    series = {slug: Series(name=n, slug=slug) for n, slug in SERIES}
     db.session.add_all([*categories.values(), *series.values()])
 
     for i, (name, cat, ser, brand, price, disc, stock, featured, desc) in enumerate(PRODUCTS, start=1):
@@ -133,10 +129,6 @@ def seed_data():
             category=categories[cat], series=series[ser] if ser else None,
             price=price, discount_price=disc, stock=stock, is_featured=featured,
         )
-        product.images = [
-            ProductImage(image_url=_img(name), is_primary=True, sort_order=0),
-            ProductImage(image_url=_img(f"{name} (back)"), sort_order=1),
-        ]
         db.session.add(product)
 
     pw = bcrypt.generate_password_hash("demo123").decode()
