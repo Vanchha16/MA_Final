@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/format.dart';
 import '../models/catalog.dart';
+import 'cart_fly.dart';
 import 'product_image.dart';
 
 /// Grid card used everywhere products are listed (Figma: Product Card):
@@ -41,6 +42,7 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
+  final _photo = GlobalKey();
   bool _adding = false;
   bool _added = false;
 
@@ -50,6 +52,8 @@ class _ProductCardState extends State<ProductCard> {
     try {
       await widget.onAddToCart!();
       if (!mounted) return;
+      final photo = _photo.currentContext;
+      if (photo != null && photo.mounted) CartFly.run(photo, widget.product);
       setState(() => _added = true);
       await Future<void>.delayed(const Duration(milliseconds: 1200));
       if (mounted) setState(() => _added = false);
@@ -91,6 +95,7 @@ class _ProductCardState extends State<ProductCard> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AspectRatio(
+                  key: _photo,
                   aspectRatio: 1,
                   child: Stack(
                     fit: StackFit.expand,
