@@ -35,9 +35,6 @@ class FakeCatalogService extends CatalogService {
   Future<List<Category>> categories() async => [figures, boosters];
 
   @override
-  Future<List<Product>> featured({int limit = 5}) async => products_.where((p) => p.isFeatured).take(limit).toList();
-
-  @override
   Future<ProductPage> products(ProductQuery query, {int page = 1, int perPage = 10}) async {
     queries.add(query);
     pages.add(page);
