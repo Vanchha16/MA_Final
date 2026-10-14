@@ -15,4 +15,9 @@ class ApiConstants {
   static const String forgotPassword = '/auth/forgot-password';
   static const String verifyOtp = '/auth/verify-otp';
   static const String resetPassword = '/auth/reset-password';
+
+  static const String profile = '/profile';
+  static const String profileSummary = '/profile/summary';
+  static const String profilePassword = '/profile/password';
+  static const String profileAvatar = '/profile/avatar';
 }

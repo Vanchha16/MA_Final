@@ -7,6 +7,8 @@ class AppTheme {
   static const Color coral = Color(0xFFF43F5E); // sale badges, wishlist heart, sold out
   static const Color amber = Color(0xFFF59E0B); // friendly accents (waving hand), warnings
   static const Color success = Color(0xFF16A34A); // success states, strong password
+  static const Color danger = Color(0xFFDC2626); // log out, delete (solid red buttons)
+  static const Color skyTint = Color(0xFFE0F2FE); // icon tiles, nav indicator (light mode)
 
   static ThemeData light = _build(Brightness.light);
   static ThemeData dark = _build(Brightness.dark);
@@ -24,7 +26,11 @@ class AppTheme {
     final radius = BorderRadius.circular(12);
     const buttonSize = Size.fromHeight(52);
     final buttonShape = RoundedRectangleBorder(borderRadius: radius);
-    const buttonText = TextStyle(fontSize: 16, fontWeight: FontWeight.w600);
+    // Start from this theme's own labelLarge so button text keeps the platform font family
+    final buttonText = ThemeData(useMaterial3: true, colorScheme: scheme)
+        .textTheme
+        .labelLarge!
+        .copyWith(fontSize: 16, fontWeight: FontWeight.w600);
 
     return ThemeData(
       useMaterial3: true,
@@ -55,6 +61,23 @@ class AppTheme {
           shape: buttonShape,
           textStyle: buttonText,
         ),
+      ),
+      // Bottom tabs (Figma: Nav Item): sky tint pill behind the active icon
+      navigationBarTheme: NavigationBarThemeData(
+        height: 72,
+        elevation: 0,
+        backgroundColor: dark ? scheme.surfaceContainer : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: dark ? const Color(0xFF0F1E33) : skyTint,
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+              size: 24,
+              color: states.contains(WidgetState.selected) ? scheme.primary : scheme.onSurfaceVariant,
+            )),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+              fontSize: 12,
+              fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+              color: states.contains(WidgetState.selected) ? scheme.primary : scheme.onSurfaceVariant,
+            )),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
