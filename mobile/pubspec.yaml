@@ -45,6 +45,7 @@ dependencies:
   carousel_slider: ^5.1.2
   flutter_animate: ^4.5.2
   pinput: ^6.0.2
+  infinite_scroll_pagination: ^5.1.1
 
 dev_dependencies:
   flutter_test:
