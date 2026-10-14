@@ -5,7 +5,7 @@ import '../../../core/utils/format.dart';
 import '../../../models/catalog.dart';
 import '../../../widgets/pill_button.dart';
 
-/// Bottom sheet for category, price range and "in stock only".
+/// Bottom sheet for category, brand, price range and "in stock only".
 /// Returns the new [ProductQuery], or null if dismissed.
 class FilterSheet extends StatefulWidget {
   /// The price slider's top end; at the top it means "no limit".
@@ -14,15 +14,23 @@ class FilterSheet extends StatefulWidget {
   final ProductQuery query;
   final List<Category> categories;
 
-  const FilterSheet({super.key, required this.query, required this.categories});
+  /// Brand chips; the section is hidden when empty.
+  final List<String> brands;
 
-  static Future<ProductQuery?> show(BuildContext context, {required ProductQuery query, required List<Category> categories}) =>
+  const FilterSheet({super.key, required this.query, required this.categories, this.brands = const []});
+
+  static Future<ProductQuery?> show(
+    BuildContext context, {
+    required ProductQuery query,
+    required List<Category> categories,
+    List<String> brands = const [],
+  }) =>
       showModalBottomSheet<ProductQuery>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
         useSafeArea: true,
-        builder: (_) => FilterSheet(query: query, categories: categories),
+        builder: (_) => FilterSheet(query: query, categories: categories, brands: brands),
       );
 
   @override
@@ -31,11 +39,13 @@ class FilterSheet extends StatefulWidget {
 
 class _FilterSheetState extends State<FilterSheet> {
   late int? _categoryId = widget.query.categoryId;
+  late String? _brand = widget.query.brand;
   late RangeValues _price = RangeValues(widget.query.minPrice ?? 0, widget.query.maxPrice ?? FilterSheet.maxPrice);
   late bool _inStock = widget.query.inStockOnly;
 
   void _reset() => setState(() {
         _categoryId = null;
+        _brand = null;
         _price = const RangeValues(0, FilterSheet.maxPrice);
         _inStock = false;
       });
@@ -43,6 +53,7 @@ class _FilterSheetState extends State<FilterSheet> {
   void _apply() {
     Navigator.of(context).pop(widget.query.copyWith(
       categoryId: () => _categoryId,
+      brand: () => _brand,
       minPrice: () => _price.start > 0 ? _price.start : null,
       maxPrice: () => _price.end < FilterSheet.maxPrice ? _price.end : null,
       inStockOnly: _inStock,
@@ -56,19 +67,20 @@ class _FilterSheetState extends State<FilterSheet> {
     final scheme = Theme.of(context).colorScheme;
     final title = Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold);
 
-    Widget choice(int? id, String label) {
-      final selected = _categoryId == id;
-      return ChoiceChip(
-        key: Key('filter_cat_${id ?? 'all'}'),
-        label: Text(label),
-        selected: selected,
-        showCheckmark: false,
-        selectedColor: AppTheme.primaryDark,
-        labelStyle: TextStyle(color: selected ? Colors.white : scheme.onSurface, fontWeight: FontWeight.w600),
-        shape: StadiumBorder(side: BorderSide(color: selected ? Colors.transparent : scheme.primary.withValues(alpha: 0.2))),
-        onSelected: (_) => setState(() => _categoryId = id),
-      );
-    }
+    Widget pill(Key key, String label, bool selected, VoidCallback onTap) => ChoiceChip(
+          key: key,
+          label: Text(label),
+          selected: selected,
+          showCheckmark: false,
+          selectedColor: AppTheme.primaryDark,
+          labelStyle: TextStyle(color: selected ? Colors.white : scheme.onSurface, fontWeight: FontWeight.w600),
+          shape: StadiumBorder(side: BorderSide(color: selected ? Colors.transparent : scheme.primary.withValues(alpha: 0.2))),
+          onSelected: (_) => onTap(),
+        );
+    Widget choice(int? id, String label) =>
+        pill(Key('filter_cat_${id ?? 'all'}'), label, _categoryId == id, () => setState(() => _categoryId = id));
+    Widget brandChoice(String? brand) =>
+        pill(Key('filter_brand_${brand ?? 'all'}'), brand ?? 'All', _brand == brand, () => setState(() => _brand = brand));
 
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + MediaQuery.viewInsetsOf(context).bottom),
@@ -91,6 +103,16 @@ class _FilterSheetState extends State<FilterSheet> {
               runSpacing: 8,
               children: [choice(null, 'All'), for (final c in widget.categories) choice(c.id, c.name)],
             ),
+            if (widget.brands.isNotEmpty) ...[
+              const SizedBox(height: 22),
+              Text('Brand', style: title),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [brandChoice(null), for (final b in widget.brands) brandChoice(b)],
+              ),
+            ],
             const SizedBox(height: 22),
             Row(
               children: [
