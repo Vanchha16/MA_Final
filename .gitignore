@@ -11,3 +11,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 ~$*.docx
+
+# Third-party reference media (watermarked previews) - kept locally, not published
+docs/figma/*.mp4
