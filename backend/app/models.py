@@ -164,8 +164,8 @@ class Product(TimestampMixin, db.Model):
             "discount_price": float(self.discount_price) if self.discount_price is not None else None,
             "stock": self.stock,
             "is_featured": self.is_featured,
-            "image_url": primary.image_url if primary else None,
-            "images": [i.image_url for i in self.images],
+            "image_url": absolute_url(primary.image_url) if primary else None,
+            "images": [absolute_url(i.image_url) for i in self.images],
             "rating": round(sum(ratings) / len(ratings), 1) if ratings else 0,
             "review_count": len(ratings),
         }

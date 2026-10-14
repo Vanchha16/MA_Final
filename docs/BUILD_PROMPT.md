@@ -347,9 +347,9 @@ and free-shipping bar, filter sheet, settings toggles. Mock services with simple
 ## 7. Data & content
 - Extend `seed.py` (keep it idempotent): 35+ products, 2 images each, several reviews from 3–4 demo
   customers, 2–3 orders per demo customer in different statuses, a few notifications, addresses.
-- Images are placeholders (`placehold.co`). Add a script `backend/scripts/import_images.py` that
-  maps files in `backend/uploads/products/<slug>/*.jpg` to products, so the team can drop in real
-  photos before recording the demo. Do not use official logos as the app logo.
+- Product photos: no placeholders in the seed. `flask --app run import-images` imports photos from
+  `backend/uploads/products/<product-slug>/` (see `docs/product-photos.md` for the folder list);
+  official photos stay out of git. Do not use official logos as the app logo.
 
 ---
 
