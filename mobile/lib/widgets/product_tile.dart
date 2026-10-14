@@ -4,12 +4,13 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/format.dart';
 import '../models/catalog.dart';
+import 'cart_fly.dart';
 import 'product_card.dart';
 import 'product_image.dart';
 
 /// One product as a row (List view on the Product List): photo on the left,
 /// series, name, rating and price on the right, heart and add-to-cart.
-class ProductTile extends StatelessWidget {
+class ProductTile extends StatefulWidget {
   final Product product;
   final bool wishlisted;
   final VoidCallback? onTap;
@@ -26,8 +27,16 @@ class ProductTile extends StatelessWidget {
   });
 
   @override
+  State<ProductTile> createState() => _ProductTileState();
+}
+
+class _ProductTileState extends State<ProductTile> {
+  final _photo = GlobalKey();
+
+  @override
   Widget build(BuildContext context) {
-    final p = product;
+    final p = widget.product;
+    final wishlisted = widget.wishlisted;
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final accent = dark ? scheme.primary : AppTheme.primaryDark;
@@ -43,13 +52,14 @@ class ProductTile extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           key: Key('product_${p.id}'),
-          onTap: onTap,
+          onTap: widget.onTap,
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox.square(
+                  key: _photo,
                   dimension: 104,
                   child: Stack(
                     fit: StackFit.expand,
@@ -93,7 +103,7 @@ class ProductTile extends StatelessWidget {
                           InkWell(
                             key: Key('heart_${p.id}'),
                             customBorder: const CircleBorder(),
-                            onTap: onToggleWishlist,
+                            onTap: widget.onToggleWishlist,
                             child: Padding(
                               padding: const EdgeInsets.all(2),
                               child: Icon(
@@ -144,7 +154,7 @@ class ProductTile extends StatelessWidget {
                               ],
                             ),
                           ),
-                          _AddButton(key: Key('add_${p.id}'), enabled: !p.soldOut, onAdd: onAddToCart),
+                          _AddButton(key: Key('add_${p.id}'), enabled: !p.soldOut, onAdd: widget.onAddToCart, product: p, photo: _photo),
                         ],
                       ),
                     ],
@@ -162,8 +172,12 @@ class ProductTile extends StatelessWidget {
 class _AddButton extends StatefulWidget {
   final bool enabled;
   final Future<void> Function()? onAdd;
+  final Product product;
 
-  const _AddButton({super.key, required this.enabled, this.onAdd});
+  /// The photo that flies into the cart button after a successful add.
+  final GlobalKey photo;
+
+  const _AddButton({super.key, required this.enabled, this.onAdd, required this.product, required this.photo});
 
   @override
   State<_AddButton> createState() => _AddButtonState();
@@ -177,6 +191,8 @@ class _AddButtonState extends State<_AddButton> {
     setState(() => _busy = true);
     try {
       await widget.onAdd!();
+      final photo = widget.photo.currentContext;
+      if (photo != null && photo.mounted) CartFly.run(photo, widget.product);
     } catch (_) {
       // The caller already showed why
     } finally {

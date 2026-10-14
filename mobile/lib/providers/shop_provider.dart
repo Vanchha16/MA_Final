@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/network/api_client.dart';
+import '../models/cart.dart';
 import '../services/shop_service.dart';
 
 /// Wishlist hearts and the cart badge, shared by every product card.
@@ -66,9 +67,12 @@ class ShopProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addToCart(int productId, {int quantity = 1}) async {
-    _cartCount = await _service.addToCart(productId, quantity: quantity);
+  /// Returns the updated cart, for the "Added to your cart" sheet.
+  Future<Cart> addToCart(int productId, {int quantity = 1}) async {
+    final cart = await _service.addToCart(productId, quantity: quantity);
+    _cartCount = cart.count;
     notifyListeners();
+    return cart;
   }
 
   void _set(int productId, bool inWishlist) {
