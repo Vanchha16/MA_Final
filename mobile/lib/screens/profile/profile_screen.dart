@@ -183,7 +183,7 @@ class _GuestProfile extends StatelessWidget {
                             Text('Join the collectors club',
                                 style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
                             SizedBox(height: 2),
-                            Text('Free to join. Takes 30 seconds.', style: TextStyle(color: Color(0xD9FFFFFF), fontSize: 13)),
+                            Text('Free to join. Takes 30 seconds.', style: TextStyle(color: Color(0xEBFFFFFF), fontSize: 13)),
                           ],
                         ),
                       ),

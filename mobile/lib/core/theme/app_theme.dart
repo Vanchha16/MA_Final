@@ -9,6 +9,9 @@ class AppTheme {
   static const Color success = Color(0xFF16A34A); // success states, strong password
   static const Color danger = Color(0xFFDC2626); // log out, delete (solid red buttons)
   static const Color skyTint = Color(0xFFE0F2FE); // icon tiles, nav indicator (light mode)
+  // Collector Card gradient: deeper sky -> teal so small white text passes WCAG AA (>= 5:1)
+  static const Color cardStart = Color(0xFF0373B5);
+  static const Color cardEnd = Color(0xFF0E7490);
 
   static ThemeData light = _build(Brightness.light);
   static ThemeData dark = _build(Brightness.dark);
