@@ -6,6 +6,8 @@ real product photos are uploaded.
 """
 from datetime import timedelta
 
+from slugify import slugify
+
 from .extensions import bcrypt, db
 from .models import Category, Favorite, Order, OrderItem, Product, Review, Series, User
 from .utils.clock import utcnow
@@ -123,9 +125,9 @@ def seed_data():
     series = {slug: Series(name=n, slug=slug) for n, slug in SERIES}
     db.session.add_all([*categories.values(), *series.values()])
 
-    for i, (name, cat, ser, brand, price, disc, stock, featured, desc) in enumerate(PRODUCTS, start=1):
+    for name, cat, ser, brand, price, disc, stock, featured, desc in PRODUCTS:
         product = Product(
-            name=name, slug=f"product-{i}", description=desc, brand=brand,
+            name=name, slug=slugify(name), description=desc, brand=brand,
             category=categories[cat], series=series[ser] if ser else None,
             price=price, discount_price=disc, stock=stock, is_featured=featured,
         )
