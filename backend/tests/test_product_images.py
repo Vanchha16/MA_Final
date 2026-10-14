@@ -44,11 +44,27 @@ def test_imports_photos_in_name_order_as_small_webp(app, uploads, client):
     files = sorted(os.listdir(uploads / "catalog"))
     assert len(files) == 2 and all(f.endswith(".webp") for f in files)
     with Image.open(uploads / "catalog" / files[0]) as img:
-        assert max(img.size) == 1000
+        assert img.size == (1000, 1000)  # made square, never cropped
 
     # The API returns full URLs the app can load
     data = client.get(f"/api/products/{p.id}").get_json()["data"]
     assert data["image_url"].startswith("http://localhost/uploads/catalog/")
+
+
+def test_tall_photo_is_padded_with_its_background_color(app, uploads):
+    p = _product()
+    folder = uploads / "products" / p.slug
+    folder.mkdir(parents=True)
+    tall = Image.new("RGB", (400, 800), (20, 120, 200))  # blue background
+    tall.paste((250, 250, 250), (150, 300, 250, 500))  # the "product"
+    tall.save(folder / "1.jpg")
+
+    import_product_images()
+    with Image.open(uploads / "catalog" / os.listdir(uploads / "catalog")[0]) as img:
+        assert img.size[0] == img.size[1]
+        left_edge = img.convert("RGB").getpixel((5, img.size[1] // 2))
+        assert all(abs(a - b) < 12 for a, b in zip(left_edge, (20, 120, 200)))  # extended background, not white
+        assert img.convert("RGB").getpixel((img.size[0] // 2, img.size[1] // 2))[0] > 230  # product still in the middle
 
 
 def test_reimport_replaces_old_photos(app, uploads):
