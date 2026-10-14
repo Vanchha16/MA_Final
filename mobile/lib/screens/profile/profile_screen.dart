@@ -7,6 +7,7 @@ import '../../models/profile_summary.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/profile_service.dart';
 import '../../widgets/animated_logout_icon.dart';
+import '../../widgets/confirm_dialog.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/menu_card.dart';
 import '../../widgets/pill_button.dart';
@@ -243,59 +244,12 @@ class _GuestProfile extends StatelessWidget {
 }
 
 /// "Log out?" confirmation (Figma: "28c - Logout Confirm"). Returns true to log out.
-Future<bool?> showLogoutDialog(BuildContext context) {
-  return showDialog<bool>(
-    context: context,
-    builder: (context) {
-      final scheme = Theme.of(context).colorScheme;
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(color: AppTheme.danger.withValues(alpha: 0.12), shape: BoxShape.circle),
-                // Plays continuously while the dialog is open
-                child: const Center(
-                  child: AnimatedLogoutIcon(size: 30, color: AppTheme.danger, pause: Duration(milliseconds: 500)),
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text('Log out?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(
-                "You'll need to log in again to see your orders and wishlist.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: scheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: PillButton.danger(
-                      key: const Key('logout_confirm'),
-                      label: 'Log out',
-                      onPressed: () => Navigator.of(context).pop(true),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
+Future<bool?> showLogoutDialog(BuildContext context) => showConfirmDialog(
+      context,
+      // Plays continuously while the dialog is open
+      icon: const AnimatedLogoutIcon(size: 30, color: AppTheme.danger, pause: Duration(milliseconds: 500)),
+      title: 'Log out?',
+      message: "You'll need to log in again to see your orders and wishlist.",
+      confirmLabel: 'Log out',
+      confirmKey: const Key('logout_confirm'),
+    );
