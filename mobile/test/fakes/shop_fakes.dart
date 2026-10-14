@@ -62,8 +62,10 @@ class FakeCatalogService extends CatalogService {
       if (query.q.isNotEmpty && !p.name.toLowerCase().contains(query.q.toLowerCase())) return false;
       if (query.seriesId != null && p.series?.id != query.seriesId) return false;
       if (query.categoryId != null && p.category.id != query.categoryId) return false;
-      if (query.brand != null && p.brand != query.brand) return false;
+      if (query.brands.isNotEmpty && !query.brands.contains(p.brand)) return false;
       if (query.inStockOnly && p.soldOut) return false;
+      if (query.minPrice != null && p.finalPrice < query.minPrice!) return false;
+      if (query.maxPrice != null && p.finalPrice > query.maxPrice!) return false;
       return true;
     }).toList();
     final start = (page - 1) * perPage;
