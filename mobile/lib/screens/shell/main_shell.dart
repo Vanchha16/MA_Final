@@ -5,6 +5,7 @@ import '../../services/cart_service.dart';
 import '../../services/catalog_service.dart';
 import '../cart/cart_screen.dart';
 import '../../services/profile_service.dart';
+import '../../widgets/cart_tab_icon.dart';
 import '../../widgets/icon_circle.dart';
 import '../catalog/categories_screen.dart';
 import '../home/home_screen.dart';
@@ -87,8 +88,10 @@ class _MainShellState extends State<MainShell> {
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: [
-            for (final (icon, selected, label) in _tabs)
-              NavigationDestination(icon: Icon(icon), selectedIcon: Icon(selected), label: label),
+            for (final (i, (icon, selected, label)) in _tabs.indexed)
+              i == MainShell.cartTab
+                  ? NavigationDestination(icon: const CartTabIcon(), selectedIcon: const CartTabIcon(selected: true), label: label)
+                  : NavigationDestination(icon: Icon(icon), selectedIcon: Icon(selected), label: label),
           ],
         ),
       ),

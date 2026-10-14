@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/network/api_client.dart';
@@ -6,6 +7,7 @@ import '../../models/cart.dart';
 import '../../models/catalog.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/catalog_service.dart';
+import '../../widgets/cart_drive.dart';
 import '../../widgets/product_image.dart';
 import '../auth/login_screen.dart';
 import '../catalog/product_details_screen.dart';
@@ -60,12 +62,16 @@ class ShopActions {
   }
 
   /// Dark floating toast with the photo, name and a View button
-  /// (Figma: Add to cart C - Toast + flying photo).
+  /// (Figma: Add to cart C - Toast). It waits until the delivery cart has
+  /// arrived, so the two never overlap at the bottom of the screen.
   static void _addedToast(BuildContext context, Product product, int quantity) {
     final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    ScaffoldMessenger.of(context)
+    messenger.hideCurrentSnackBar();
+
+    void show() => messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
         key: const Key('added_toast'),
@@ -113,6 +119,11 @@ class ShopActions {
           ],
         ),
       ));
+
+    // The card starts the drive right after this returns, so wait for this frame first.
+    SchedulerBinding.instance.addPostFrameCallback((_) => CartDrive.whenIdle(() {
+          if (messenger.mounted) show();
+        }));
   }
 
   /// Goes back to the main tabs and shows the Cart tab.
