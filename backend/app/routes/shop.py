@@ -4,6 +4,7 @@ from sqlalchemy.orm import selectinload
 
 from ..extensions import db
 from ..models import CartItem, Favorite, Product
+from ..pricing import find_coupon, summarize
 from ..utils.responses import error, success
 
 bp = Blueprint("shop", __name__, url_prefix="/api")
@@ -19,18 +20,23 @@ def _active_product(product_id):
     return Product.query.filter_by(id=product_id, is_active=True).first()
 
 
-def _cart_summary(user_id):
-    items = (
+def _cart_items(user_id):
+    return (
         CartItem.query.filter_by(user_id=user_id)
         .options(selectinload(CartItem.product))
         .order_by(CartItem.created_at.desc(), CartItem.id.desc())
         .all()
     )
-    return {
-        "items": [i.to_dict() for i in items],
-        "count": sum(i.quantity for i in items),
-        "subtotal": round(sum(float(i.product.final_price) * i.quantity for i in items), 2),
-    }
+
+
+def _cart_summary(user_id, coupon_code=None):
+    """Lines, subtotal, promo discount, delivery and total. Pass ?coupon=CODE to preview a promo code."""
+    items = _cart_items(user_id)
+    return {"items": [i.to_dict() for i in items], **summarize(items, coupon_code)}
+
+
+def _max_qty(product):
+    return min(product.stock, MAX_QTY_PER_ITEM)
 
 
 # ---------- Wishlist ----------
@@ -73,7 +79,7 @@ def remove_from_wishlist(product_id):
 @bp.get("/cart")
 @jwt_required()
 def cart():
-    return success(_cart_summary(_user_id()))
+    return success(_cart_summary(_user_id(), request.args.get("coupon")))
 
 
 @bp.post("/cart")
@@ -97,12 +103,67 @@ def add_to_cart():
     new_qty = (item.quantity if item else 0) + quantity
     if product.stock <= 0:
         return error("This item is sold out", 409)
-    if new_qty > min(product.stock, MAX_QTY_PER_ITEM):
-        return error(f"Only {min(product.stock, MAX_QTY_PER_ITEM)} can be added for this item", 409)
+    if new_qty > _max_qty(product):
+        return error(f"Only {_max_qty(product)} can be added for this item", 409)
 
     if item:
         item.quantity = new_qty
     else:
         db.session.add(CartItem(user_id=user_id, product_id=product_id, quantity=quantity))
     db.session.commit()
-    return success(_cart_summary(user_id), "Added to cart", 201)
+    return success(_cart_summary(user_id, data.get("coupon")), "Added to cart", 201)
+
+
+def _own_item(item_id):
+    return CartItem.query.filter_by(id=item_id, user_id=_user_id()).first()
+
+
+@bp.put("/cart/<int:item_id>")
+@jwt_required()
+def update_cart_item(item_id):
+    """Body: {"quantity": 2, "coupon": "WELCOME10"?}"""
+    item = _own_item(item_id)
+    if not item:
+        return error("Item not in your cart", 404)
+    data = request.get_json(silent=True) or {}
+    quantity = data.get("quantity")
+    if not isinstance(quantity, int) or quantity < 1:
+        return error("Validation failed", 422, {"quantity": "Quantity must be at least 1"})
+    if quantity > _max_qty(item.product):
+        return error(f"Only {_max_qty(item.product)} available for this item", 409)
+    item.quantity = quantity
+    db.session.commit()
+    return success(_cart_summary(item.user_id, data.get("coupon")))
+
+
+@bp.delete("/cart/<int:item_id>")
+@jwt_required()
+def remove_cart_item(item_id):
+    item = _own_item(item_id)
+    if not item:
+        return error("Item not in your cart", 404)
+    user_id = item.user_id
+    db.session.delete(item)
+    db.session.commit()
+    return success(_cart_summary(user_id, request.args.get("coupon")), "Removed from cart")
+
+
+@bp.delete("/cart")
+@jwt_required()
+def clear_cart():
+    CartItem.query.filter_by(user_id=_user_id()).delete()
+    db.session.commit()
+    return success(_cart_summary(_user_id()), "Cart cleared")
+
+
+@bp.post("/cart/coupon")
+@jwt_required()
+def apply_coupon():
+    """Body: {"code": "WELCOME10"}. Checks the code against the current cart."""
+    code = ((request.get_json(silent=True) or {}).get("code") or "").strip()
+    user_id = _user_id()
+    subtotal = sum(float(i.product.final_price) * i.quantity for i in _cart_items(user_id))
+    coupon, reason = find_coupon(code, subtotal)
+    if coupon is None:
+        return error(reason, 422, {"code": reason})
+    return success(_cart_summary(user_id, coupon.code), f"{coupon.code} applied")

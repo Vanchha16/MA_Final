@@ -143,3 +143,16 @@ Table reviews {
   created_at datetime
   indexes { (user_id, product_id) [unique] }
 }
+
+Table coupons {
+  id int [pk, increment]
+  code varchar(30) [not null, unique, note: 'upper case, e.g. WELCOME10']
+  description varchar(150) [not null]
+  discount_type enum [not null, note: 'percent | fixed']
+  value decimal(10,2) [not null]
+  min_subtotal decimal(10,2) [not null, default: 0]
+  max_discount decimal(10,2) [note: 'cap for percent coupons']
+  expires_at datetime
+  is_active bool [not null, default: true]
+  created_at datetime
+}

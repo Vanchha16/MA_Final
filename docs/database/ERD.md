@@ -135,6 +135,17 @@ erDiagram
         tinyint rating "1-5"
         text comment
     }
+    COUPONS {
+        int id PK
+        varchar code UK
+        varchar description
+        enum discount_type "percent | fixed"
+        decimal value
+        decimal min_subtotal
+        decimal max_discount
+        datetime expires_at
+        bool is_active
+    }
 ```
 
 ## Relationships
