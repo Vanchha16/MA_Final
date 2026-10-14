@@ -4,6 +4,7 @@ import 'package:ecommerce_app/core/network/api_client.dart';
 import 'package:ecommerce_app/models/profile_summary.dart';
 import 'package:ecommerce_app/models/user.dart';
 import 'package:ecommerce_app/providers/auth_provider.dart';
+import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/providers/theme_provider.dart';
 import 'package:ecommerce_app/screens/profile/change_password_screen.dart';
 import 'package:ecommerce_app/screens/profile/edit_profile_screen.dart';
@@ -14,6 +15,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'fakes/shop_fakes.dart';
 
 final demo = User(id: 2, fullName: 'Demo Customer', email: 'demo@shop.com', phone: '012345678');
 
@@ -73,6 +76,7 @@ Future<AuthProvider> _pump(WidgetTester tester, Widget home, {bool signedIn = tr
     providers: [
       ChangeNotifierProvider.value(value: auth),
       ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ChangeNotifierProvider(create: (_) => ShopProvider(service: FakeShopService())),
     ],
     child: MaterialApp(home: home),
   ));
@@ -196,8 +200,8 @@ void main() {
   });
 
   testWidgets('bottom navigation switches tabs', (tester) async {
-    await _pump(tester, const MainShell(), signedIn: false);
-    expect(find.text('Hi there!'), findsOneWidget);
+    await _pump(tester, MainShell(catalogService: FakeCatalogService()), signedIn: false);
+    expect(find.text('Hi there, welcome'), findsOneWidget);
 
     await tester.tap(find.text('Cart'));
     await tester.pump(const Duration(milliseconds: 500));

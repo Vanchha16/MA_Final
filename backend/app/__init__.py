@@ -16,11 +16,12 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     cors.init_app(app)
 
-    from .routes import auth, catalog, profile
+    from .routes import auth, catalog, profile, shop
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(catalog.bp)
     app.register_blueprint(profile.bp)
+    app.register_blueprint(shop.bp)
     register_error_handlers(app)
 
     @app.get("/api/health")

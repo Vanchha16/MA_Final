@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/shop_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/splash/splash_screen.dart';
 
@@ -19,6 +20,11 @@ void main() {
         providers: [
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
+          // Wishlist hearts + cart badge follow the signed-in user
+          ChangeNotifierProxyProvider<AuthProvider, ShopProvider>(
+            create: (_) => ShopProvider(),
+            update: (_, auth, shop) => shop!..setSignedIn(auth.isLoggedIn),
+          ),
         ],
         child: const ShopApp(),
       ),

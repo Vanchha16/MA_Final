@@ -20,4 +20,10 @@ class ApiConstants {
   static const String profileSummary = '/profile/summary';
   static const String profilePassword = '/profile/password';
   static const String profileAvatar = '/profile/avatar';
+
+  static const String categories = '/categories';
+  static const String series = '/series';
+  static const String products = '/products';
+  static const String wishlist = '/wishlist';
+  static const String cart = '/cart';
 }
