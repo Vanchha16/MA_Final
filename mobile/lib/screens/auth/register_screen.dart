@@ -12,7 +12,7 @@ import '../../widgets/icon_title.dart';
 import '../../widgets/mascot_greeting.dart';
 import '../../widgets/password_strength_meter.dart';
 import '../../widgets/pill_text_field.dart';
-import '../home/home_screen.dart';
+import '../shell/main_shell.dart';
 
 /// Create account (Figma: "04 - Register"), same playful style as Login.
 class RegisterScreen extends StatefulWidget {
@@ -85,7 +85,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
           );
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const MainShell()),
         (_) => false,
       );
     } on ApiException catch (e) {

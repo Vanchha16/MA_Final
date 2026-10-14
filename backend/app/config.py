@@ -15,6 +15,10 @@ class Config:
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret-change-me-in-production-01")
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)
 
+    # Uploaded files (avatars, product photos) - served at /uploads/<path>
+    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads"))
+    MAX_CONTENT_LENGTH = 6 * 1024 * 1024  # reject bigger request bodies
+
     # Forgot password
     RESET_CODE_MINUTES = 10          # 6-digit code lifetime
     RESET_TOKEN_MINUTES = 15         # token returned by verify-otp, used by reset-password

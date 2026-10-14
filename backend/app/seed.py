@@ -3,10 +3,12 @@
 Run:  flask --app run seed
 Images are placeholders - replace them with real product photos later.
 """
+from datetime import timedelta
 from urllib.parse import quote_plus
 
 from .extensions import bcrypt, db
-from .models import Category, Product, ProductImage, Review, Series, User
+from .models import Category, Favorite, Order, OrderItem, Product, ProductImage, Review, Series, User
+from .utils.clock import utcnow
 
 
 def _img(text):
@@ -116,7 +118,8 @@ PRODUCTS = [
 
 def seed_data():
     if Category.query.first():
-        print("Database already has data - skipping seed.")
+        print("Database already has data - skipping catalog seed.")
+        seed_demo_orders()
         return
 
     categories = {slug: Category(name=n, slug=slug, description=d, image_url=_img(n))
@@ -148,3 +151,53 @@ def seed_data():
 
     db.session.commit()
     print(f"Seeded {len(CATEGORIES)} categories, {len(SERIES)} series, {len(PRODUCTS)} products, 2 users.")
+    seed_demo_orders()
+
+
+# Order history for demo@shop.com so the Profile shows real data in the demo video:
+# 3 delivered (926 pts -> Silver), 2 shipped (To Receive), 1 confirmed (To Ship),
+# 2 delivered products not reviewed yet (To Review).
+# (days ago, status, payment method, payment status, [(product name, qty)])
+DEMO_ORDERS = [
+    (40, "delivered", "khqr", "paid", [("Monkey D. Luffy Gear 5 1/7 Scale Figure", 1), ("Roronoa Zoro Three-Sword Style 1/8 Figure", 1)]),
+    (25, "delivered", "cod", "paid", [("Rengoku Kyojuro 1/8 Scale Figure", 1), ("Gojo Satoru Unlimited Void 1/7 Figure", 1)]),
+    (12, "delivered", "khqr", "paid", [("Pokemon TCG Booster Box (36 packs)", 1), ("One Piece Card Game Booster Box (24 packs)", 1)]),
+    (4, "shipped", "cod", "unpaid", [("Nendoroid Anya Forger", 1)]),
+    (3, "shipped", "khqr", "paid", [("Pikachu Plush 30 cm", 2)]),
+    (1, "confirmed", "khqr", "paid", [("RG 1/144 RX-78-2 Gundam", 1)]),
+]
+DEMO_WISHLIST = [
+    "Nendoroid Tanjiro Kamado", "Makima 1/7 Scale Figure", "Pokemon TCG Elite Trainer Box",
+    "MG 1/100 Freedom Gundam 2.0", "Pochita Plush", "Nendoroid Itadori Yuji",
+]
+
+
+def seed_demo_orders():
+    """Idempotent: does nothing if the demo customer already has orders."""
+    demo = User.query.filter_by(email="demo@shop.com").first()
+    if not demo or Order.query.filter_by(user_id=demo.id).first():
+        return
+    products = {p.name: p for p in Product.query}
+    now = utcnow()
+    for seq, (days_ago, status, method, paid, lines) in enumerate(DEMO_ORDERS, start=1):
+        when = now - timedelta(days=days_ago)
+        subtotal = sum(float(products[n].final_price) * q for n, q in lines)
+        shipping = 0 if subtotal >= 50 else 2  # free shipping from $50
+        order = Order(
+            order_number=f"AWS-{when:%Y%m%d}-{seq:04d}", user_id=demo.id,
+            shipping_name=demo.full_name, shipping_phone=demo.phone or "012345678",
+            shipping_address="St. 271, Toul Tom Poung, Phnom Penh",
+            subtotal=subtotal, shipping_fee=shipping, total=subtotal + shipping,
+            status=status, payment_method=method, payment_status=paid,
+            created_at=when, updated_at=when,
+        )
+        for name, qty in lines:
+            p = products[name]
+            order.items.append(OrderItem(product_id=p.id, product_name=p.name, unit_price=p.final_price,
+                                         quantity=qty, subtotal=float(p.final_price) * qty))
+        db.session.add(order)
+    for name in DEMO_WISHLIST:
+        if name in products:
+            db.session.add(Favorite(user_id=demo.id, product_id=products[name].id))
+    db.session.commit()
+    print(f"Seeded {len(DEMO_ORDERS)} demo orders and {len(DEMO_WISHLIST)} wishlist items for demo@shop.com.")
