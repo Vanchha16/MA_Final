@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_theme.dart';
+
 /// Primary pill button: solid brand sky blue with a soft shadow
 /// (Figma: Button / Primary, pill style). Buttons never use gradients.
+/// Pass [color] for other solid variants, e.g. [PillButton.danger] for log out.
 class PillButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final bool loading;
+  final IconData? leadingIcon;
   final IconData? trailingIcon;
+  final Color? color;
+  final Color? foregroundColor;
 
   /// What screen readers announce, e.g. "Log in" for a playful "Let's go!" label.
   final String? semanticLabel;
@@ -16,14 +22,31 @@ class PillButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.loading = false,
+    this.leadingIcon,
     this.trailingIcon,
+    this.color,
+    this.foregroundColor,
     this.semanticLabel,
   });
+
+  /// Solid red for log out and other destructive actions (Figma: Button / Danger).
+  const PillButton.danger({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.loading = false,
+    this.leadingIcon,
+    this.trailingIcon,
+    this.semanticLabel,
+  })  : color = AppTheme.danger,
+        foregroundColor = Colors.white;
 
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !loading;
     final scheme = Theme.of(context).colorScheme;
+    final bg = color ?? scheme.primary;
+    final fg = foregroundColor ?? scheme.onPrimary;
     const shape = StadiumBorder();
 
     return Semantics(
@@ -37,10 +60,10 @@ class PillButton extends StatelessWidget {
         child: DecoratedBox(
           decoration: ShapeDecoration(
             shape: shape,
-            color: scheme.primary,
+            color: bg,
             shadows: [
               BoxShadow(
-                color: scheme.primary.withValues(alpha: 0.25),
+                color: bg.withValues(alpha: 0.25),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -59,22 +82,26 @@ class PillButton extends StatelessWidget {
                       ? SizedBox(
                           height: 22,
                           width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: scheme.onPrimary),
+                          child: CircularProgressIndicator(strokeWidth: 2.5, color: fg),
                         )
                       : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            if (leadingIcon != null) ...[
+                              Icon(leadingIcon, color: fg, size: 20),
+                              const SizedBox(width: 8),
+                            ],
                             Text(
                               label,
                               style: TextStyle(
-                                color: scheme.onPrimary,
+                                color: fg,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             if (trailingIcon != null) ...[
                               const SizedBox(width: 8),
-                              Icon(trailingIcon, color: scheme.onPrimary, size: 20),
+                              Icon(trailingIcon, color: fg, size: 20),
                             ],
                           ],
                         ),

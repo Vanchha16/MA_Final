@@ -1,6 +1,15 @@
 """SQLAlchemy models. These mirror docs/database/schema.sql - keep the two in sync."""
+from flask import has_request_context, request
+
 from .extensions import db
 from .utils.clock import utcnow
+
+
+def absolute_url(path):
+    """Turn a stored "/uploads/..." path into a full URL for the current host."""
+    if path and path.startswith("/") and has_request_context():
+        return request.host_url.rstrip("/") + path
+    return path
 
 
 class TimestampMixin:
@@ -32,7 +41,7 @@ class User(TimestampMixin, db.Model):
             "full_name": self.full_name,
             "email": self.email,
             "phone": self.phone,
-            "avatar_url": self.avatar_url,
+            "avatar_url": absolute_url(self.avatar_url),
             "role": self.role,
             "created_at": self.created_at.isoformat(),
         }

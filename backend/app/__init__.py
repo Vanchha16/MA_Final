@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 
 from .config import Config
 from .errors import register_error_handlers
@@ -16,15 +16,20 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     cors.init_app(app)
 
-    from .routes import auth, catalog
+    from .routes import auth, catalog, profile
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(catalog.bp)
+    app.register_blueprint(profile.bp)
     register_error_handlers(app)
 
     @app.get("/api/health")
     def health():
         return success({"status": "up"})
+
+    @app.get("/uploads/<path:filename>")
+    def uploads(filename):
+        return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
     @app.cli.command("init-db")
     def init_db():

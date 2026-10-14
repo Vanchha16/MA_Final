@@ -19,6 +19,7 @@ class PillTextField extends StatefulWidget {
   final String? hint;
   final String? errorText;
   final bool obscureText;
+  final bool enabled;
   final Widget? suffix;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
@@ -37,6 +38,7 @@ class PillTextField extends StatefulWidget {
     this.hint,
     this.errorText,
     this.obscureText = false,
+    this.enabled = true,
     this.suffix,
     this.keyboardType,
     this.textInputAction,
@@ -90,7 +92,9 @@ class _PillTextFieldState extends State<PillTextField> {
     final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final duration = reduceMotion ? Duration.zero : _duration;
 
-    final fillColor = dark ? scheme.surfaceContainerHigh : Colors.white;
+    final fillColor = !widget.enabled
+        ? scheme.surfaceContainerHighest.withValues(alpha: 0.5)
+        : (dark ? scheme.surfaceContainerHigh : Colors.white);
     final shape = BorderRadius.circular(PillTextField.radius);
     OutlineInputBorder border([Color? color, double width = 1.5]) => OutlineInputBorder(
           borderRadius: shape,
@@ -105,7 +109,7 @@ class _PillTextFieldState extends State<PillTextField> {
             offset: const Offset(0, 10),
           )
         : BoxShadow(
-            color: AppTheme.primaryDark.withValues(alpha: dark ? 0 : 0.10),
+            color: AppTheme.primaryDark.withValues(alpha: dark || !widget.enabled ? 0 : 0.10),
             blurRadius: 18,
             offset: const Offset(0, 6),
           );
@@ -133,6 +137,7 @@ class _PillTextFieldState extends State<PillTextField> {
             key: widget.fieldKey,
             controller: widget.controller,
             focusNode: _focusNode,
+            enabled: widget.enabled,
             obscureText: widget.obscureText,
             keyboardType: widget.keyboardType,
             textInputAction: widget.textInputAction,
@@ -166,6 +171,7 @@ class _PillTextFieldState extends State<PillTextField> {
                   : Padding(padding: const EdgeInsets.only(right: 6), child: widget.suffix),
               border: border(),
               enabledBorder: border(),
+              disabledBorder: border(),
               focusedBorder: border(scheme.primary),
               errorBorder: border(scheme.error, 1),
               focusedErrorBorder: border(scheme.error),
