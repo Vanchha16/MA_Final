@@ -14,3 +14,5 @@ Thumbs.db
 
 # Third-party reference media (watermarked previews) - kept locally, not published
 docs/figma/*.mp4
+# Full-size ChatGPT banner originals (the app uses the small WebP copies)
+docs/banners/source/

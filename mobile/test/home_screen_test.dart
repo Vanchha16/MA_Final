@@ -50,7 +50,7 @@ void main() {
     expect(find.text('Hi there, welcome'), findsOneWidget);
     expect(find.byKey(const Key('series_all')), findsOneWidget);
     expect(find.byKey(const Key('series_2')), findsOneWidget);
-    expect(find.text('SAVE 11%'), findsOneWidget); // featured banner
+    expect(find.text('New scale figures'), findsOneWidget); // promo banner slider
     expect(find.text('Popular now'), findsOneWidget);
     expect(find.text('-11%'), findsOneWidget); // sale badge on the card
     expect(find.text(r'$169'), findsWidgets);
@@ -63,7 +63,7 @@ void main() {
 
     await _tap(tester, find.byKey(const Key('series_2')));
     expect(catalog.lastQuery!.seriesId, 2);
-    expect(find.text('SAVE 11%'), findsNothing);
+    expect(find.text('New scale figures'), findsNothing);
     expect(find.text('1 item'), findsOneWidget);
     expect(find.byKey(const Key('product_2')), findsOneWidget);
     expect(find.byKey(const Key('product_1')), findsNothing);
@@ -96,6 +96,17 @@ void main() {
     await _tap(tester, find.byKey(const Key('home_clear')));
     expect(catalog.lastQuery!.q, '');
     expect(find.text('Popular now'), findsOneWidget);
+  });
+
+  testWidgets('tapping a banner slide opens its category', (tester) async {
+    final catalog = FakeCatalogService();
+    await _pump(tester, catalog);
+
+    await _tap(tester, find.byKey(const Key('promo_banner_figures')));
+    expect(catalog.lastQuery!.categoryId, figures.id);
+    expect(find.text('Scale Figures'), findsOneWidget); // title is the category name
+    expect(find.byKey(const Key('product_1')), findsOneWidget);
+    expect(find.byKey(const Key('product_3')), findsNothing);
   });
 
   testWidgets('guests are asked to log in for the heart and the plus', (tester) async {
