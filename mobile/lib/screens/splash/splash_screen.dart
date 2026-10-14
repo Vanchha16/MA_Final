@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
-import '../home/home_screen.dart';
+import '../shell/main_shell.dart';
 import '../../widgets/sparkle.dart';
 
 /// Light & clean splash: pale sky background, twinkling sparkles and an aqua
@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     await Future.wait([auth.tryAutoLogin(), Future.delayed(_duration)]);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(
-      builder: (_) => auth.isLoggedIn ? const HomeScreen() : const LoginScreen(),
+      builder: (_) => auth.isLoggedIn ? const MainShell() : const LoginScreen(),
     ));
   }
 

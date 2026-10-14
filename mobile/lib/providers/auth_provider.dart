@@ -43,6 +43,12 @@ class AuthProvider extends ChangeNotifier {
             phone: phone,
           ));
 
+  /// Replace the signed-in user after a profile edit (name, phone, photo).
+  void updateUser(User user) {
+    _user = user;
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(ApiClient.tokenKey);
