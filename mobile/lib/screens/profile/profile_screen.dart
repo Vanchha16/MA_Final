@@ -131,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               PillButton.danger(
                 key: const Key('profile_logout'),
                 label: 'Log out',
-                leading: const AnimatedLogoutIcon(size: 20, color: Colors.white),
+                leadingIcon: Icons.logout_rounded,
                 onPressed: _confirmLogout,
               ),
             ],
