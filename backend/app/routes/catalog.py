@@ -3,7 +3,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 
 from ..extensions import db
-from ..models import Category, Product, Series
+from ..models import Category, Product, Series, absolute_url
 from ..utils.responses import error, success
 
 bp = Blueprint("catalog", __name__, url_prefix="/api")
@@ -26,21 +26,45 @@ def _with_relations(query):
     )
 
 
-@bp.get("/categories")
-def list_categories():
-    counts = dict(
-        db.session.query(Product.category_id, func.count(Product.id))
-        .filter(Product.is_active.is_(True))
-        .group_by(Product.category_id)
+def _counts_and_covers(group_column):
+    """Active product count per group, and a cover photo: the main photo of the
+    group's first featured product, else its first product that has a photo."""
+    products = (
+        _with_relations(Product.query)
+        .filter(Product.is_active.is_(True), group_column.isnot(None))
+        .order_by(Product.is_featured.desc(), Product.id)
         .all()
     )
+    counts, covers = {}, {}
+    for p in products:
+        key = getattr(p, group_column.key)
+        counts[key] = counts.get(key, 0) + 1
+        if key not in covers and p.images:
+            primary = next((i for i in p.images if i.is_primary), p.images[0])
+            covers[key] = absolute_url(primary.image_url)
+    return counts, covers
+
+
+@bp.get("/categories")
+def list_categories():
+    counts, covers = _counts_and_covers(Product.category_id)
     categories = Category.query.order_by(Category.id).all()
-    return success([{**c.to_dict(), "product_count": counts.get(c.id, 0)} for c in categories])
+    return success([
+        {**c.to_dict(), "product_count": counts.get(c.id, 0), "cover_image": covers.get(c.id) or c.image_url}
+        for c in categories
+    ])
 
 
 @bp.get("/series")
 def list_series():
-    return success([s.to_dict() for s in Series.query.order_by(Series.name).all()])
+    """Series that have products, most products first."""
+    counts, covers = _counts_and_covers(Product.series_id)
+    rows = [s for s in Series.query.order_by(Series.name).all() if counts.get(s.id)]
+    rows.sort(key=lambda s: -counts[s.id])
+    return success([
+        {**s.to_dict(), "product_count": counts[s.id], "cover_image": covers.get(s.id) or s.image_url}
+        for s in rows
+    ])
 
 
 @bp.get("/brands")

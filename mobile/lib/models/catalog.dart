@@ -5,13 +5,17 @@ class Category {
   final String slug;
   final int productCount;
 
-  const Category({required this.id, required this.name, required this.slug, this.productCount = 0});
+  /// Main photo of one of its products, for the Categories tiles.
+  final String? coverImage;
+
+  const Category({required this.id, required this.name, required this.slug, this.productCount = 0, this.coverImage});
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
         id: json['id'],
         name: json['name'],
         slug: json['slug'],
         productCount: json['product_count'] ?? 0,
+        coverImage: json['cover_image'],
       );
 
   /// Figures, plush, model kits or trading cards - picks the placeholder look.
@@ -30,10 +34,25 @@ class Series {
   final int id;
   final String name;
   final String slug;
+  final int productCount;
+  final String? coverImage;
 
-  const Series({required this.id, required this.name, required this.slug});
+  const Series({required this.id, required this.name, required this.slug, this.productCount = 0, this.coverImage});
 
-  factory Series.fromJson(Map<String, dynamic> json) => Series(id: json['id'], name: json['name'], slug: json['slug']);
+  factory Series.fromJson(Map<String, dynamic> json) => Series(
+        id: json['id'],
+        name: json['name'],
+        slug: json['slug'],
+        productCount: json['product_count'] ?? 0,
+        coverImage: json['cover_image'],
+      );
+
+  /// "OP" for One Piece, "SX" for Spy x Family - shown when there is no photo.
+  String get initials {
+    final words = name.replaceAll(RegExp(r'[^A-Za-z ]'), ' ').split(' ').where((w) => w.isNotEmpty).toList();
+    if (words.length == 1) return words.first.substring(0, words.first.length.clamp(0, 2)).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
 }
 
 class Product {
