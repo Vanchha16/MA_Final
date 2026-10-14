@@ -143,27 +143,34 @@ class _ProductCardState extends State<ProductCard> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Flexible(
-                            child: Text(formatPrice(p.finalPrice),
-                                maxLines: 1, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: accent)),
-                          ),
-                          if (p.onSale) ...[
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                formatPrice(p.price),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: scheme.onSurfaceVariant,
-                                  decoration: TextDecoration.lineThrough,
-                                  decorationColor: scheme.onSurfaceVariant,
+                          // Prices take the free space, so the button always sits at the right edge
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(formatPrice(p.finalPrice),
+                                      maxLines: 1, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: accent)),
                                 ),
-                              ),
+                                if (p.onSale) ...[
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      formatPrice(p.price),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: scheme.onSurfaceVariant,
+                                        decoration: TextDecoration.lineThrough,
+                                        decorationColor: scheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                          ],
-                          const Spacer(),
+                          ),
+                          const SizedBox(width: 8),
                           _AddButton(
                             key: Key('add_${p.id}'),
                             enabled: !p.soldOut,
