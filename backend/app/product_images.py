@@ -3,8 +3,9 @@
 Put photos in   backend/uploads/products/<product-slug>/   (jpg, png or webp).
 Files are used in name order: the first one is the main photo.
 Run:            flask --app run import-images
-Each photo is turned into a phone-friendly WebP (max 1000 px) in
-backend/uploads/catalog/ and the product's images are replaced.
+Each photo is made square (padded with its own edge color, never cropped),
+saved as a phone-friendly WebP (max 1000 px) in backend/uploads/catalog/,
+and the product's images are replaced.
 Products without a photo folder keep what they have.
 """
 import hashlib
@@ -13,7 +14,7 @@ import re
 from dataclasses import dataclass, field
 
 from flask import current_app
-from PIL import Image, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageOps, ImageStat, UnidentifiedImageError
 
 from .extensions import db
 from .models import Product, ProductImage
@@ -21,6 +22,7 @@ from .models import Product, ProductImage
 PHOTO_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_SIDE = 1000
 WEBP_QUALITY = 82
+MARGIN = 0.04  # space around the product, as a share of the photo's longer side
 NOTE_FILE = "_PUT_PHOTOS_HERE.txt"
 
 
@@ -50,8 +52,26 @@ def _photo_files(folder):
     return [os.path.join(folder, n) for n in sorted(names, key=_natural_key)]
 
 
+def _edge_color(img):
+    """Average color of the photo's outer border, used to extend its background."""
+    w, h = img.size
+    strips = [img.crop((0, 0, w, 1)), img.crop((0, h - 1, w, h)), img.crop((0, 0, 1, h)), img.crop((w - 1, 0, w, h))]
+    stats = [ImageStat.Stat(strip) for strip in strips]
+    count = sum(st.count[0] for st in stats)
+    return tuple(round(sum(st.sum[i] for st in stats) / count) for i in range(3))
+
+
+def _square(img):
+    """Center the photo on a square canvas so cards and tiles never have to crop it."""
+    w, h = img.size
+    side = round(max(w, h) * (1 + 2 * MARGIN))
+    canvas = Image.new("RGB", (side, side), _edge_color(img))
+    canvas.paste(img, ((side - w) // 2, (side - h) // 2))
+    return canvas
+
+
 def _to_webp(path):
-    """Open any photo, fix its rotation, put transparency on white and shrink it."""
+    """Open any photo, fix its rotation, put transparency on white, make it square and shrink it."""
     with Image.open(path) as img:
         img = ImageOps.exif_transpose(img)
         if img.mode in ("RGBA", "LA", "P"):
@@ -61,6 +81,7 @@ def _to_webp(path):
             img = white
         else:
             img = img.convert("RGB")
+        img = _square(img)
         img.thumbnail((MAX_SIDE, MAX_SIDE), Image.LANCZOS)
         return img
 
