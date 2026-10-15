@@ -12,6 +12,9 @@ class FakeCartService extends CartService {
   int _nextId = 1;
   bool fail = false;
 
+  /// How many quantity changes reached the "server".
+  int updates = 0;
+
   FakeCartService({Map<int, int> items = const {}}) {
     items.forEach((productId, qty) => _lines.add((_nextId++, demoProducts.firstWhere((p) => p.id == productId), qty)));
   }
@@ -77,6 +80,7 @@ class FakeCartService extends CartService {
   @override
   Future<Cart> update(int lineId, int quantity, {String? coupon}) async {
     _check();
+    updates++;
     final i = _lines.indexWhere((l) => l.$1 == lineId);
     if (quantity > _lines[i].$2.stock) throw ApiException('Only ${_lines[i].$2.stock} available for this item', statusCode: 409);
     _lines[i] = (_lines[i].$1, _lines[i].$2, quantity);
