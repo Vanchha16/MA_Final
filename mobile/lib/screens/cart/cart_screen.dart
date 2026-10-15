@@ -19,7 +19,7 @@ import '../../widgets/icon_circle.dart';
 import '../../widgets/pill_button.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/product_image.dart';
-import '../../widgets/quantity_stepper.dart';
+import '../../widgets/quantity_chip.dart';
 import '../auth/login_screen.dart';
 import '../shell/main_shell.dart';
 import '../shop/shop_actions.dart';
@@ -49,7 +49,6 @@ class _CartScreenState extends State<CartScreen> {
   String? _coupon;
   String? _promoError;
   bool _applying = false;
-  final Set<int> _busyLines = {};
   bool? _signedIn;
   int? _knownCount;
 
@@ -118,14 +117,15 @@ class _CartScreenState extends State<CartScreen> {
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(message), action: action, behavior: SnackBarBehavior.floating));
 
+  /// The quantity chip sends one change after the customer stops tapping or typing.
   Future<void> _setQuantity(CartLine line, int quantity) async {
-    setState(() => _busyLines.add(line.id));
     try {
-      _show(await _service.update(line.id, quantity, coupon: _coupon));
+      final cart = await _service.update(line.id, quantity, coupon: _coupon);
+      if (mounted) _show(cart);
     } on ApiException catch (e) {
+      if (!mounted) return;
       _snack(e.message);
-    } finally {
-      if (mounted) setState(() => _busyLines.remove(line.id));
+      await _load(); // put the chip back to what the server has
     }
   }
 
@@ -266,8 +266,8 @@ class _CartScreenState extends State<CartScreen> {
               _LineRow(
                 key: ValueKey('line_${line.id}'),
                 line: line,
-                busy: _busyLines.contains(line.id),
                 onQuantity: (q) => _setQuantity(line, q),
+                onTooMany: (max) => _snack('Only $max available for this item'),
                 onRemove: () => _remove(line),
                 onOpen: () => ShopActions.openProduct(context, line.product, catalog: widget.catalogService),
               ),
@@ -404,11 +404,10 @@ class _CartPreview extends StatelessWidget {
 
 class _LineRow extends StatelessWidget {
   final CartLine line;
-  final bool busy;
-  final ValueChanged<int> onQuantity;
+  final ValueChanged<int> onQuantity, onTooMany;
   final VoidCallback onRemove, onOpen;
 
-  const _LineRow({super.key, required this.line, required this.busy, required this.onQuantity, required this.onRemove, required this.onOpen});
+  const _LineRow({super.key, required this.line, required this.onQuantity, required this.onTooMany, required this.onRemove, required this.onOpen});
 
   @override
   Widget build(BuildContext context) {
@@ -482,16 +481,14 @@ class _LineRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Opacity(
-              opacity: busy ? 0.5 : 1,
-              child: QuantityStepper(
-                key: Key('stepper_${line.id}'),
-                keyPrefix: 'line_${line.id}',
-                value: line.quantity,
-                max: line.maxQuantity < line.quantity ? line.quantity : line.maxQuantity,
-                compact: true,
-                onChanged: busy || p.soldOut ? null : onQuantity,
-              ),
+            QuantityChip(
+              key: Key('stepper_${line.id}'),
+              keyPrefix: 'line_${line.id}',
+              value: line.quantity,
+              max: line.maxQuantity < line.quantity ? line.quantity : line.maxQuantity,
+              onChanged: p.soldOut ? null : onQuantity,
+              onRemove: onRemove,
+              onTooMany: onTooMany,
             ),
           ],
         ),
