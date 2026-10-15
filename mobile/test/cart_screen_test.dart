@@ -4,6 +4,7 @@ import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/providers/theme_provider.dart';
 import 'package:ecommerce_app/screens/cart/cart_screen.dart';
+import 'package:ecommerce_app/widgets/quantity_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -45,6 +46,15 @@ Future<void> _tap(WidgetTester tester, Finder f) async {
 
 String _text(WidgetTester tester, String key) => tester.widget<Text>(find.byKey(Key(key))).data!;
 
+String _field(WidgetTester tester, String key) => tester.widget<TextField>(find.byKey(Key(key))).controller!.text;
+
+/// Waits for the chip to send its change and the cart to update.
+Future<void> _send(WidgetTester tester) async {
+  await tester.pump(QuantityChip.sendAfter);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 100));
+}
+
 void main() {
   // Luffy $169 (was $189) x1, One Piece pack #3 $5 x2
   final items = {1: 1, 3: 2};
@@ -68,12 +78,57 @@ void main() {
     expect(_text(tester, 'sum_total'), r'$12');
   });
 
-  testWidgets('the stepper changes the amount and the cart badge', (tester) async {
+  testWidgets('the ×2 chip opens a stepper; fast taps make one request', (tester) async {
+    final cart = FakeCartService(items: items);
+    await _pump(tester, cart);
+    expect(_text(tester, 'line_2_value'), '×2');
+
+    await _tap(tester, find.byKey(const Key('line_2_chip')));
+    expect(_field(tester, 'line_2_field'), '2');
+    await tester.tap(find.byKey(const Key('line_2_plus')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('line_2_plus')));
+    await tester.pump();
+    expect(_field(tester, 'line_2_field'), '4'); // shows right away
+    expect(cart.updates, 0);
+
+    await _send(tester);
+    expect(cart.updates, 1);
+    expect(_text(tester, 'sum_subtotal'), r'$189');
+    expect(_shop.cartCount, 5);
+
+    await tester.pump(QuantityChip.closeAfter); // closes by itself
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const Key('line_2_field')), findsNothing);
+    expect(_text(tester, 'line_2_value'), '×4');
+  });
+
+  testWidgets('the amount can be typed, and too many is lowered to the stock', (tester) async {
     await _pump(tester, FakeCartService(items: items));
-    await _tap(tester, find.byKey(const Key('line_2_plus'))); // pack #3 -> 3
-    expect(_text(tester, 'line_2_value'), '3');
-    expect(_text(tester, 'sum_subtotal'), r'$184');
-    expect(_shop.cartCount, 4);
+    await _tap(tester, find.byKey(const Key('line_2_chip')));
+    await tester.enterText(find.byKey(const Key('line_2_field')), '12');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await _send(tester);
+    expect(_text(tester, 'sum_subtotal'), r'$229'); // 169 + 12 x 5
+
+    // Luffy has only 5 in stock
+    await _tap(tester, find.byKey(const Key('line_1_chip')));
+    await tester.enterText(find.byKey(const Key('line_1_field')), '9');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await _send(tester);
+    expect(find.text('Only 5 available for this item'), findsOneWidget);
+    expect(_field(tester, 'line_1_field'), '5');
+    expect(_text(tester, 'sum_subtotal'), r'$905');
+  });
+
+  testWidgets('at 1 the minus is a trash button that removes with Undo', (tester) async {
+    await _pump(tester, FakeCartService(items: items));
+    await _tap(tester, find.byKey(const Key('line_1_chip'))); // Luffy x1
+    expect(find.byKey(const Key('line_1_minus')), findsNothing);
+    await _tap(tester, find.byKey(const Key('line_1_trash')));
+    expect(find.byKey(const ValueKey('line_1')), findsNothing);
+    expect(find.textContaining('Removed'), findsOneWidget);
+    expect(_shop.cartCount, 2);
   });
 
   testWidgets('swipe left removes an item and Undo brings it back', (tester) async {
