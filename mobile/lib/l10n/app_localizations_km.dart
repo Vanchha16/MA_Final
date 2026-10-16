@@ -461,4 +461,114 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get stageCancelled => 'បានលុបចោល';
+
+  @override
+  String get adminTitle => 'អ្នកគ្រប់គ្រងហាង';
+
+  @override
+  String get adminEntrySub => 'ការបញ្ជាទិញ ផលិតផល និងអតិថិជន';
+
+  @override
+  String goodMorning(String name) {
+    return 'អរុណសួស្តី $name';
+  }
+
+  @override
+  String goodAfternoon(String name) {
+    return 'ទិវាសួស្តី $name';
+  }
+
+  @override
+  String goodEvening(String name) {
+    return 'សាយ័ណ្ហសួស្តី $name';
+  }
+
+  @override
+  String get adminShop => 'ហាង';
+
+  @override
+  String get revenuePaid => 'ចំណូល (បានបង់)';
+
+  @override
+  String thisWeek(String amount) {
+    return '+ $amount សប្តាហ៍នេះ';
+  }
+
+  @override
+  String get today => 'ថ្ងៃនេះ';
+
+  @override
+  String get toHandle => 'ត្រូវដោះស្រាយ';
+
+  @override
+  String get lowStock => 'ស្តុកតិច';
+
+  @override
+  String get messagesLabel => 'សារ';
+
+  @override
+  String get liveActivity => 'សកម្មភាពផ្ទាល់';
+
+  @override
+  String get noActivity =>
+      'មិនទាន់មានទេ។ ការបញ្ជាទិញ និងសារថ្មីនឹងបង្ហាញនៅទីនេះ។';
+
+  @override
+  String get actConfirm => 'បញ្ជាក់';
+
+  @override
+  String get actShip => 'ដឹកចេញ';
+
+  @override
+  String get actReply => 'ឆ្លើយតប';
+
+  @override
+  String get actRestock => 'បន្ថែមស្តុក';
+
+  @override
+  String get doneConfirmed => 'បានបញ្ជាក់ · បានប្រាប់អតិថិជន';
+
+  @override
+  String get doneShipped => 'បានដឹកចេញ · បានប្រាប់អតិថិជន';
+
+  @override
+  String get doneReplied => 'បានឆ្លើយតប';
+
+  @override
+  String doneRestocked(int count) {
+    return 'មានស្តុក $count';
+  }
+
+  @override
+  String get replyTitle => 'ឆ្លើយតបអតិថិជន';
+
+  @override
+  String get replyHint => 'ចម្លើយរបស់អ្នកនឹងទៅកាន់ការជូនដំណឹងរបស់គេ';
+
+  @override
+  String get sendReply => 'ផ្ញើចម្លើយ';
+
+  @override
+  String get restockTitle => 'ឥឡូវមានស្តុកប៉ុន្មាន?';
+
+  @override
+  String get saveStock => 'រក្សាទុកស្តុក';
+
+  @override
+  String get navDashboard => 'ផ្ទាំងគ្រប់គ្រង';
+
+  @override
+  String get navOrders => 'ការបញ្ជាទិញ';
+
+  @override
+  String get navProducts => 'ផលិតផល';
+
+  @override
+  String get navMore => 'ច្រើនទៀត';
+
+  @override
+  String get addProduct => 'បន្ថែមផលិតផល';
+
+  @override
+  String get adminComingSoon => 'ផ្នែកនេះនឹងមកដល់បន្ទាប់។';
 }

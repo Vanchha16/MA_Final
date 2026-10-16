@@ -10,6 +10,7 @@ import '../../widgets/pill_button.dart';
 import '../../widgets/icon_title.dart';
 import '../../widgets/mascot_greeting.dart';
 import '../../widgets/pill_text_field.dart';
+import '../admin/admin_shell.dart';
 import '../shell/main_shell.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
@@ -76,7 +77,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   void _goHome() {
     if (!mounted) return;
     // Clear the auth screens (and any guest shell underneath) and open the app
-    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const MainShell()), (_) => false);
+    final admin = context.read<AuthProvider>().user?.isAdmin ?? false;
+    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => admin ? const AdminShell() : const MainShell()), (_) => false);
   }
 
   void _fillDemo() {

@@ -463,4 +463,113 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stageCancelled => 'Cancelled';
+
+  @override
+  String get adminTitle => 'Shop admin';
+
+  @override
+  String get adminEntrySub => 'Orders, products and customers';
+
+  @override
+  String goodMorning(String name) {
+    return 'Good morning, $name';
+  }
+
+  @override
+  String goodAfternoon(String name) {
+    return 'Good afternoon, $name';
+  }
+
+  @override
+  String goodEvening(String name) {
+    return 'Good evening, $name';
+  }
+
+  @override
+  String get adminShop => 'Shop';
+
+  @override
+  String get revenuePaid => 'Revenue (paid)';
+
+  @override
+  String thisWeek(String amount) {
+    return '+ $amount this week';
+  }
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get toHandle => 'To handle';
+
+  @override
+  String get lowStock => 'Low stock';
+
+  @override
+  String get messagesLabel => 'Messages';
+
+  @override
+  String get liveActivity => 'Live activity';
+
+  @override
+  String get noActivity => 'Nothing yet. New orders and messages show up here.';
+
+  @override
+  String get actConfirm => 'Confirm';
+
+  @override
+  String get actShip => 'Ship it';
+
+  @override
+  String get actReply => 'Reply';
+
+  @override
+  String get actRestock => 'Restock';
+
+  @override
+  String get doneConfirmed => 'Confirmed · customer told';
+
+  @override
+  String get doneShipped => 'Shipped · customer told';
+
+  @override
+  String get doneReplied => 'Replied';
+
+  @override
+  String doneRestocked(int count) {
+    return '$count in stock';
+  }
+
+  @override
+  String get replyTitle => 'Reply to the customer';
+
+  @override
+  String get replyHint => 'Your answer goes to their Notifications';
+
+  @override
+  String get sendReply => 'Send reply';
+
+  @override
+  String get restockTitle => 'How many are in stock now?';
+
+  @override
+  String get saveStock => 'Save stock';
+
+  @override
+  String get navDashboard => 'Dashboard';
+
+  @override
+  String get navOrders => 'Orders';
+
+  @override
+  String get navProducts => 'Products';
+
+  @override
+  String get navMore => 'More';
+
+  @override
+  String get addProduct => 'Add product';
+
+  @override
+  String get adminComingSoon => 'This part of the admin comes next.';
 }

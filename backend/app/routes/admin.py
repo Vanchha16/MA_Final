@@ -9,7 +9,7 @@ from slugify import slugify
 from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 
-from ..admin_ops import AdminError, delete_category, next_statuses, reply_contact, set_customer_active, set_order_status, stats
+from ..admin_ops import AdminError, activity, delete_category, next_statuses, reply_contact, set_customer_active, set_order_status, stats
 from ..extensions import db
 from ..models import Category, ContactMessage, Order, OrderItem, Product, ProductImage, Series, User
 from ..product_images import add_uploaded_photo, remove_photo
@@ -53,6 +53,13 @@ def _body():
 @admin_required
 def dashboard():
     return success(stats())
+
+
+@bp.get("/activity")
+@admin_required
+def live_activity():
+    """The dashboard's Live activity feed. Query: limit (default 20, max 50)."""
+    return success(activity(min(max(request.args.get("limit", 20, type=int), 1), 50)))
 
 
 # ---------------------------------------------------------------------------

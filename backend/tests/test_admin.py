@@ -191,3 +191,33 @@ def test_stats(client, user, admin, catalog):
     data = client.get("/api/admin/stats", headers=_h(client)).get_json()["data"]
     assert data["products"] == 1 and data["customers"] == 1 and data["orders_to_handle"] == 1
     assert data["revenue"] == 378.0 and data["low_stock"] == 1
+
+
+def test_activity_feed_and_week_revenue(client, user, admin, catalog):
+    from app.models import ContactMessage
+    from app.utils.clock import utcnow
+
+    _, luffy = catalog
+    cash = _order(user, luffy, qty=1)
+    khqr = _order(user, luffy, status="confirmed", payment="khqr", paid="paid", qty=1)
+    db.session.add(Payment(order_id=khqr.id, provider="mock", qr="x", md5="1" * 32, amount=khqr.total, status="paid",
+                           expires_at=utcnow(), paid_at=utcnow()))
+    db.session.add(ContactMessage(user_id=user.id, topic="other", message="Posters?"))
+    luffy.stock = 0
+    db.session.commit()
+    h = _h(client)
+
+    events = {e["id"]: e for e in client.get("/api/admin/activity", headers=h).get_json()["data"]}
+    assert events[f"order-{cash.id}"]["action"] == "confirm"
+    assert events[f"paid-{khqr.id}"]["action"] == "ship" and events[f"paid-{khqr.id}"]["kind"] == "paid"
+    assert events[f"order-{khqr.id}"]["action"] is None  # the payment event carries Ship
+    assert next(e for e in events.values() if e["kind"] == "message")["action"] == "reply"
+    assert events[f"stock-{luffy.id}"]["action"] == "restock"
+
+    client.put(f"/api/admin/orders/{khqr.id}/status", json={"status": "shipped"}, headers=h)
+    events = {e["id"]: e for e in client.get("/api/admin/activity", headers=h).get_json()["data"]}
+    assert events[f"paid-{khqr.id}"]["action"] is None and events[f"paid-{khqr.id}"]["status"] == "shipped"
+
+    stats = client.get("/api/admin/stats", headers=h).get_json()["data"]
+    assert len(stats["week"]) == 7 and stats["week"][-1]["date"] == utcnow().date().isoformat()
+    assert stats["week"][-1]["revenue"] == 189.0 and stats["week_revenue"] == 189.0
