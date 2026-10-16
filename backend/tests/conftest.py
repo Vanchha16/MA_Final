@@ -11,6 +11,7 @@ class TestConfig(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite://"
     MAIL_MODE = "console"
     RESET_RESEND_SECONDS = 0  # tests may request several codes in a row
+    RATELIMIT_ENABLED = False  # test_validation.py turns the limits on where it tests them
 
 
 @pytest.fixture()

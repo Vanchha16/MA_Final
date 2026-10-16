@@ -14,6 +14,7 @@ from ..extensions import db
 from ..models import Category, ContactMessage, Order, OrderItem, Product, ProductImage, Series, User
 from ..product_images import add_uploaded_photo, remove_photo
 from ..utils.responses import error, success
+from ..utils.validators import STOCK_MAX, Fields, json_body
 
 bp = Blueprint("admin_api", __name__, url_prefix="/api/admin")
 
@@ -46,7 +47,7 @@ def _page(query, item):
 
 
 def _body():
-    return request.get_json(silent=True) or {}
+    return json_body()
 
 
 @bp.get("/stats")
@@ -82,72 +83,62 @@ def _unique_slug(name, product_id=None):
     return slug
 
 
-def _number(value, *, whole=False):
-    try:
-        return int(value) if whole else float(value)
-    except (TypeError, ValueError):
-        return None
-
-
 def _apply_product(product, data, creating):
     """Checks and copies the fields that were sent. On create, name, category_id and price are required."""
-    errors = {}
-    fields = set(data)
-    if creating:
-        for f in ("name", "category_id", "price"):
-            if data.get(f) in (None, ""):
-                errors[f] = f"{f} is required"
-
-    if "name" in fields and not errors.get("name"):
-        name = str(data["name"] or "").strip()
-        if not name:
-            errors["name"] = "name is required"
-        elif len(name) > 150:
-            errors["name"] = "Keep the name under 150 characters"
-        else:
+    f = Fields(data)
+    if creating or f.has("name"):
+        name = f.text("name", required=True, max_len=150)
+        if name:
             product.name = name
             product.slug = _unique_slug(name, product.id)
-    if "category_id" in fields and not errors.get("category_id"):
-        category = db.session.get(Category, _number(data["category_id"], whole=True) or 0)
-        if category is None:
-            errors["category_id"] = "Category not found"
-        else:
-            product.category = category
-    if "series_id" in fields:
+    if creating or f.has("category_id"):
+        category_id = f.integer("category_id", required=True, min_value=1)
+        if category_id is not None:
+            category = db.session.get(Category, category_id)
+            if category is None:
+                f.errors["category_id"] = "Category not found"
+            else:
+                product.category = category
+    if f.has("series_id"):
         if data["series_id"] in (None, ""):
             product.series = None
-        elif (series := db.session.get(Series, _number(data["series_id"], whole=True) or 0)) is None:
-            errors["series_id"] = "Series not found"
         else:
-            product.series = series
-    if "price" in fields and not errors.get("price"):
-        price = _number(data["price"])
-        if price is None or price <= 0:
-            errors["price"] = "Price must be more than 0"
-        else:
+            series_id = f.integer("series_id", min_value=1)
+            if series_id is not None:
+                series = db.session.get(Series, series_id)
+                if series is None:
+                    f.errors["series_id"] = "Series not found"
+                else:
+                    product.series = series
+    if creating or f.has("price"):
+        price = f.money("price", required=True, label="Price")
+        if price is not None:
             product.price = price
-    if "discount_price" in fields:
-        discount = None if data["discount_price"] in (None, "") else _number(data["discount_price"])
-        price = float(product.price) if product.price is not None else None
-        if data["discount_price"] not in (None, "") and (discount is None or discount <= 0):
-            errors["discount_price"] = "Sale price must be more than 0"
-        elif discount is not None and price is not None and discount >= price:
-            errors["discount_price"] = "Sale price must be lower than the price"
+    if f.has("discount_price"):
+        if data["discount_price"] in (None, ""):
+            product.discount_price = None
         else:
-            product.discount_price = discount
-    if "stock" in fields:
-        stock = _number(data["stock"], whole=True)
-        if stock is None or stock < 0:
-            errors["stock"] = "Stock must be 0 or more"
-        else:
+            discount = f.money("discount_price", label="Sale price")
+            if discount is not None:
+                product.discount_price = discount
+    if f.has("stock"):
+        stock = f.integer("stock", required=True, min_value=0, max_value=STOCK_MAX, label="Stock")
+        if stock is not None:
             product.stock = stock
-    for f in ("brand", "description"):
-        if f in fields:
-            setattr(product, f, (str(data[f]).strip() or None) if data[f] is not None else None)
-    for f in ("is_featured", "is_active"):
-        if f in fields:
-            setattr(product, f, bool(data[f]))
-    return errors
+    if f.has("brand"):
+        product.brand = f.text("brand", max_len=100, label="Brand")
+    if f.has("description"):
+        product.description = f.text("description", max_len=5000, label="Description")
+    for name in ("is_featured", "is_active"):
+        if f.has(name):
+            value = f.boolean(name)
+            if value is not None:
+                setattr(product, name, value)
+    # Checked on the result, so lowering only the price can't leave a dearer "sale" price
+    if (product.discount_price is not None and product.price is not None
+            and float(product.discount_price) >= float(product.price) and "price" not in f.errors):
+        f.errors.setdefault("discount_price", "Sale price must be lower than the price")
+    return f.errors
 
 
 def _admin_product(product_id):
@@ -270,7 +261,10 @@ def _category_dict(c, counts=None):
 def _apply_category(category, data, creating):
     errors = {}
     if creating or "name" in data:
-        name = str(data.get("name") or "").strip()
+        name = data.get("name")
+        if name is not None and not isinstance(name, str):
+            return {"name": "name must be text"}
+        name = (name or "").strip()
         if not name:
             errors["name"] = "name is required"
         elif len(name) > 100:
@@ -286,7 +280,9 @@ def _apply_category(category, data, creating):
                     taken = Category.query.filter_by(slug=slug).first()
                     category.slug = slug if taken is None or taken.id == category.id else f"{slug}-{Category.query.count() + 1}"
     if "description" in data:
-        category.description = (str(data["description"]).strip() or None) if data["description"] is not None else None
+        f = Fields(data)
+        category.description = f.text("description", max_len=1000, label="Description")
+        errors.update(f.errors)
     return errors
 
 

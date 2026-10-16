@@ -26,6 +26,10 @@ class Config:
     RESET_MAX_PER_HOUR = 5           # code requests per user per hour
     RESET_MAX_ATTEMPTS = 5           # wrong codes before a code is locked
 
+    # Attempt limits (Flask-Limiter); tests turn them off except where they test them
+    RATELIMIT_ENABLED = True
+    RATELIMIT_HEADERS_ENABLED = True
+
     # Email: "console" prints codes to the server log (development);
     # "smtp" sends real email using the MAIL_* settings below.
     MAIL_MODE = os.getenv("MAIL_MODE", "console")

@@ -11,4 +11,5 @@ python-slugify>=8.0
 bakong-khqr==0.6.5
 Flask-Admin>=2.2
 Flask-Login>=0.6
+Flask-Limiter>=3.8
 swagger-ui-bundle>=1.1

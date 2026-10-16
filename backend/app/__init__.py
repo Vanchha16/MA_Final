@@ -3,7 +3,7 @@ from flask import Flask, send_from_directory
 
 from .config import Config
 from .errors import register_error_handlers
-from .extensions import bcrypt, cors, db, jwt
+from .extensions import bcrypt, cors, db, jwt, limiter
 from .utils.responses import success
 
 
@@ -16,6 +16,7 @@ def create_app(config_class=Config):
     jwt.init_app(app)
     bcrypt.init_app(app)
     cors.init_app(app)
+    limiter.init_app(app)
 
     from .routes import admin, auth, catalog, contact, notifications, orders, profile, reviews, shop
 

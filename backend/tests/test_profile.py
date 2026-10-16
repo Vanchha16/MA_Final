@@ -2,11 +2,20 @@ import io
 
 import pytest
 from conftest import login_token
+from PIL import Image
 
 from app.extensions import db
 from app.models import Category, Favorite, Order, OrderItem, Product, Review
 
-PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+def _png():
+    """A real 8x8 PNG (the server opens uploads with Pillow)."""
+    out = io.BytesIO()
+    Image.new("RGB", (8, 8), (2, 132, 199)).save(out, "PNG")
+    return out.getvalue()
+
+
+PNG = _png()
+FAKE_PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64  # right first bytes, not a picture
 
 
 @pytest.fixture()
@@ -94,7 +103,7 @@ def test_avatar_upload(app, client, auth, tmp_path):
                       data={"file": (io.BytesIO(PNG), "me.png")}, content_type="multipart/form-data")
     assert res.status_code == 200
     url = res.get_json()["data"]["avatar_url"]
-    assert url.startswith("http://localhost/uploads/avatars/") and url.endswith(".png")
+    assert url.startswith("http://localhost/uploads/avatars/") and url.endswith(".webp")  # saved again as WebP
     assert len(list((tmp_path / "avatars").iterdir())) == 1
 
     # The file is served back
