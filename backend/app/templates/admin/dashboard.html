@@ -1,0 +1,69 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<div class="row">
+  {% for label, value, icon, color, link in [
+      ('Revenue (paid)', '$%.2f' % stats.revenue, 'fa-money', '#16A34A', url_for('admin_orders.index_view')),
+      ('Orders to handle', stats.orders_to_handle, 'fa-inbox', '#F59E0B', url_for('admin_orders.index_view')),
+      ('Products in shop', stats.products, 'fa-cube', '#0284C7', url_for('admin_products.index_view')),
+      ('Low stock (3 or less)', stats.low_stock, 'fa-exclamation-triangle', '#DC2626', url_for('admin_products.index_view')),
+      ('Customers', stats.customers, 'fa-users', '#7C3AED', url_for('admin_customers.index_view')),
+      ('Open messages', stats.open_messages, 'fa-comments', '#06B6D4', url_for('admin_messages.index_view')),
+  ] %}
+  <div class="col-sm-6 col-lg-4 col-xl-2 mb-3">
+    <a href="{{ link }}" class="text-reset text-decoration-none">
+      <div class="card stat p-3 h-100">
+        <div class="icon mb-2" style="background: {{ color }}22; color: {{ color }};"><i class="fa {{ icon }}"></i></div>
+        <div class="num">{{ value }}</div>
+        <div class="label">{{ label }}</div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row">
+  <div class="col-lg-7 mb-3">
+    <div class="card p-3 h-100">
+      <h5 class="font-weight-bold">Orders to handle</h5>
+      {% if orders %}
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Pay by</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for o in orders %}
+          <tr>
+            <td><a href="{{ url_for('admin_orders.details_view', id=o.id) }}">{{ o.order_number }}</a></td>
+            <td>{{ o.user.full_name }}</td>
+            <td>${{ '%.2f' % o.total }}</td>
+            <td>{{ o.payment_method|upper }}{% if o.payment_status == 'paid' %} <span class="badge badge-success">paid</span>{% endif %}</td>
+            <td><span class="badge badge-{{ 'warning' if o.status == 'pending' else 'info' }}">{{ o.status }}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="muted mb-0">Nothing waiting. All orders are on their way.</p>{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5 mb-3">
+    <div class="card p-3 mb-3">
+      <h5 class="font-weight-bold">Open messages</h5>
+      {% for m in messages %}
+        <div class="py-2 border-top">
+          <a href="{{ url_for('admin_messages.edit_view', id=m.id) }}">{{ m.topic|capitalize }}{% if m.order %} · {{ m.order.order_number }}{% endif %}</a>
+          <div class="muted small">{{ m.message|truncate(90) }}</div>
+        </div>
+      {% else %}<p class="muted mb-0">No questions waiting for a reply.</p>{% endfor %}
+    </div>
+    <div class="card p-3">
+      <h5 class="font-weight-bold">Low stock</h5>
+      {% for p in low %}
+        <div class="d-flex align-items-center py-1 border-top">
+          {% if p.photo_url %}<img src="{{ p.photo_url }}" class="thumb mr-2" alt="">{% endif %}
+          <a class="flex-grow-1" href="{{ url_for('admin_products.edit_view', id=p.id) }}">{{ p.name }}</a>
+          <span class="badge badge-{{ 'danger' if p.stock == 0 else 'warning' }}">{{ p.stock }} left</span>
+        </div>
+      {% else %}<p class="muted mb-0">Everything is well stocked.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,6 +1,7 @@
 from werkzeug.exceptions import HTTPException
 
 from .extensions import db, jwt
+from .models import User
 from .utils.responses import error
 
 
@@ -36,3 +37,15 @@ def register_error_handlers(app):
     @jwt.token_verification_failed_loader
     def wrong_token_type(header, payload):
         return error("Invalid token", 401)
+
+    # A blocked customer's token stops working at once, not only at the next login
+    @jwt.token_in_blocklist_loader
+    def blocked_account(header, payload):
+        if payload.get("purpose") is not None:
+            return False
+        user = db.session.get(User, int(payload["sub"]))
+        return user is None or not user.is_active
+
+    @jwt.revoked_token_loader
+    def account_disabled(header, payload):
+        return error("This account has been disabled", 403)

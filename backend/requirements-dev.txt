@@ -1,1 +1,2 @@
 pytest>=8.0
+openapi-spec-validator>=0.7

@@ -1,5 +1,6 @@
 """SQLAlchemy models. These mirror docs/database/schema.sql - keep the two in sync."""
 from flask import has_request_context, request
+from flask_login import UserMixin
 
 from .extensions import db
 from .utils.clock import utcnow
@@ -16,7 +17,7 @@ class TimestampMixin:
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
 
-class User(TimestampMixin, db.Model):
+class User(UserMixin, TimestampMixin, db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -39,6 +40,9 @@ class User(TimestampMixin, db.Model):
     notify_orders = db.Column(db.Boolean, nullable=False, default=True)
     notify_offers = db.Column(db.Boolean, nullable=False, default=True)
     notify_news = db.Column(db.Boolean, nullable=False, default=True)
+
+    def __str__(self):
+        return f"{self.full_name} <{self.email}>"
 
     def to_dict(self):
         return {
@@ -108,6 +112,9 @@ class Category(TimestampMixin, db.Model):
 
     products = db.relationship("Product", backref="category")
 
+    def __str__(self):
+        return self.name
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -128,6 +135,9 @@ class Series(TimestampMixin, db.Model):
     image_url = db.Column(db.String(255))
 
     products = db.relationship("Product", backref="series")
+
+    def __str__(self):
+        return self.name
 
     def to_dict(self):
         return {"id": self.id, "name": self.name, "slug": self.slug, "image_url": self.image_url}
@@ -165,6 +175,9 @@ class Product(TimestampMixin, db.Model):
         """Absolute URL of the main photo, or None."""
         primary = next((i for i in self.images if i.is_primary), self.images[0] if self.images else None)
         return absolute_url(primary.image_url) if primary else None
+
+    def __str__(self):
+        return self.name
 
     def to_dict(self):
         ratings = [r.rating for r in self.reviews]
@@ -256,6 +269,9 @@ class Order(TimestampMixin, db.Model):
     updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     items = db.relationship("OrderItem", backref="order", cascade="all, delete-orphan")
+
+    def __str__(self):
+        return self.order_number
 
     def to_dict(self, with_items=False):
         data = {
