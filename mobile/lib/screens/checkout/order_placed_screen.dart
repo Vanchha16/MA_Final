@@ -7,6 +7,7 @@ import '../../core/utils/format.dart';
 import '../../models/order.dart';
 import '../../widgets/pill_button.dart';
 import '../shell/main_shell.dart';
+import 'khqr_payment_screen.dart';
 
 /// Shown right after Place order: the order number, what happens next
 /// (pay with KHQR, or pay the rider / at the shop) and where to go now.
@@ -244,7 +245,7 @@ class OrderPlacedScreen extends StatelessWidget {
                   key: const Key('placed_pay'),
                   label: 'Pay ${formatPrice(order.total)} with KHQR',
                   leadingIcon: Icons.qr_code_2_rounded,
-                  onPressed: () => _soon(context, 'KHQR payment'),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => KhqrPaymentScreen(order: order))),
                 ),
                 const SizedBox(height: 12),
               ],

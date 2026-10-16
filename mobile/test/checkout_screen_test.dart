@@ -5,6 +5,7 @@ import 'package:ecommerce_app/models/user.dart';
 import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/screens/checkout/checkout_screen.dart';
+import 'package:ecommerce_app/screens/checkout/khqr_payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +15,7 @@ import 'fakes/shop_fakes.dart';
 
 /// Cart: 1 Luffy figure ($169) + 2 packs ($5) = $179, so delivery is free.
 /// A host page pushes the checkout and keeps what it pops with.
-Future<(ShopProvider, List<Object?>)> _pump(WidgetTester tester, FakeCheckoutService service, {String? coupon}) async {
+Future<(ShopProvider, List<Object?>)> _pump(WidgetTester tester, FakeCheckoutService service, {String? coupon, FakePaymentService? payments}) async {
   tester.view.physicalSize = const Size(412, 1500) * 2; // tall, so the whole page is built
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
@@ -32,7 +33,7 @@ Future<(ShopProvider, List<Object?>)> _pump(WidgetTester tester, FakeCheckoutSer
           body: Center(
             child: TextButton(
               key: const Key('open'),
-              onPressed: () async => results.add(await Navigator.of(context).push(MaterialPageRoute(builder: (_) => CheckoutScreen(coupon: coupon, service: service)))),
+              onPressed: () async => results.add(await Navigator.of(context).push(MaterialPageRoute(builder: (_) => CheckoutScreen(coupon: coupon, service: service, paymentService: payments ?? FakePaymentService())))),
               child: const Text('Open'),
             ),
           ),
@@ -45,31 +46,86 @@ Future<(ShopProvider, List<Object?>)> _pump(WidgetTester tester, FakeCheckoutSer
   return (shop, results);
 }
 
+/// The KHQR screen keeps a spinner and a timer running, so pump a fixed time instead of settling.
 Future<void> _place(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('checkout_place')));
-  await tester.pumpAndSettle();
+  await tester.pump();
+  await tester.pump(const Duration(seconds: 1));
 }
 
 void main() {
-  testWidgets('places a KHQR order to the default address with the cart promo code', (tester) async {
+  testWidgets('places a KHQR order to the default address with the cart promo code, then pays', (tester) async {
     final service = FakeCheckoutService(addresses: [FakeCheckoutService.work, FakeCheckoutService.home]);
-    final (shop, results) = await _pump(tester, service, coupon: 'WELCOME10');
+    final payments = FakePaymentService();
+    final (shop, results) = await _pump(tester, service, coupon: 'WELCOME10', payments: payments);
 
     expect(find.text('Home · Demo Customer'), findsOneWidget); // the default comes first
     expect(find.text(r'-$17.90'), findsOneWidget);
-    expect(find.byKey(const Key('checkout_total')), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('checkout_total'))).data, r'$161.10');
 
     await _place(tester);
     expect(service.placed.single, {'address': 1, 'delivery': DeliveryMethod.standard, 'payment': PaymentMethod.khqr, 'coupon': 'WELCOME10', 'note': ''});
-    expect(find.byKey(const Key('placed_title')), findsOneWidget);
-    expect(find.text('AWS-20261016-0007'), findsOneWidget);
-    expect(find.byKey(const Key('placed_pay')), findsOneWidget);
     expect(shop.cartCount, 0);
 
-    await tester.tap(find.byKey(const Key('placed_shop')));
+    // Straight to the KHQR screen
+    expect(find.byKey(const Key('khqr_card')), findsOneWidget);
+    expect(find.byKey(const Key('khqr_qr')), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('khqr_amount'))).data, r'$161.10');
+    expect(find.textContaining('Expires in 1'), findsOneWidget);
+
+    await tester.pump(KhqrPaymentScreen.pollEvery);
+    expect(payments.checks, 1); // checks by itself
+
+    await tester.tap(find.byKey(const Key('khqr_simulate')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const Key('khqr_card')), findsOneWidget); // squashing into the printer
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('khqr_card')), findsNothing);
+    expect(find.text('Your receipt'), findsOneWidget);
+    expect(find.byKey(const Key('khqr_paid_stamp')), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('khqr_receipt_total'))).data, r'$161.10');
+    expect(find.textContaining('Promo WELCOME10'), findsOneWidget);
+    expect(find.byKey(const Key('khqr_confirmed')), findsOneWidget);
+
+    final checks = payments.checks;
+    await tester.pump(KhqrPaymentScreen.pollEvery * 2);
+    expect(payments.checks, checks); // stops checking once paid
+
+    await tester.tap(find.byKey(const Key('khqr_done')));
     await tester.pumpAndSettle();
     expect(results, [true]); // the Cart forgets the promo code
+  });
+
+  testWidgets('closing the KHQR screen shows Order placed, which can open it again', (tester) async {
+    await _pump(tester, FakeCheckoutService(addresses: [FakeCheckoutService.home]));
+    await _place(tester);
+    await tester.tap(find.byKey(const Key('khqr_close')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('placed_title')), findsOneWidget);
+    expect(find.byKey(const Key('placed_pay')), findsOneWidget);
+  });
+
+  testWidgets('an expired KHQR shows that the order was cancelled', (tester) async {
+    final payments = FakePaymentService();
+    await _pump(tester, FakeCheckoutService(addresses: [FakeCheckoutService.home]), payments: payments);
+    await _place(tester);
+    payments.state = KhqrStatus.expired;
+    await tester.pump(KhqrPaymentScreen.pollEvery);
+    await tester.pump();
+    expect(find.byKey(const Key('khqr_expired')), findsOneWidget);
+    expect(find.text('Back to shop'), findsOneWidget);
+    expect(find.byKey(const Key('khqr_simulate')), findsNothing);
+  });
+
+  testWidgets('real payments (not demo) have no simulate button', (tester) async {
+    await _pump(tester, FakeCheckoutService(addresses: [FakeCheckoutService.home]), payments: FakePaymentService(demo: false));
+    await _place(tester);
+    expect(find.byKey(const Key('khqr_card')), findsOneWidget);
+    expect(find.byKey(const Key('khqr_simulate')), findsNothing);
+    await tester.tap(find.byKey(const Key('khqr_check')));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox()); // stop the timers
   });
 
   testWidgets('store pickup is free and paid at the shop', (tester) async {
@@ -119,6 +175,7 @@ void main() {
 
     await _place(tester);
     expect(service.placed.single['address'], 100);
+    await tester.pumpWidget(const SizedBox()); // stop the KHQR timers
   });
 
   testWidgets('Change opens the picker; picking Work uses it', (tester) async {
@@ -133,6 +190,7 @@ void main() {
 
     await _place(tester);
     expect(service.placed.single['address'], 2);
+    await tester.pumpWidget(const SizedBox()); // stop the KHQR timers
   });
 
   testWidgets('an expired promo code from the cart is dropped', (tester) async {
