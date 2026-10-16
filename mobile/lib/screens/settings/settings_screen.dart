@@ -9,6 +9,7 @@ import '../../l10n/l10n.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/shop_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../services/catalog_service.dart';
 import '../../services/checkout_service.dart';
 import '../../services/preferences_service.dart';
 import '../../widgets/circle_back_button.dart';
@@ -24,8 +25,9 @@ import 'help_screen.dart';
 class SettingsScreen extends StatefulWidget {
   final PreferencesService? preferences;
   final CheckoutService? addresses;
+  final CatalogService? catalog;
 
-  const SettingsScreen({super.key, this.preferences, this.addresses});
+  const SettingsScreen({super.key, this.preferences, this.addresses, this.catalog});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -206,7 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: const Color(0xFF64748B),
                         title: l.about,
                         subtitle: _version.isEmpty ? null : l.version(_version),
-                        onTap: () => _push(AboutScreen(version: _version)),
+                        onTap: () => _push(AboutScreen(version: _version, catalogService: widget.catalog)),
                       ),
                     ]),
                   ),

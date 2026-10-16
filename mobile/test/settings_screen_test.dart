@@ -62,6 +62,7 @@ Future<(FakePreferencesService, LocaleProvider, ThemeProvider)> _pump(WidgetTest
         home: SettingsScreen(
           preferences: service,
           addresses: FakeCheckoutService(addresses: [FakeCheckoutService.work, FakeCheckoutService.home]),
+          catalog: FakeCatalogService(),
         ),
       ),
     ),
@@ -149,10 +150,13 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('settings_about')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400)); // the page slides in
+    await tester.pump(const Duration(seconds: 3)); // About's photo columns never stop drifting
+    await tester.pump(const Duration(seconds: 3)); // the category chips pop in after they load
     expect(find.byKey(const Key('about_credit')), findsOneWidget);
     expect(find.byKey(const Key('about_version')), findsOneWidget);
-    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 50));
   });
 
   testWidgets('the circle wipe changes the theme and then goes away', (tester) async {
