@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../widgets/circle_back_button.dart';
@@ -81,6 +82,7 @@ class AdminSearch extends StatelessWidget {
         child: TextField(
           onChanged: onChanged,
           textInputAction: TextInputAction.search,
+          inputFormatters: [LengthLimitingTextInputFormatter(100)],
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: const Icon(Icons.search_rounded),
@@ -235,6 +237,7 @@ class _ReplySheetState extends State<_ReplySheet> {
           minLines: 3,
           maxLines: 6,
           textCapitalization: TextCapitalization.sentences,
+          inputFormatters: [LengthLimitingTextInputFormatter(2000)],
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: widget.hint,

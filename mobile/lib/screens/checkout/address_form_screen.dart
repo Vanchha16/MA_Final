@@ -189,6 +189,7 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
               ],
               PillTextField(
                 fieldKey: const Key('address_name'),
+                maxLength: 100,
                 controller: _name,
                 label: 'Recipient name',
                 icon: Icons.person_rounded,
@@ -199,6 +200,7 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
               const SizedBox(height: 14),
               PillTextField(
                 fieldKey: const Key('address_phone'),
+                maxLength: 30,
                 controller: _phone,
                 label: 'Phone number',
                 hint: '012 345 678',
@@ -219,6 +221,7 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
               const SizedBox(height: 14),
               PillTextField(
                 fieldKey: const Key('address_street'),
+                maxLength: 255,
                 controller: _street,
                 label: 'House no. and street',
                 hint: '#24 St. 271',
@@ -230,6 +233,7 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
               const SizedBox(height: 14),
               PillTextField(
                 fieldKey: const Key('address_city'),
+                maxLength: 100,
                 controller: _city,
                 label: 'Sangkat / Khan',
                 hint: 'Tuol Tumpung 2, Chamkar Mon',

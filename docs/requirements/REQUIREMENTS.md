@@ -187,7 +187,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 |---|---|
 | API-01 | All requests and responses use **JSON** (photo uploads use multipart form data). |
 | API-02 | Every response has the same envelope: `{"success": true/false, "message": "...", "data": ...}`; errors add `"errors"`. |
-| API-03 | **Validation** happens on the server for every input; a `422` response lists each wrong field, e.g. `{"email": "Email is not valid"}`. |
+| API-03 | **Validation** happens on the server for every input: types (text, whole numbers, true/false), lengths that fit the database columns, ranges and allowed values. A `422` response lists each wrong field, e.g. `{"email": "Email is not valid"}`; a wrong value never causes a server error. |
 | API-04 | Errors use the right HTTP status: `400` bad request, `401` not logged in, `403` not allowed or blocked, `404` not found, `409` conflict (e.g. not enough stock), `422` validation, `429` too many attempts, `500` unexpected error (still JSON). |
 | API-05 | Lists are **paginated** (`page`, `per_page`, `total`, `total_pages`). |
 | API-06 | The API is **documented** with OpenAPI 3: interactive Swagger UI at `/api/docs` and `docs/API.md`; an automated test fails if any route is not documented. |
@@ -205,9 +205,10 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | NFR-05 | Performance | Screens show data within about 2 seconds on a normal connection; lists load in pages; photos are cached. | Pagination (max 50 per page), photos cached on the device with `cached_network_image` |
 | NFR-06 | Security | Passwords are never stored in plain text. | bcrypt hashes |
 | NFR-07 | Security | Only logged-in users reach their own data; only admins reach admin data. | JWT (7-day expiry), ownership checks on every order/address/cart query, role check, blocked accounts rejected |
-| NFR-08 | Security | Password reset cannot be brute-forced. | Code valid 10 minutes, locked after 5 wrong tries, 60 s between requests, max 5 requests per hour |
+| NFR-08 | Security | Passwords and reset codes cannot be brute-forced, and the shop cannot be flooded. | Login: 10 tries a minute per network and 10 per 15 minutes per email; sign-up: 20 an hour per network; contact: 5 messages in 10 minutes and 30 a day per account (Flask-Limiter, `429`). Reset code valid 10 minutes, locked after 5 wrong tries, 60 s between requests, max 5 requests per hour |
+| NFR-08b | Security | Changing or resetting the password signs out the account's other devices. | A token version in each login token; older tokens get `401` |
 | NFR-09 | Security | Secrets are not in the source code. | `.env` file (git-ignored) for database URL, secret keys and Bakong token |
-| NFR-10 | Reliability | Stock can never go below zero and an order is all-or-nothing. | Stock re-checked when the order is placed, in one database transaction |
+| NFR-10 | Reliability | Stock can never go below zero, even when two customers buy the last item at the same moment, and an order is all-or-nothing. | Each item's stock is taken with one conditional `UPDATE ... WHERE stock >= quantity` inside the order's transaction; if it no longer matches, the whole order is rolled back with `409` |
 | NFR-11 | Reliability | Unpaid KHQR orders do not hold stock forever. | Cancelled and restocked after 15 minutes |
 | NFR-12 | Maintainability | Code is organised and tested. | Flask Blueprints, Flutter screens/services/providers folders; 87 backend tests (pytest) and 169 Flutter tests; `flutter analyze` with no issues |
 | NFR-13 | Portability | Runs on Android, iOS and the web. | Flutter; API base URL in one constant |
@@ -223,7 +224,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | BR-02 | Delivery is free when the subtotal is $50 or more; otherwise standard delivery costs $2. Store pickup is always free. |
 | BR-03 | A cart quantity cannot exceed the product's stock; sold-out or hidden products cannot be ordered. |
 | BR-04 | A coupon is valid only if it is active, not expired, and the subtotal reaches its minimum. Percentage coupons can have a maximum discount. |
-| BR-05 | Order numbers are unique and readable, e.g. `AWS-20261016-0001`. |
+| BR-05 | Order numbers are unique and readable, e.g. `AWS-20261016-00042`: the date plus the order's own id, so two orders placed at the same moment never share a number. |
 | BR-06 | Orders move only forward: pending -> confirmed -> shipped -> delivered. Pending and confirmed orders can be cancelled; shipped and delivered orders cannot. |
 | BR-07 | An unpaid KHQR order cannot be confirmed; it waits for payment or is cancelled after 15 minutes, and its stock is returned. |
 | BR-08 | Cancelling an order returns its items to stock. |
