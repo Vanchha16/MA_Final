@@ -11,6 +11,7 @@ import '../../widgets/confirm_dialog.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/menu_card.dart';
 import '../../widgets/pill_button.dart';
+import '../../widgets/notification_bell.dart';
 import '../../widgets/round_icon_button.dart';
 import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
@@ -84,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Expanded(child: Text('Profile', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold))),
           if (signedIn) ...[
-            RoundIconButton(icon: Icons.notifications_rounded, tooltip: 'Notifications', onPressed: () => _comingSoon('Notifications')),
+            const NotificationBell(),
             const SizedBox(width: 10),
           ],
           RoundIconButton(icon: Icons.settings_rounded, tooltip: 'Settings', onPressed: () => showSettingsSheet(context)),

@@ -343,16 +343,28 @@ class Notification(TimestampMixin, db.Model):
     title = db.Column(db.String(150), nullable=False)
     message = db.Column(db.Text, nullable=False)
     type = db.Column(db.Enum("order", "promo", "system", name="notification_type"), nullable=False, default="system")
+    # What happened, so the app can pick the icon and button: placed, paid, confirmed,
+    # shipped, delivered, cancelled, welcome, promo, news
+    event = db.Column(db.String(20))
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id", ondelete="CASCADE"))
+    promo_code = db.Column(db.String(30))
     is_read = db.Column(db.Boolean, nullable=False, default=False)
 
+    order = db.relationship("Order")
+
     def to_dict(self):
+        first = self.order.items[0] if self.order is not None and self.order.items else None
         return {
             "id": self.id,
             "title": self.title,
             "message": self.message,
             "type": self.type,
+            "event": self.event or self.type,
             "is_read": self.is_read,
-            "created_at": self.created_at.isoformat(),
+            "order": {"id": self.order.id, "number": self.order.order_number} if self.order is not None else None,
+            "image_url": first.product.photo_url if first is not None and first.product is not None else None,
+            "promo_code": self.promo_code,
+            "created_at": self.created_at.isoformat() + "Z",
         }
 
 
