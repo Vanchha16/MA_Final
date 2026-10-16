@@ -52,3 +52,11 @@ def news(user_id, title, message):
     if not _wants(user_id, "news"):
         return
     db.session.add(Notification(user_id=user_id, type="system", event="news", title=title, message=message))
+
+
+def support_reply(contact):
+    """The shop answered a Contact message. Always sent: the customer asked for it."""
+    db.session.add(Notification(
+        user_id=contact.user_id, type="system", event="support", order_id=contact.order_id,
+        title="Anime World support replied", message=contact.reply,
+    ))

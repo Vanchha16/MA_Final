@@ -17,7 +17,7 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     cors.init_app(app)
 
-    from .routes import auth, catalog, notifications, orders, profile, shop
+    from .routes import auth, catalog, contact, notifications, orders, profile, shop
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(catalog.bp)
@@ -25,6 +25,7 @@ def create_app(config_class=Config):
     app.register_blueprint(shop.bp)
     app.register_blueprint(orders.bp)
     app.register_blueprint(notifications.bp)
+    app.register_blueprint(contact.bp)
     register_error_handlers(app)
 
     @app.get("/api/health")
@@ -102,5 +103,26 @@ def create_app(config_class=Config):
             moved += 1
         db.session.commit()
         print(f"Moved {moved} order(s) one step on.")
+
+    @app.cli.command("reply-contact")
+    @click.argument("text")
+    @click.option("--id", "message_id", type=int, help="Message to answer (default: the oldest open one).")
+    def reply_contact(text, message_id):
+        # For the demo video: answers a Contact message; the customer gets it in Notifications.
+        from . import notify
+        from .models import ContactMessage
+        from .utils.clock import utcnow
+
+        if message_id:
+            msg = db.session.get(ContactMessage, message_id)
+        else:
+            msg = ContactMessage.query.filter_by(status="open").order_by(ContactMessage.id).first()
+        if msg is None:
+            print("No open message to answer.")
+            return
+        msg.reply, msg.status, msg.replied_at = text, "answered", utcnow()
+        notify.support_reply(msg)
+        db.session.commit()
+        print(f"Answered message {msg.id} ({msg.topic}).")
 
     return app

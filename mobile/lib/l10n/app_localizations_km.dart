@@ -221,30 +221,10 @@ class AppLocalizationsKm extends AppLocalizations {
   String get helpTitle => 'ជំនួយ និងទំនាក់ទំនង';
 
   @override
-  String get contactUs => 'ទាក់ទងមកយើង';
-
-  @override
-  String get callUs => 'ទូរស័ព្ទមកយើង';
-
-  @override
-  String get telegram => 'តេឡេក្រាម';
-
-  @override
   String get emailUs => 'អ៊ីមែល';
 
   @override
-  String get visitShop => 'មកកាន់ហាង';
-
-  @override
   String get openHours => 'បើករៀងរាល់ថ្ងៃ ម៉ោង 9:00 - 20:00';
-
-  @override
-  String get tapToCopy => 'ចុចដើម្បីចម្លង';
-
-  @override
-  String copied(String value) {
-    return 'បានចម្លង $value';
-  }
 
   @override
   String get faq => 'សំណួរ';
@@ -368,4 +348,117 @@ class AppLocalizationsKm extends AppLocalizations {
   @override
   String get terms4b =>
       'រូបភាពផលិតផលជាកម្មសិទ្ធិរបស់ម្ចាស់រៀងៗខ្លួន ហើយប្រើសម្រាប់គោលបំណងអប់រំតែប៉ុណ្ណោះ។';
+
+  @override
+  String get contactTitle => 'ទាក់ទងយើង';
+
+  @override
+  String get helpContactSub => 'Telegram ទូរស័ព្ទ អ៊ីមែល ឬផ្ញើសារ';
+
+  @override
+  String get supportName => 'ផ្នែកជំនួយ Anime World';
+
+  @override
+  String get supportOnline => 'អនឡាញ · ជាធម្មតាឆ្លើយតបក្នុង ១០ នាទី';
+
+  @override
+  String get supportOffline => 'បិទហើយ · យើងឆ្លើយតបចាប់ពីម៉ោង ៩:០០';
+
+  @override
+  String get chatTelegram => 'ជជែកតាម Telegram';
+
+  @override
+  String get callShort => 'ហៅ';
+
+  @override
+  String get visitShort => 'មកហាង';
+
+  @override
+  String get orSendMessage => 'ឬផ្ញើសារមកយើង';
+
+  @override
+  String get whatAbout => 'តើវាអំពីអ្វី?';
+
+  @override
+  String get topicOrder => 'ការបញ្ជាទិញ';
+
+  @override
+  String get topicPayment => 'ការបង់ប្រាក់';
+
+  @override
+  String get topicProduct => 'ផលិតផល';
+
+  @override
+  String get topicOther => 'ផ្សេងទៀត';
+
+  @override
+  String get noSpecificOrder => 'មិនមែនការបញ្ជាទិញជាក់លាក់';
+
+  @override
+  String orderNumber(String number) {
+    return 'ការបញ្ជាទិញ $number';
+  }
+
+  @override
+  String get messageHint => 'សរសេរសាររបស់អ្នក';
+
+  @override
+  String get sendMessage => 'ផ្ញើសារ';
+
+  @override
+  String get sending => 'កំពុងផ្ញើ...';
+
+  @override
+  String get replyNote => 'យើងឆ្លើយតបក្នុងការជូនដំណឹង ជាធម្មតានៅថ្ងៃដដែល។';
+
+  @override
+  String get messageSent => 'បានផ្ញើសារ';
+
+  @override
+  String messageSentAbout(String number) {
+    return 'អំពីការបញ្ជាទិញ $number។ យើងនឹងឆ្លើយតបក្នុងការជូនដំណឹង ជាធម្មតានៅថ្ងៃដដែល។';
+  }
+
+  @override
+  String get messageSentGeneral =>
+      'យើងនឹងឆ្លើយតបក្នុងការជូនដំណឹង ជាធម្មតានៅថ្ងៃដដែល។';
+
+  @override
+  String get sendAnother => 'ផ្ញើសារមួយទៀត';
+
+  @override
+  String get shopLabel => 'ហាង';
+
+  @override
+  String get shopShortAddress => '#88 ផ្លូវ 315 ទួលគោក';
+
+  @override
+  String get loginToMessage => 'ចូលគណនីដើម្បីផ្ញើសារមកយើង';
+
+  @override
+  String get loginToMessageSub =>
+      'Telegram ការហៅ និងអ៊ីមែល ប្រើបានដោយមិនចាំបាច់មានគណនី។';
+
+  @override
+  String couldNotOpen(String value) {
+    return 'មិនអាចបើកបានទេ ដូច្នេះយើងបានចម្លង $value។';
+  }
+
+  @override
+  String get stageToPay => 'ត្រូវបង់';
+
+  @override
+  String get stageWaiting => 'កំពុងរង់ចាំ';
+
+  @override
+  String get stagePacking => 'កំពុងវេចខ្ចប់';
+
+  @override
+  String get stageOnTheWay => 'កំពុងដឹកជញ្ជូន';
+
+  @override
+  String get stageDelivered => 'បានដឹកដល់';
+
+  @override
+  String get stageCancelled => 'បានលុបចោល';
 }
