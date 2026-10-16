@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/network/api_client.dart';
@@ -9,8 +8,12 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/format.dart';
 import '../../models/order.dart';
 import '../../services/payment_service.dart';
+import '../../services/receipt_export.dart';
 import '../../widgets/error_banner.dart';
+import '../../widgets/order_receipt.dart';
 import '../../widgets/pill_button.dart';
+import '../orders/order_details_screen.dart';
+import '../orders/receipt_screen.dart';
 import '../shell/main_shell.dart';
 import 'order_placed_screen.dart';
 
@@ -27,7 +30,10 @@ class KhqrPaymentScreen extends StatefulWidget {
   /// Opened straight after Place order: closing it shows Order placed.
   final bool fromCheckout;
 
-  const KhqrPaymentScreen({super.key, required this.order, this.service, this.fromCheckout = false});
+  /// Save receipt (tests pass a fake).
+  final ReceiptExport export;
+
+  const KhqrPaymentScreen({super.key, required this.order, this.service, this.fromCheckout = false, this.export = const ReceiptExport()});
 
   /// How often the app asks the server about the payment.
   static const pollEvery = Duration(seconds: 3);
@@ -154,6 +160,14 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
     MainShell.requestedTab.value = 0;
   }
 
+  /// View order: back to the tabs, then this order's details.
+  void _viewOrder() {
+    final navigator = Navigator.of(context);
+    final order = _order;
+    navigator.popUntil((route) => route.isFirst);
+    navigator.push(MaterialPageRoute(builder: (_) => OrderDetailsScreen(order: order)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final payment = _payment;
@@ -189,21 +203,29 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
                             simulating: _simulating,
                             onSimulate: payment.demo ? _simulate : null,
                           ),
-                          receipt: paid ? _Receipt(order: _order, paidAt: payment.paidAt) : null,
+                          paidOrder: paid ? _order : null,
+                          paidAt: payment.paidAt,
+                          // After the stamp: what happens next, right under the receipt
+                          after: paid
+                              ? _PaidActions(
+                                  onSave: () => exportReceipt(context, widget.export, _order, paidAt: payment.paidAt, share: false),
+                                  onViewOrder: _viewOrder,
+                                  onContinue: _continue,
+                                )
+                              : null,
                         ),
                     },
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-                    child: _BottomButton(
-                      showDone: expired || (paid && t >= 1.6),
-                      fade: expired ? 1 : _seg(t, 1.6, 2.0),
-                      checking: _checkingByHand,
-                      expired: expired,
-                      onCheck: payment == null ? null : _checkByHand,
-                      onDone: _continue,
+                  if (!paid)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                      child: _BottomButton(
+                        showDone: expired,
+                        checking: _checkingByHand,
+                        onCheck: payment == null ? null : _checkByHand,
+                        onDone: _continue,
+                      ),
                     ),
-                  ),
                 ],
               );
             },
@@ -239,9 +261,11 @@ class _TopBar extends StatelessWidget {
 class _Printer extends StatelessWidget {
   final double t;
   final Widget waiting;
-  final Widget? receipt;
+  final Order? paidOrder;
+  final DateTime? paidAt;
+  final Widget? after;
 
-  const _Printer({required this.t, required this.waiting, this.receipt});
+  const _Printer({required this.t, required this.waiting, this.paidOrder, this.paidAt, this.after});
 
   @override
   Widget build(BuildContext context) {
@@ -249,6 +273,7 @@ class _Printer extends StatelessWidget {
     final slot = _seg(t, .25, .5);
     final print = _seg(t, .55, 1.6, Curves.easeOutCubic);
     final stamp = _seg(t, 1.6, 1.95, Curves.easeOutBack);
+    final next = _seg(t, 1.7, 2.1);
     final scheme = Theme.of(context).colorScheme;
     return Stack(
       alignment: Alignment.topCenter,
@@ -265,17 +290,23 @@ class _Printer extends StatelessWidget {
               ),
             ),
           ),
-        if (receipt != null && slot > 0) ...[
+        if (paidOrder != null && slot > 0) ...[
           Positioned.fill(
             top: 13,
             child: SingleChildScrollView(
               key: const Key('khqr_receipt'),
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Center(
-                child: ClipRect(
-                  child: Align(alignment: Alignment.bottomCenter, heightFactor: print, child: _Stamped(stamp: stamp, child: receipt!)),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Column(children: [
+                ClipRect(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    heightFactor: print,
+                    child: OrderReceipt(order: paidOrder!, paidAt: paidAt, stamp: stamp),
+                  ),
                 ),
-              ),
+                if (after != null && next > 0)
+                  Opacity(opacity: next, child: Transform.translate(offset: Offset(0, 16 * (1 - next)), child: after)),
+              ]),
             ),
           ),
           Positioned(
@@ -295,35 +326,36 @@ class _Printer extends StatelessWidget {
   }
 }
 
-class _Stamped extends StatelessWidget {
-  final double stamp;
-  final Widget child;
+/// Under the printed receipt: confirmed, Save receipt / View order, Continue shopping.
+class _PaidActions extends StatelessWidget {
+  final VoidCallback onSave, onViewOrder, onContinue;
 
-  const _Stamped({required this.stamp, required this.child});
+  const _PaidActions({required this.onSave, required this.onViewOrder, required this.onContinue});
 
   @override
-  Widget build(BuildContext context) => Stack(children: [
-        child,
-        Positioned(
-          right: 28,
-          bottom: 16,
-          child: Opacity(
-            opacity: stamp.clamp(0.0, 1.0),
-            child: Transform.scale(
-              scale: stamp,
-              child: Transform.rotate(
-                angle: -0.25,
-                child: Container(
-                  key: const Key('khqr_paid_stamp'),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(border: Border.all(color: AppTheme.success, width: 3), borderRadius: BorderRadius.circular(10)),
-                  child: const Text('PAID', style: TextStyle(color: AppTheme.success, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 3)),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ]);
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Column(children: [
+        const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.check_circle_rounded, color: AppTheme.success, size: 20),
+          SizedBox(width: 8),
+          Flexible(child: Text('Your order is confirmed', key: Key('khqr_confirmed'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+        ]),
+        const SizedBox(height: 4),
+        Text("We're packing it now. We'll tell you when it ships.", textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant)),
+        const SizedBox(height: 16),
+        Row(children: [
+          Expanded(child: ReceiptAction(key: const Key('khqr_save_receipt'), label: 'Save receipt', icon: Icons.download_rounded, onPressed: onSave)),
+          const SizedBox(width: 10),
+          Expanded(child: ReceiptAction(key: const Key('khqr_view_order'), label: 'View order', icon: Icons.receipt_long_rounded, onPressed: onViewOrder)),
+        ]),
+        const SizedBox(height: 10),
+        PillButton(key: const Key('khqr_done'), label: 'Continue shopping', leadingIcon: Icons.storefront_outlined, onPressed: onContinue),
+      ]),
+    );
+  }
 }
 
 class _Waiting extends StatelessWidget {
@@ -439,51 +471,6 @@ class _Waiting extends StatelessWidget {
   }
 }
 
-class _Receipt extends StatelessWidget {
-  final Order order;
-  final DateTime? paidAt;
-
-  const _Receipt({required this.order, this.paidAt});
-
-  @override
-  Widget build(BuildContext context) {
-    const ink = Color(0xFF0F172A), muted = Color(0xFF64748B);
-    final when = paidAt == null ? '' : ' · ${DateFormat('d MMM yyyy, HH:mm').format(paidAt!.toLocal())}';
-    Widget line(String a, String b, {Color? color}) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(child: Text(a, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: ink))),
-            const SizedBox(width: 10),
-            Text(b, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color ?? ink)),
-          ]),
-        );
-    return Container(
-      width: 300,
-      padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-      decoration: BoxDecoration(
-        color: Colors.white, // paper
-        boxShadow: [BoxShadow(color: ink.withValues(alpha: 0.12), blurRadius: 14, offset: const Offset(0, 6))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Text('ANIME WORLD SHOP', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2, color: ink)),
-        Text('${order.number}$when', key: const Key('khqr_receipt_number'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: muted)),
-        const Divider(height: 26, color: Color(0xFFE2E8F0)),
-        for (final l in order.lines) line('${l.quantity} ×  ${l.name}', formatPrice(l.unitPrice * l.quantity)),
-        if (order.discount > 0) line('Promo ${order.couponCode ?? ''}'.trim(), '-${formatPrice(order.discount)}', color: AppTheme.success),
-        line(order.deliveryMethod == DeliveryMethod.pickup ? 'Store pickup' : 'Delivery', order.shippingFee == 0 ? 'Free' : formatPrice(order.shippingFee)),
-        const Divider(height: 26, color: Color(0xFFE2E8F0)),
-        Row(children: [
-          const Expanded(child: Text('TOTAL', style: TextStyle(fontWeight: FontWeight.w900, color: ink))),
-          Text(formatPrice(order.total), key: const Key('khqr_receipt_total'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
-        ]),
-        const SizedBox(height: 6),
-        const Text('Paid by KHQR', style: TextStyle(fontSize: 12, color: muted)),
-        const SizedBox(height: 64), // room for the PAID stamp
-      ]),
-    );
-  }
-}
-
 class _ExpiredState extends StatelessWidget {
   const _ExpiredState();
 
@@ -524,33 +511,17 @@ class _ErrorState extends StatelessWidget {
 }
 
 class _BottomButton extends StatelessWidget {
-  final bool showDone, checking, expired;
-  final double fade;
+  final bool showDone, checking;
   final VoidCallback? onCheck;
   final VoidCallback onDone;
 
-  const _BottomButton({required this.showDone, required this.fade, required this.checking, required this.expired, required this.onCheck, required this.onDone});
+  const _BottomButton({required this.showDone, required this.checking, required this.onCheck, required this.onDone});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     if (showDone) {
-      return Opacity(
-        opacity: fade,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (!expired)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 10),
-              child: Text('Your order is confirmed', key: Key('khqr_confirmed'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-            ),
-          PillButton(
-            key: const Key('khqr_done'),
-            label: expired ? 'Back to shop' : 'Continue shopping',
-            leadingIcon: Icons.storefront_outlined,
-            onPressed: onDone,
-          ),
-        ]),
-      );
+      return PillButton(key: const Key('khqr_done'), label: 'Back to shop', leadingIcon: Icons.storefront_outlined, onPressed: onDone);
     }
     return PillButton(
       key: const Key('khqr_check'),
