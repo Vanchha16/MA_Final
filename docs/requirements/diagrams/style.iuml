@@ -1,0 +1,33 @@
+' Shared look for the use case diagrams (brand sky blue, Roboto)
+skinparam backgroundColor white
+skinparam defaultFontName Roboto
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 14
+skinparam titleFontSize 18
+skinparam titleFontStyle bold
+skinparam ArrowColor #0284C7
+skinparam ArrowFontColor #334155
+skinparam ArrowFontSize 11
+skinparam actor {
+  BorderColor #0284C7
+  BackgroundColor #E0F2FE
+  FontStyle bold
+}
+skinparam usecase {
+  BorderColor #0284C7
+  BackgroundColor #F0F9FF
+  FontColor #0F172A
+}
+skinparam rectangle {
+  BorderColor #94A3B8
+  BackgroundColor #FFFFFF
+  FontStyle bold
+  FontColor #0F172A
+}
+skinparam package {
+  BorderColor #CBD5E1
+  BackgroundColor #F8FAFC
+  FontColor #0284C7
+  FontStyle bold
+}

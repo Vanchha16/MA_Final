@@ -1,0 +1,30 @@
+@startuml use-case-customer-account
+' Anime World Shop - everything a signed-in customer can do
+!pragma layout smetana
+!include style.iuml
+left to right direction
+title Anime World Shop - Customer: Account and Support
+
+actor Customer
+
+
+rectangle "Anime World Shop - customer app" {
+  package "Account and support" {
+    usecase "Edit profile and photo" as C_Profile
+    usecase "Change password" as C_Pass
+    usecase "Manage addresses" as C_Addresses
+    usecase "Read notifications" as C_Notif
+    usecase "Change settings\n(dark mode, English / Khmer,\nnotification choices)" as C_Settings
+    usecase "Send a message\nto the shop" as C_Contact
+    usecase "Read help, about\nand legal pages" as C_Help
+  }
+}
+
+Customer --> C_Profile
+Customer --> C_Pass
+Customer --> C_Addresses
+Customer --> C_Notif
+Customer --> C_Settings
+Customer --> C_Contact
+Customer --> C_Help
+@enduml
