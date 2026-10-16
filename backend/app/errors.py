@@ -44,8 +44,12 @@ def register_error_handlers(app):
         if payload.get("purpose") is not None:
             return False
         user = db.session.get(User, int(payload["sub"]))
-        return user is None or not user.is_active
+        # also refused: tokens from before the last password change
+        return user is None or not user.is_active or payload.get("ver", 0) != user.token_version
 
     @jwt.revoked_token_loader
     def account_disabled(header, payload):
+        user = db.session.get(User, int(payload["sub"]))
+        if user is not None and user.is_active:
+            return error("Your password was changed. Please log in again.", 401)
         return error("This account has been disabled", 403)

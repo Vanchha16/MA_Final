@@ -51,7 +51,7 @@ Response 200: `data` = {status: string}
 
 Create a customer account.
 
-Also adds a WELCOME10 promo notification.
+Also adds a WELCOME10 promo notification. Name 2-100 characters with letters, email up to 150, password 6-72, phone Cambodian. 20 sign-ups an hour per network (429).
 
 Body (application/json): {full_name: string, email: string, phone: string, password: string}
 
@@ -66,13 +66,13 @@ Body (application/json): {full_name: string, email: string, phone: string, passw
 
 Response 201: `data` = {token: string, user: `User`}
 
-Errors: 422
+Errors: 422, 429
 
 #### `POST /api/auth/login`
 
 Log in.
 
-401 for a wrong email or password, 403 for a blocked account. Tokens last 7 days.
+401 for a wrong email or password, 403 for a blocked account. Tokens last 7 days. 429 after 10 tries a minute from one network, or 10 in 15 minutes for one email.
 
 Body (application/json): {email: string, password: string}
 
@@ -85,7 +85,7 @@ Body (application/json): {email: string, password: string}
 
 Response 200: `data` = {token: string, user: `User`}
 
-Errors: 401, 403, 422
+Errors: 401, 403, 422, 429
 
 #### `GET /api/auth/me`
 
@@ -684,7 +684,7 @@ Change password.
 
 Body (application/json): {current_password: string, new_password: string}
 
-Response 200: `data` = any or null
+Response 200: `data` = {token: string}
 
 Errors: 401, 422
 
@@ -692,7 +692,7 @@ Errors: 401, 422
 
 Upload a profile photo.
 
-JPG, PNG or WebP, 5 MB max.
+JPG, PNG or WebP, 5 MB max. It must open as a picture; it is saved again as a WebP (at most 512 px).
 
 Body (multipart/form-data): {file: string}
 
@@ -801,7 +801,7 @@ Errors: 401
 
 Send a message to the shop.
 
-The order is kept only for order and payment questions and must be yours. The reply arrives as a `support` notification.
+The order is kept only for order and payment questions and must be yours. The reply arrives as a `support` notification. At most 5 messages in 10 minutes and 30 a day per account (429).
 
 Body (application/json): {topic: `order` \| `payment` \| `product` \| `other`, message: string, order_id: integer}
 
@@ -815,7 +815,7 @@ Body (application/json): {topic: `order` \| `payment` \| `product` \| `other`, m
 
 Response 201: `data` = `ContactMessage`
 
-Errors: 401, 404, 422
+Errors: 401, 404, 422, 429
 
 ### Admin
 

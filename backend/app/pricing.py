@@ -12,7 +12,7 @@ def shipping_for(subtotal):
 
 def find_coupon(code, subtotal):
     """Returns (coupon, None) when the code can be used now, else (None, reason)."""
-    code = (code or "").strip().upper()
+    code = code.strip().upper() if isinstance(code, str) else ""
     if not code:
         return None, "Enter a promo code"
     coupon = Coupon.query.filter_by(code=code).first()

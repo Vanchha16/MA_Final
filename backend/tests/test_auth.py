@@ -18,7 +18,7 @@ def test_register_validation(client, user):
     assert res.status_code == 422
     assert set(errors) == {"full_name", "email", "password", "phone"}
 
-    dup = client.post("/api/auth/register", json={"full_name": "X", "email": "DEMO@shop.com", "password": "secret1"})
+    dup = client.post("/api/auth/register", json={"full_name": "Xavier", "email": "DEMO@shop.com", "password": "secret1"})
     assert dup.status_code == 422
     assert dup.get_json()["errors"]["email"] == "Email is already registered"
 

@@ -1,14 +1,17 @@
+import io
 import os
 import uuid
 
 from flask import Blueprint, current_app, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import func
 
 from ..extensions import bcrypt, db
 from ..models import Favorite, Order, OrderItem, Review, User
 from ..utils.responses import error, success
-from ..utils.validators import is_valid_phone, normalize_phone, require_fields
+from ..utils.validators import Fields, json_body
+from .auth import token_for
 
 bp = Blueprint("profile", __name__, url_prefix="/api/profile")
 
@@ -21,6 +24,7 @@ IMAGE_SIGNATURES = {
     b"\xff\xd8\xff": "jpg",
 }
 MAX_AVATAR_BYTES = 5 * 1024 * 1024
+AVATAR_SIDE = 512  # saved as a WebP at most this wide
 
 
 def _current_user():
@@ -94,16 +98,11 @@ def summary():
 @jwt_required()
 def update_profile():
     user = _current_user()
-    data = request.get_json(silent=True) or {}
-    errors = require_fields(data, ["full_name"])
-    name = (data.get("full_name") or "").strip()
-    if name and len(name) < 2:
-        errors["full_name"] = "Name is too short"
-    phone = normalize_phone(data.get("phone"))
-    if phone and not is_valid_phone(phone):
-        errors["phone"] = "Phone number is not valid"
-    if errors:
-        return error("Validation failed", 422, errors)
+    f = Fields(json_body())
+    name = f.person_name("full_name")
+    phone = f.phone()
+    if f.errors:
+        return error("Validation failed", 422, f.errors)
 
     user.full_name = name
     user.phone = phone
@@ -115,20 +114,21 @@ def update_profile():
 @jwt_required()
 def change_password():
     user = _current_user()
-    data = request.get_json(silent=True) or {}
-    errors = require_fields(data, ["current_password", "new_password"])
-    if data.get("new_password") and len(data["new_password"]) < 6:
-        errors["new_password"] = "Password must be at least 6 characters"
-    if errors:
-        return error("Validation failed", 422, errors)
-    if not bcrypt.check_password_hash(user.password_hash, data["current_password"]):
+    f = Fields(json_body())
+    current = f.text("current_password", required=True, strip=False, max_len=200, label="Current password")
+    new = f.password("new_password", label="New password")
+    if f.errors:
+        return error("Validation failed", 422, f.errors)
+    if not bcrypt.check_password_hash(user.password_hash, current):
         return error("Validation failed", 422, {"current_password": "Current password is incorrect"})
-    if data["current_password"] == data["new_password"]:
+    if current == new:
         return error("Validation failed", 422, {"new_password": "Choose a different password"})
 
-    user.password_hash = bcrypt.generate_password_hash(data["new_password"]).decode()
+    user.password_hash = bcrypt.generate_password_hash(new).decode()
+    user.token_version += 1  # other devices are signed out
     db.session.commit()
-    return success(None, "Password changed")
+    # a fresh token so this device stays logged in
+    return success({"token": token_for(user)}, "Password changed")
 
 
 @bp.post("/avatar")
@@ -147,13 +147,25 @@ def upload_avatar():
         ext = "webp"
     if ext is None:
         return error("Validation failed", 422, {"file": "Use a JPG, PNG or WebP image"})
+    # The first bytes can be faked: the file must also open as a picture.
+    # Saving it again as WebP drops anything hidden in it (and the camera's location data).
+    try:
+        with Image.open(io.BytesIO(content)) as probe:
+            probe.verify()
+        with Image.open(io.BytesIO(content)) as img:
+            img = ImageOps.exif_transpose(img).convert("RGB")
+            img.thumbnail((AVATAR_SIDE, AVATAR_SIDE))
+            out = io.BytesIO()
+            img.save(out, "WEBP", quality=88)
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Image.DecompressionBombError):
+        return error("Validation failed", 422, {"file": "This photo could not be opened"})
 
     # Random file name - never trust the client's name
     folder = os.path.join(current_app.config["UPLOAD_FOLDER"], "avatars")
     os.makedirs(folder, exist_ok=True)
-    name = f"{uuid.uuid4().hex}.{ext}"
-    with open(os.path.join(folder, name), "wb") as f:
-        f.write(content)
+    name = f"{uuid.uuid4().hex}.webp"
+    with open(os.path.join(folder, name), "wb") as fh:
+        fh.write(out.getvalue())
 
     old = user.avatar_url
     user.avatar_url = f"/uploads/avatars/{name}"
@@ -186,7 +198,7 @@ def update_preferences():
     user = _current_user()
     if not user:
         return error("User not found", 404)
-    data = request.get_json(silent=True) or {}
+    data = json_body()
     bad = {k: "Must be true or false" for k in PREFERENCES if k in data and not isinstance(data[k], bool)}
     if bad:
         return error("Validation failed", 422, bad)

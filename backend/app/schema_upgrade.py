@@ -12,7 +12,7 @@ from .models import Notification, Order, Review, User
 NEW_COLUMNS = {
     Order.__table__: ("discount", "coupon_code", "delivery_method"),
     Notification.__table__: ("event", "order_id", "promo_code"),
-    User.__table__: ("notify_orders", "notify_offers", "notify_news"),
+    User.__table__: ("notify_orders", "notify_offers", "notify_news", "token_version"),
     Review.__table__: ("tags", "updated_at"),
 }
 
