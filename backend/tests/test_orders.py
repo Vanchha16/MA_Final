@@ -173,3 +173,34 @@ def test_khqr_for_an_order_already_paid_is_refused(client, user):
     o.payment_status, o.status = "paid", "delivered"  # e.g. an old demo order
     db.session.commit()
     assert client.post(f"/api/orders/{order['id']}/khqr", headers=h).status_code == 409
+
+
+def test_orders_list_has_items_and_got_it_marks_delivered(client, user):
+    h = _auth(client)
+    p = _product(stock=5, price=30)
+    client.post("/api/cart", json={"product_id": p.id}, headers=h)
+    order = client.post("/api/orders", json={"delivery_method": "pickup", "payment_method": "cod"}, headers=h).get_json()["data"]
+
+    listed = client.get("/api/orders", headers=h).get_json()["data"]
+    assert listed[0]["items"][0]["product_name"] == p.name and "image_url" in listed[0]["items"][0]
+    assert listed[0]["items"][0]["category"]["slug"] == "scale-figures"
+
+    assert client.post(f"/api/orders/{order['id']}/received", headers=h).status_code == 409  # not shipped yet
+    o = db.session.get(Order, order["id"])
+    o.status = "shipped"
+    db.session.commit()
+    data = client.post(f"/api/orders/{order['id']}/received", headers=h).get_json()["data"]
+    assert data["status"] == "delivered" and data["payment_status"] == "paid"
+    assert client.post("/api/orders/999/received", headers=h).status_code == 404
+
+
+def test_orders_list_cancels_expired_khqr(client, user):
+    from app.models import Payment
+
+    h = _auth(client)
+    _, order = _khqr_order(client, h)
+    client.post(f"/api/orders/{order['id']}/khqr", headers=h)
+    payment = Payment.query.one()
+    payment.expires_at = payment.expires_at.replace(year=2000)
+    db.session.commit()
+    assert client.get("/api/orders", headers=h).get_json()["data"][0]["status"] == "cancelled"

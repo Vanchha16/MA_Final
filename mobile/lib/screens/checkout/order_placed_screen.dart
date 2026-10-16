@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/format.dart';
 import '../../models/order.dart';
 import '../../widgets/pill_button.dart';
+import '../orders/orders_screen.dart';
 import '../shell/main_shell.dart';
 import 'khqr_payment_screen.dart';
 
@@ -20,15 +21,6 @@ class OrderPlacedScreen extends StatelessWidget {
     Navigator.of(context).popUntil((route) => route.isFirst);
     MainShell.requestedTab.value = tab;
   }
-
-  void _soon(BuildContext context, String what) => ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        content: Text('$what is the next screen we build'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +254,10 @@ class OrderPlacedScreen extends StatelessWidget {
               const SizedBox(height: 8),
               TextButton(
                 key: const Key('placed_orders'),
-                onPressed: () => _soon(context, 'My orders'),
+                onPressed: () {
+                  final navigator = Navigator.of(context)..popUntil((route) => route.isFirst);
+                  navigator.push(MaterialPageRoute(builder: (_) => const OrdersScreen()));
+                },
                 child: const Text('View my orders'),
               ),
             ],

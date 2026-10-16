@@ -1,4 +1,5 @@
 import 'cart.dart';
+import 'catalog.dart';
 
 /// A saved delivery address (/api/addresses).
 class Address {
@@ -106,14 +107,35 @@ class OrderLine {
   final double unitPrice;
   final int quantity;
 
-  const OrderLine({this.productId, required this.name, required this.unitPrice, required this.quantity});
+  /// Today's photo of the product (the name and price are what was paid).
+  final String? imageUrl;
+  final Category? category;
+
+  const OrderLine({this.productId, required this.name, required this.unitPrice, required this.quantity, this.imageUrl, this.category});
 
   factory OrderLine.fromJson(Map<String, dynamic> json) => OrderLine(
         productId: json['product_id'],
         name: json['product_name'],
         unitPrice: (json['unit_price'] as num).toDouble(),
         quantity: json['quantity'],
+        imageUrl: json['image_url'],
+        category: json['category'] == null ? null : Category.fromJson(json['category']),
       );
+
+  /// For the photo placeholder when there is no photo.
+  ProductKind get kind => category?.kind ?? ProductKind.figure;
+}
+
+/// Where an order is, as the customer sees it.
+enum OrderStage {
+  toPay,
+  waitingConfirm,
+  packing,
+  onTheWay,
+  delivered,
+  cancelled;
+
+  bool get active => this != delivered && this != cancelled;
 }
 
 /// An order as returned by POST /api/orders and GET /api/orders/{id}.
@@ -127,7 +149,8 @@ class Order {
   final double subtotal, discount, shippingFee, total;
   final String? couponCode;
   final int itemCount;
-  final String? shippingName, shippingAddress;
+  final String? shippingName, shippingAddress, note;
+  final DateTime? createdAt;
   final List<OrderLine> lines;
 
   const Order({
@@ -145,8 +168,49 @@ class Order {
     required this.itemCount,
     this.shippingName,
     this.shippingAddress,
+    this.note,
+    this.createdAt,
     this.lines = const [],
   });
+
+  OrderStage get stage => switch (status) {
+        'cancelled' => OrderStage.cancelled,
+        'delivered' => OrderStage.delivered,
+        'shipped' => OrderStage.onTheWay,
+        'confirmed' => OrderStage.packing,
+        _ when paymentMethod == PaymentMethod.khqr && paymentStatus != 'paid' => OrderStage.toPay,
+        _ when paymentMethod == PaymentMethod.cod => OrderStage.waitingConfirm,
+        _ => OrderStage.packing, // pending but already paid
+      };
+
+  /// How many of Placed / Paid (or Confirmed) / Shipped / Delivered are done.
+  int get stepsDone => switch (stage) {
+        OrderStage.toPay || OrderStage.waitingConfirm => 1,
+        OrderStage.packing => 2,
+        OrderStage.onTheWay => 3,
+        OrderStage.delivered => 4,
+        OrderStage.cancelled => 1,
+      };
+
+  Order copyWith({String? status, String? paymentStatus}) => Order(
+        id: id,
+        number: number,
+        status: status ?? this.status,
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentStatus ?? this.paymentStatus,
+        deliveryMethod: deliveryMethod,
+        subtotal: subtotal,
+        discount: discount,
+        shippingFee: shippingFee,
+        total: total,
+        couponCode: couponCode,
+        itemCount: itemCount,
+        shippingName: shippingName,
+        shippingAddress: shippingAddress,
+        note: note,
+        createdAt: createdAt,
+        lines: lines,
+      );
 
   factory Order.fromJson(Map<String, dynamic> json) {
     double n(String key) => (json[key] as num? ?? 0).toDouble();
@@ -166,6 +230,8 @@ class Order {
       itemCount: json['item_count'] ?? 0,
       shippingName: shipping?['name'],
       shippingAddress: shipping?['address'],
+      note: json['note'],
+      createdAt: json['created_at'] == null ? null : DateTime.tryParse(json['created_at']),
       lines: [for (final l in json['items'] as List? ?? []) OrderLine.fromJson(l)],
     );
   }
