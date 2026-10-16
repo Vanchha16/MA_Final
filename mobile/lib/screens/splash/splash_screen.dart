@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
+import '../admin/admin_shell.dart';
 import '../shell/main_shell.dart';
 import '../../widgets/sparkle.dart';
 
@@ -54,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     await Future.wait([auth.tryAutoLogin(), Future.delayed(_duration)]);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(
-      builder: (_) => auth.isLoggedIn ? const MainShell() : const LoginScreen(),
+      builder: (_) => !auth.isLoggedIn ? const LoginScreen() : (auth.user!.isAdmin ? const AdminShell() : const MainShell()),
     ));
   }
 

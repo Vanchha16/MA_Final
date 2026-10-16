@@ -36,4 +36,5 @@ class ApiConstants {
   static const String addresses = '/addresses';
   static const String notifications = '/notifications';
   static const String contact = '/contact';
+  static const String admin = '/admin';
 }

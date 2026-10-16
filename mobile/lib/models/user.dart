@@ -15,6 +15,9 @@ class User {
     this.role = 'customer',
   });
 
+  /// Shop owner: opens the admin area instead of the shop.
+  bool get isAdmin => role == 'admin';
+
   factory User.fromJson(Map<String, dynamic> json) => User(
         id: json['id'],
         fullName: json['full_name'],
