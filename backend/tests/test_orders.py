@@ -104,3 +104,72 @@ def test_place_order_checks(client, user):
     pickup = client.post("/api/orders", json={"delivery_method": "pickup", "payment_method": "cod"}, headers=h).get_json()["data"]
     assert pickup["shipping_fee"] == 0 and pickup["shipping"]["address"].startswith("Store pickup")
     assert Order.query.count() == 1
+
+
+# ---------- KHQR ----------
+
+def _khqr_order(client, h, stock=5):
+    p = _product(stock=stock, price=30)
+    client.post("/api/cart", json={"product_id": p.id, "quantity": 2}, headers=h)
+    address = _address(client, h)
+    order = client.post("/api/orders", json={"address_id": address["id"], "delivery_method": "standard",
+                                             "payment_method": "khqr"}, headers=h).get_json()["data"]
+    return p, order
+
+
+def test_khqr_is_made_once_and_simulated_payment_confirms(client, user):
+    h = _auth(client)
+    _, order = _khqr_order(client, h)
+    first = client.post(f"/api/orders/{order['id']}/khqr", headers=h).get_json()["data"]["payment"]
+    again = client.post(f"/api/orders/{order['id']}/khqr", headers=h).get_json()["data"]["payment"]
+    assert first["qr"] == again["qr"] and first["qr"].startswith("0002")
+    assert first["amount"] == 60 and first["status"] == "pending" and first["demo"] is True
+
+    assert client.get(f"/api/orders/{order['id']}/payment", headers=h).get_json()["data"]["payment"]["status"] == "pending"
+    data = client.post(f"/api/orders/{order['id']}/payment/simulate", headers=h).get_json()["data"]
+    assert data["payment"]["status"] == "paid" and data["payment"]["paid_at"]
+    assert data["order"]["status"] == "confirmed" and data["order"]["payment_status"] == "paid"
+
+
+def test_khqr_expiry_cancels_the_order_and_restocks(client, user):
+    from app.models import Payment
+
+    h = _auth(client)
+    p, order = _khqr_order(client, h, stock=5)
+    client.post(f"/api/orders/{order['id']}/khqr", headers=h)
+    assert db.session.get(Product, p.id).stock == 3
+    payment = Payment.query.one()
+    payment.expires_at = payment.expires_at.replace(year=2000)
+    db.session.commit()
+
+    data = client.get(f"/api/orders/{order['id']}/payment", headers=h).get_json()["data"]
+    assert data["payment"]["status"] == "expired" and data["order"]["status"] == "cancelled"
+    assert db.session.get(Product, p.id).stock == 5
+    assert client.post(f"/api/orders/{order['id']}/payment/simulate", headers=h).status_code == 409
+    assert client.post(f"/api/orders/{order['id']}/khqr", headers=h).status_code == 409
+
+
+def test_khqr_rules(client, user, app):
+    h = _auth(client)
+    p = _product()
+    client.post("/api/cart", json={"product_id": p.id}, headers=h)
+    cod = client.post("/api/orders", json={"delivery_method": "pickup", "payment_method": "cod"}, headers=h).get_json()["data"]
+    assert client.post(f"/api/orders/{cod['id']}/khqr", headers=h).status_code == 409
+    assert client.get(f"/api/orders/{cod['id']}/payment", headers=h).status_code == 404
+
+    _, order = _khqr_order(client, h)
+    client.post(f"/api/orders/{order['id']}/khqr", headers=h)
+    app.config["PAYMENT_PROVIDER"] = "bakong"
+    try:
+        assert client.post(f"/api/orders/{order['id']}/payment/simulate", headers=h).status_code == 403
+    finally:
+        app.config["PAYMENT_PROVIDER"] = "mock"
+
+
+def test_khqr_for_an_order_already_paid_is_refused(client, user):
+    h = _auth(client)
+    _, order = _khqr_order(client, h)
+    o = db.session.get(Order, order["id"])
+    o.payment_status, o.status = "paid", "delivered"  # e.g. an old demo order
+    db.session.commit()
+    assert client.post(f"/api/orders/{order['id']}/khqr", headers=h).status_code == 409

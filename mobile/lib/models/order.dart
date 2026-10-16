@@ -170,3 +170,38 @@ class Order {
     );
   }
 }
+
+enum KhqrStatus { pending, paid, expired }
+
+/// A KHQR payment for an order (POST /api/orders/{id}/khqr).
+class KhqrPayment {
+  final String qr;
+  final double amount;
+  final String currency;
+  final KhqrStatus status;
+  final DateTime expiresAt;
+  final DateTime? paidAt;
+
+  /// Demo mode: the app may simulate the payment.
+  final bool demo;
+
+  const KhqrPayment({
+    required this.qr,
+    required this.amount,
+    this.currency = 'USD',
+    required this.status,
+    required this.expiresAt,
+    this.paidAt,
+    this.demo = false,
+  });
+
+  factory KhqrPayment.fromJson(Map<String, dynamic> json) => KhqrPayment(
+        qr: json['qr'],
+        amount: (json['amount'] as num).toDouble(),
+        currency: json['currency'] ?? 'USD',
+        status: KhqrStatus.values.byName(json['status']),
+        expiresAt: DateTime.parse(json['expires_at']),
+        paidAt: json['paid_at'] == null ? null : DateTime.parse(json['paid_at']),
+        demo: json['demo'] ?? false,
+      );
+}
