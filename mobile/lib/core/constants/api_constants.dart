@@ -35,4 +35,5 @@ class ApiConstants {
   static const String orders = '/orders';
   static const String addresses = '/addresses';
   static const String notifications = '/notifications';
+  static const String contact = '/contact';
 }

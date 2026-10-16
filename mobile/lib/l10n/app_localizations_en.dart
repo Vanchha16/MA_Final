@@ -224,30 +224,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helpTitle => 'Help & contact';
 
   @override
-  String get contactUs => 'CONTACT US';
-
-  @override
-  String get callUs => 'Call us';
-
-  @override
-  String get telegram => 'Telegram';
-
-  @override
   String get emailUs => 'Email';
 
   @override
-  String get visitShop => 'Visit the shop';
-
-  @override
   String get openHours => 'Open every day, 9:00 - 20:00';
-
-  @override
-  String get tapToCopy => 'Tap to copy';
-
-  @override
-  String copied(String value) {
-    return '$value copied';
-  }
 
   @override
   String get faq => 'QUESTIONS';
@@ -370,4 +350,117 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get terms4b =>
       'Product images belong to their respective owners and are used for educational purposes only.';
+
+  @override
+  String get contactTitle => 'Contact us';
+
+  @override
+  String get helpContactSub => 'Telegram, phone, email or a message';
+
+  @override
+  String get supportName => 'Anime World support';
+
+  @override
+  String get supportOnline => 'Online · usually replies in 10 min';
+
+  @override
+  String get supportOffline => 'Closed now · we reply from 9:00';
+
+  @override
+  String get chatTelegram => 'Chat on Telegram';
+
+  @override
+  String get callShort => 'Call';
+
+  @override
+  String get visitShort => 'Visit';
+
+  @override
+  String get orSendMessage => 'OR SEND US A MESSAGE';
+
+  @override
+  String get whatAbout => 'What is it about?';
+
+  @override
+  String get topicOrder => 'An order';
+
+  @override
+  String get topicPayment => 'Payment';
+
+  @override
+  String get topicProduct => 'A product';
+
+  @override
+  String get topicOther => 'Something else';
+
+  @override
+  String get noSpecificOrder => 'Not a specific order';
+
+  @override
+  String orderNumber(String number) {
+    return 'Order $number';
+  }
+
+  @override
+  String get messageHint => 'Write your message';
+
+  @override
+  String get sendMessage => 'Send message';
+
+  @override
+  String get sending => 'Sending...';
+
+  @override
+  String get replyNote => 'We reply in Notifications, usually the same day.';
+
+  @override
+  String get messageSent => 'Message sent';
+
+  @override
+  String messageSentAbout(String number) {
+    return 'About order $number. We\'ll answer in Notifications, usually the same day.';
+  }
+
+  @override
+  String get messageSentGeneral =>
+      'We\'ll answer in Notifications, usually the same day.';
+
+  @override
+  String get sendAnother => 'Send another message';
+
+  @override
+  String get shopLabel => 'SHOP';
+
+  @override
+  String get shopShortAddress => '#88 St. 315, Toul Kork';
+
+  @override
+  String get loginToMessage => 'Log in to send us a message';
+
+  @override
+  String get loginToMessageSub =>
+      'Telegram, call and email work without an account.';
+
+  @override
+  String couldNotOpen(String value) {
+    return 'Could not open it, so we copied $value.';
+  }
+
+  @override
+  String get stageToPay => 'To pay';
+
+  @override
+  String get stageWaiting => 'Waiting';
+
+  @override
+  String get stagePacking => 'Packing';
+
+  @override
+  String get stageOnTheWay => 'On the way';
+
+  @override
+  String get stageDelivered => 'Delivered';
+
+  @override
+  String get stageCancelled => 'Cancelled';
 }

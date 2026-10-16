@@ -476,53 +476,17 @@ abstract class AppLocalizations {
   /// **'Help & contact'**
   String get helpTitle;
 
-  /// No description provided for @contactUs.
-  ///
-  /// In en, this message translates to:
-  /// **'CONTACT US'**
-  String get contactUs;
-
-  /// No description provided for @callUs.
-  ///
-  /// In en, this message translates to:
-  /// **'Call us'**
-  String get callUs;
-
-  /// No description provided for @telegram.
-  ///
-  /// In en, this message translates to:
-  /// **'Telegram'**
-  String get telegram;
-
   /// No description provided for @emailUs.
   ///
   /// In en, this message translates to:
   /// **'Email'**
   String get emailUs;
 
-  /// No description provided for @visitShop.
-  ///
-  /// In en, this message translates to:
-  /// **'Visit the shop'**
-  String get visitShop;
-
   /// No description provided for @openHours.
   ///
   /// In en, this message translates to:
   /// **'Open every day, 9:00 - 20:00'**
   String get openHours;
-
-  /// No description provided for @tapToCopy.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to copy'**
-  String get tapToCopy;
-
-  /// No description provided for @copied.
-  ///
-  /// In en, this message translates to:
-  /// **'{value} copied'**
-  String copied(String value);
 
   /// No description provided for @faq.
   ///
@@ -739,6 +703,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Product images belong to their respective owners and are used for educational purposes only.'**
   String get terms4b;
+
+  /// No description provided for @contactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact us'**
+  String get contactTitle;
+
+  /// No description provided for @helpContactSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram, phone, email or a message'**
+  String get helpContactSub;
+
+  /// No description provided for @supportName.
+  ///
+  /// In en, this message translates to:
+  /// **'Anime World support'**
+  String get supportName;
+
+  /// No description provided for @supportOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online · usually replies in 10 min'**
+  String get supportOnline;
+
+  /// No description provided for @supportOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed now · we reply from 9:00'**
+  String get supportOffline;
+
+  /// No description provided for @chatTelegram.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat on Telegram'**
+  String get chatTelegram;
+
+  /// No description provided for @callShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get callShort;
+
+  /// No description provided for @visitShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit'**
+  String get visitShort;
+
+  /// No description provided for @orSendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'OR SEND US A MESSAGE'**
+  String get orSendMessage;
+
+  /// No description provided for @whatAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'What is it about?'**
+  String get whatAbout;
+
+  /// No description provided for @topicOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'An order'**
+  String get topicOrder;
+
+  /// No description provided for @topicPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment'**
+  String get topicPayment;
+
+  /// No description provided for @topicProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'A product'**
+  String get topicProduct;
+
+  /// No description provided for @topicOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get topicOther;
+
+  /// No description provided for @noSpecificOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a specific order'**
+  String get noSpecificOrder;
+
+  /// No description provided for @orderNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Order {number}'**
+  String orderNumber(String number);
+
+  /// No description provided for @messageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your message'**
+  String get messageHint;
+
+  /// No description provided for @sendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Send message'**
+  String get sendMessage;
+
+  /// No description provided for @sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending...'**
+  String get sending;
+
+  /// No description provided for @replyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'We reply in Notifications, usually the same day.'**
+  String get replyNote;
+
+  /// No description provided for @messageSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Message sent'**
+  String get messageSent;
+
+  /// No description provided for @messageSentAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About order {number}. We\'ll answer in Notifications, usually the same day.'**
+  String messageSentAbout(String number);
+
+  /// No description provided for @messageSentGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll answer in Notifications, usually the same day.'**
+  String get messageSentGeneral;
+
+  /// No description provided for @sendAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Send another message'**
+  String get sendAnother;
+
+  /// No description provided for @shopLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SHOP'**
+  String get shopLabel;
+
+  /// No description provided for @shopShortAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'#88 St. 315, Toul Kork'**
+  String get shopShortAddress;
+
+  /// No description provided for @loginToMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to send us a message'**
+  String get loginToMessage;
+
+  /// No description provided for @loginToMessageSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram, call and email work without an account.'**
+  String get loginToMessageSub;
+
+  /// No description provided for @couldNotOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open it, so we copied {value}.'**
+  String couldNotOpen(String value);
+
+  /// No description provided for @stageToPay.
+  ///
+  /// In en, this message translates to:
+  /// **'To pay'**
+  String get stageToPay;
+
+  /// No description provided for @stageWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get stageWaiting;
+
+  /// No description provided for @stagePacking.
+  ///
+  /// In en, this message translates to:
+  /// **'Packing'**
+  String get stagePacking;
+
+  /// No description provided for @stageOnTheWay.
+  ///
+  /// In en, this message translates to:
+  /// **'On the way'**
+  String get stageOnTheWay;
+
+  /// No description provided for @stageDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get stageDelivered;
+
+  /// No description provided for @stageCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get stageCancelled;
 }
 
 class _AppLocalizationsDelegate
