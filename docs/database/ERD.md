@@ -1,7 +1,10 @@
 # Entity Relationship Diagram
 
-The diagram below renders on GitHub. For a polished image for the report, paste
-[`erd.dbml`](erd.dbml) into <https://dbdiagram.io> and export as PNG/PDF.
+All 16 tables with their keys and relationships. For the report use the ready
+image [`erd.png`](erd.png) or [`erd.pdf`](erd.pdf). The same diagram is below
+(GitHub draws it), and [`erd.dbml`](erd.dbml) opens in <https://dbdiagram.io>.
+
+![ERD](erd.png)
 
 ```mermaid
 erDiagram
