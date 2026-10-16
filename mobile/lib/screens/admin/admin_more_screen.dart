@@ -254,9 +254,9 @@ class _CategoryDialogState extends State<_CategoryDialog> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         title: Text(widget.category == null ? 'New category' : 'Edit category'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(key: const Key('admin_category_name'), controller: _name, autofocus: true, textCapitalization: TextCapitalization.words, decoration: InputDecoration(labelText: 'Name', errorText: _error)),
+          TextField(key: const Key('admin_category_name'), controller: _name, inputFormatters: [LengthLimitingTextInputFormatter(100)], autofocus: true, textCapitalization: TextCapitalization.words, decoration: InputDecoration(labelText: 'Name', errorText: _error)),
           const SizedBox(height: 10),
-          TextField(key: const Key('admin_category_description'), controller: _description, decoration: const InputDecoration(labelText: 'Description (optional)')),
+          TextField(key: const Key('admin_category_description'), controller: _description, inputFormatters: [LengthLimitingTextInputFormatter(1000)], decoration: const InputDecoration(labelText: 'Description (optional)')),
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),

@@ -83,6 +83,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   const SizedBox(height: 24),
                   PillTextField(
                     fieldKey: const Key('forgot_email'),
+                    maxLength: 150,
                     controller: _email,
                     label: 'Email',
                     hint: 'you@example.com',
