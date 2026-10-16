@@ -1,57 +1,15 @@
-import 'package:ecommerce_app/core/network/api_client.dart';
 import 'package:ecommerce_app/core/theme/app_theme.dart';
 import 'package:ecommerce_app/models/admin.dart';
 import 'package:ecommerce_app/models/user.dart';
 import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/screens/admin/admin_dashboard_screen.dart';
 import 'package:ecommerce_app/screens/admin/admin_shell.dart';
-import 'package:ecommerce_app/services/admin_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class FakeAdminService extends AdminService {
-  AdminStats stats_ = const AdminStats(revenue: 1053, weekRevenue: 127, week: [20, 40, 0, 60, 30, 40, 70], ordersToHandle: 4, lowStock: 5, openMessages: 2);
-  List<ActivityEvent> events = [
-    ActivityEvent(id: 'paid-3', kind: ActivityKind.paid, at: DateTime.now().toUtc(), title: 'Payment received', message: 'Chan paid \$27.00 by KHQR',
-        action: ActivityAction.ship, orderId: 3, status: 'confirmed'),
-    ActivityEvent(id: 'message-1', kind: ActivityKind.message, at: DateTime.now().toUtc(), title: 'New message', message: '"Posters?"',
-        action: ActivityAction.reply, messageId: 1, status: 'open'),
-    ActivityEvent(id: 'order-1', kind: ActivityKind.order, at: DateTime.now().toUtc(), title: 'New order AWS-1', message: 'Demo · \$87.00 · cash',
-        action: ActivityAction.confirm, orderId: 1, status: 'pending'),
-    ActivityEvent(id: 'stock-7', kind: ActivityKind.soldOut, at: DateTime.now().toUtc(), title: 'Sold out', message: 'Makima has 0 left',
-        action: ActivityAction.restock, productId: 7),
-    ActivityEvent(id: 'order-9', kind: ActivityKind.order, at: DateTime.now().toUtc(), title: 'New order AWS-9', message: 'Demo · \$12.00 · KHQR', status: 'delivered'),
-  ];
-  bool fail = false;
-  final statuses = <(int, String)>[];
-  final replies = <(int, String)>[];
-  final stock = <(int, int)>[];
-  int loads = 0;
-
-  @override
-  Future<AdminStats> stats() async {
-    loads++;
-    if (fail) throw ApiException('Cannot connect to server. Check your internet connection.');
-    return stats_;
-  }
-
-  @override
-  Future<List<ActivityEvent>> activity({int limit = 20}) async {
-    if (fail) throw ApiException('Cannot connect to server. Check your internet connection.');
-    return [...events];
-  }
-
-  @override
-  Future<void> setOrderStatus(int orderId, String status) async => statuses.add((orderId, status));
-
-  @override
-  Future<void> reply(int messageId, String text) async => replies.add((messageId, text));
-
-  @override
-  Future<void> setStock(int productId, int stock) async => this.stock.add((productId, stock));
-}
+import 'fakes/admin_fake.dart';
 
 Future<FakeAdminService> _pump(WidgetTester tester, {FakeAdminService? service, bool shell = false, int hour = 14}) async {
   SharedPreferences.setMockInitialValues({});
@@ -164,7 +122,10 @@ void main() {
     expect(find.descendant(of: find.byKey(const Key('admin_tab_more')), matching: find.text('2')), findsOneWidget);
     await tester.tap(find.byKey(const Key('admin_count_low_stock')));
     await tester.pumpAndSettle();
-    expect(find.text('This part of the admin comes next.'), findsOneWidget);
+    // Products, already showing Low stock: Makima (0) and Gojo (2 left)
+    expect(tester.widget<ChoiceChip>(find.byKey(const Key('admin_products_filter_1'))).selected, isTrue);
+    expect(find.text('F:NEX Makima 1/7'), findsOneWidget);
+    expect(find.text('Old Keychain'), findsNothing);
     await _end(tester);
   });
 }

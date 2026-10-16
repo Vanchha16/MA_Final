@@ -17,6 +17,7 @@ import '../../services/admin_service.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
 import '../../widgets/quantity_stepper.dart';
+import 'admin_widgets.dart';
 
 /// Admin dashboard (E with A's header): greeting and Shop switch, the paid
 /// revenue with this week's bars, three counts, then Live activity where each
@@ -35,10 +36,10 @@ class AdminDashboardScreen extends StatefulWidget {
   static const checkEvery = Duration(seconds: 20);
 
   @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+  State<AdminDashboardScreen> createState() => AdminDashboardScreenState();
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+class AdminDashboardScreenState extends State<AdminDashboardScreen> {
   AdminStats? _stats;
   List<ActivityEvent>? _events;
   String? _error;
@@ -67,6 +68,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   bool get _reduceMotion => MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+
+  /// Fetches the numbers and the feed again (after a change on another tab).
+  Future<void> reload() => _load(quiet: true);
 
   Future<void> _load({bool quiet = false}) async {
     try {
@@ -117,12 +121,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
-  Future<String?> _askReply(ActivityEvent e) => showModalBottomSheet<String>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (_) => _ReplySheet(question: e.message),
-      );
+  Future<String?> _askReply(ActivityEvent e) {
+    final l = context.l10n;
+    return showReplySheet(context, question: e.message, title: l.replyTitle, hint: l.replyHint, send: l.sendReply);
+  }
 
   Future<int?> _askStock() {
     var count = 10;
@@ -502,63 +504,6 @@ class _EventRow extends StatelessWidget {
         Container(width: 36, height: 36, decoration: BoxDecoration(color: color, shape: BoxShape.circle), child: Icon(icon, color: Colors.white, size: 18)),
         const SizedBox(width: 12),
         Expanded(child: card),
-      ]),
-    );
-  }
-}
-
-/// Bottom sheet to answer a Contact message. Owns its text field so it is
-/// cleaned up only after the sheet has gone.
-class _ReplySheet extends StatefulWidget {
-  final String question;
-
-  const _ReplySheet({required this.question});
-
-  @override
-  State<_ReplySheet> createState() => _ReplySheetState();
-}
-
-class _ReplySheetState extends State<_ReplySheet> {
-  final _text = TextEditingController();
-
-  @override
-  void dispose() {
-    _text.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    final answer = _text.text.trim();
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text(l.replyTitle, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Text(widget.question, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 14),
-        TextField(
-          key: const Key('admin_reply_text'),
-          controller: _text,
-          autofocus: true,
-          minLines: 3,
-          maxLines: 6,
-          textCapitalization: TextCapitalization.sentences,
-          onChanged: (_) => setState(() {}),
-          decoration: InputDecoration(
-            hintText: l.replyHint,
-            filled: true,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-          ),
-        ),
-        const SizedBox(height: 14),
-        PillButton(
-          key: const Key('admin_reply_send'),
-          label: l.sendReply,
-          leadingIcon: Icons.send_rounded,
-          onPressed: answer.isEmpty ? null : () => Navigator.of(context).pop(answer),
-        ),
       ]),
     );
   }

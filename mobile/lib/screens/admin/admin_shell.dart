@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../l10n/l10n.dart';
 import '../../models/admin.dart';
-import '../../providers/auth_provider.dart';
 import '../../services/admin_service.dart';
-import '../../widgets/icon_circle.dart';
-import '../../widgets/pill_button.dart';
-import '../auth/login_screen.dart';
-import '../profile/profile_screen.dart';
 import '../shell/main_shell.dart';
 import 'admin_dashboard_screen.dart';
+import 'admin_more_screen.dart';
+import 'admin_orders_screen.dart';
+import 'admin_products_screen.dart';
 
 /// The app for an admin account (picked from the Admin previews: E with A's
 /// header): Dashboard, Orders, a raised + to add a product, Products, More.
@@ -33,6 +30,9 @@ class AdminShell extends StatefulWidget {
 
 class _AdminShellState extends State<AdminShell> {
   late final AdminService _service = widget.service ?? AdminService();
+  final _dashboard = GlobalKey<AdminDashboardScreenState>();
+  final _orders = GlobalKey<AdminOrdersScreenState>();
+  final _products = GlobalKey<AdminProductsScreenState>();
   int _index = 0;
 
   /// Kept in sync by the dashboard, for the badges.
@@ -40,7 +40,22 @@ class _AdminShellState extends State<AdminShell> {
 
   void _openShop() => Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const MainShell()), (_) => false);
 
-  void _addProduct() => Navigator.of(context).push(MaterialPageRoute(builder: (_) => _ComingNext(title: context.l10n.addProduct, icon: Icons.add_box_rounded)));
+  /// Something changed on one tab: refresh the others' numbers.
+  void _changed() {
+    _dashboard.currentState?.reload();
+    _orders.currentState?.reload();
+    _products.currentState?.reload();
+  }
+
+  Future<void> _addProduct() async {
+    final added = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => AdminProductFormScreen(service: _service)));
+    if (added == true) _changed();
+  }
+
+  void _openTab(int tab) {
+    setState(() => _index = tab);
+    if (tab == AdminShell.productsTab) _products.currentState?.showLowStock();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,14 +71,15 @@ class _AdminShellState extends State<AdminShell> {
     return Scaffold(
       body: IndexedStack(index: _index, children: [
         AdminDashboardScreen(
+          key: _dashboard,
           service: _service,
           onShop: _openShop,
           onStats: (s) => setState(() => _stats = s),
-          onOpenTab: (tab) => setState(() => _index = tab),
+          onOpenTab: _openTab,
         ),
-        _ComingNext(title: l.navOrders, icon: Icons.receipt_long_rounded, inTab: true),
-        _ComingNext(title: l.navProducts, icon: Icons.inventory_2_rounded, inTab: true),
-        _ComingNext(title: l.navMore, icon: Icons.more_horiz_rounded, inTab: true, showLogout: true),
+        AdminOrdersScreen(key: _orders, service: _service, onChanged: _changed),
+        AdminProductsScreen(key: _products, service: _service, onChanged: _changed),
+        AdminMoreScreen(service: _service, onShop: _openShop, openMessages: messages, onChanged: _changed),
       ]),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Tooltip(
@@ -92,7 +108,10 @@ class _AdminShellState extends State<AdminShell> {
         child: NavigationBar(
           selectedIndex: slot,
           onDestinationSelected: (i) {
-            if (i == 2) return _addProduct();
+            if (i == 2) {
+              _addProduct();
+              return;
+            }
             setState(() => _index = i < 2 ? i : i - 1);
           },
           destinations: [
@@ -104,7 +123,7 @@ class _AdminShellState extends State<AdminShell> {
               label: l.navOrders,
             ),
             const NavigationDestination(icon: SizedBox(width: 56), label: '', enabled: false),
-            NavigationDestination(icon: const Icon(Icons.inventory_2_outlined), selectedIcon: const Icon(Icons.inventory_2_rounded), label: l.navProducts),
+            NavigationDestination(key: const Key('admin_tab_products'), icon: const Icon(Icons.inventory_2_outlined), selectedIcon: const Icon(Icons.inventory_2_rounded), label: l.navProducts),
             NavigationDestination(
               key: const Key('admin_tab_more'),
               icon: badge(messages, const Icon(Icons.more_horiz_rounded)),
@@ -114,45 +133,5 @@ class _AdminShellState extends State<AdminShell> {
         ),
       ),
     );
-  }
-}
-
-/// Stand-in for the admin pages that are designed next (orders, products, more).
-class _ComingNext extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final bool inTab;
-  final bool showLogout;
-
-  const _ComingNext({required this.title, required this.icon, this.inTab = false, this.showLogout = false});
-
-  Future<void> _logout(BuildContext context) async {
-    final ok = await showLogoutDialog(context);
-    if (ok != true || !context.mounted) return;
-    await context.read<AuthProvider>().logout();
-    if (!context.mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (_) => false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    final body = Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          IconCircle(icon: icon),
-          const SizedBox(height: 16),
-          Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          Text(l.adminComingSoon, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          if (showLogout) ...[
-            const SizedBox(height: 24),
-            PillButton.danger(key: const Key('admin_logout'), label: l.logOut, leadingIcon: Icons.logout_rounded, onPressed: () => _logout(context)),
-          ],
-        ]),
-      ),
-    );
-    return inTab ? SafeArea(child: body) : Scaffold(appBar: AppBar(title: Text(title)), body: body);
   }
 }
