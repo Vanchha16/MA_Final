@@ -222,14 +222,17 @@ CREATE TABLE contact_messages (
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
 );
 
--- Bonus: product reviews & ratings
+-- Bonus: product reviews & ratings. Only for products in the customer's
+-- delivered orders (checked by the API); one per customer and product.
 CREATE TABLE reviews (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   product_id INT UNSIGNED     NOT NULL,
   user_id    INT UNSIGNED     NOT NULL,
   rating     TINYINT UNSIGNED NOT NULL CHECK (rating BETWEEN 1 AND 5),
   comment    TEXT             NULL,
+  tags       JSON             NULL,  -- quality, as_pictured, packaging, delivery, value
   created_at DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME         NULL,  -- set when the customer edits it
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE,
   UNIQUE KEY uq_review_user_product (user_id, product_id)

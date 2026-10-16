@@ -115,44 +115,148 @@ class Product {
   int get discountPercent => onSale ? ((1 - discountPrice! / price) * 100).round() : 0;
 }
 
+/// The quick tags a customer can add to a review (API key -> label).
+const reviewTags = {
+  'quality': 'Great quality',
+  'as_pictured': 'As pictured',
+  'packaging': 'Well packed',
+  'delivery': 'Fast delivery',
+  'value': 'Good value',
+};
+
+/// Words for 1-5 stars.
+const ratingWords = ['', 'Terrible', 'Not great', 'Okay', 'Very good', 'Excellent'];
+
+DateTime _utc(String raw) {
+  // The API sends UTC without a zone marker
+  final hasZone = raw.endsWith('Z') || RegExp(r'[+-]\d\d:\d\d$').hasMatch(raw);
+  return DateTime.parse(hasZone ? raw : '${raw}Z');
+}
+
 class Review {
   final int id;
+  final int? productId;
   final String user;
   final int rating;
   final String? comment;
+  final List<String> tags;
   final DateTime createdAt;
+  final bool edited;
 
-  const Review({required this.id, required this.user, required this.rating, this.comment, required this.createdAt});
+  /// The logged-in customer wrote it.
+  final bool isMine;
 
-  factory Review.fromJson(Map<String, dynamic> json) {
-    final raw = json['created_at'] as String;
-    // The API sends UTC without a zone marker
-    final hasZone = raw.endsWith('Z') || RegExp(r'[+-]\d\d:\d\d$').hasMatch(raw);
-    return Review(
-      id: json['id'],
-      user: json['user'],
-      rating: json['rating'],
-      comment: json['comment'],
-      createdAt: DateTime.parse(hasZone ? raw : '${raw}Z'),
-    );
-  }
+  const Review({
+    required this.id,
+    this.productId,
+    required this.user,
+    required this.rating,
+    this.comment,
+    this.tags = const [],
+    required this.createdAt,
+    this.edited = false,
+    this.isMine = false,
+  });
+
+  factory Review.fromJson(Map<String, dynamic> json) => Review(
+        id: json['id'],
+        productId: json['product_id'],
+        user: json['user'],
+        rating: json['rating'],
+        comment: json['comment'],
+        tags: [for (final t in json['tags'] as List? ?? const []) if (reviewTags.containsKey(t)) t as String],
+        createdAt: _utc(json['created_at'] as String),
+        edited: json['edited'] ?? false,
+        isMine: json['is_mine'] ?? false,
+      );
 
   /// "DC" for Demo Customer.
   String get initials => user.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0].toUpperCase()).join();
+
+  bool get hasComment => (comment ?? '').trim().isNotEmpty;
+}
+
+/// Average, count and how many reviews gave each star / chose each tag.
+class ReviewSummary {
+  final double rating;
+  final int count, withComment;
+  final Map<int, int> stars;
+  final Map<String, int> tags;
+
+  const ReviewSummary({this.rating = 0, this.count = 0, this.withComment = 0, this.stars = const {}, this.tags = const {}});
+
+  factory ReviewSummary.fromJson(Map<String, dynamic> json) => ReviewSummary(
+        rating: (json['rating'] as num? ?? 0).toDouble(),
+        count: json['count'] ?? 0,
+        withComment: json['with_comment'] ?? 0,
+        stars: {for (final e in (json['stars'] as Map? ?? const {}).entries) int.parse('${e.key}'): e.value as int},
+        tags: {for (final e in (json['tags'] as Map? ?? const {}).entries) '${e.key}': e.value as int},
+      );
+
+  int starCount(int n) => stars[n] ?? 0;
+
+  /// Share of reviews with [n] stars, 0..1.
+  double share(int n) => count == 0 ? 0 : starCount(n) / count;
+}
+
+/// GET /api/products/{id}/reviews: one page plus the summary.
+class ReviewPage {
+  final ReviewSummary summary;
+  final List<Review> items;
+  final int page, totalPages, total;
+
+  const ReviewPage({required this.summary, this.items = const [], this.page = 1, this.totalPages = 1, this.total = 0});
+
+  factory ReviewPage.fromJson(Map<String, dynamic> json) => ReviewPage(
+        summary: ReviewSummary.fromJson(json['summary']),
+        items: [for (final r in json['items'] as List) Review.fromJson(r)],
+        page: json['page'],
+        totalPages: json['total_pages'],
+        total: json['total'],
+      );
+
+  bool get hasMore => page < totalPages;
+}
+
+/// A delivered product the customer hasn't rated yet (GET /api/reviews/to-review).
+class ToReviewItem {
+  final Product product;
+  final int orderId;
+  final String orderNumber;
+
+  const ToReviewItem({required this.product, required this.orderId, required this.orderNumber});
+
+  factory ToReviewItem.fromJson(Map<String, dynamic> json) =>
+      ToReviewItem(product: Product.fromJson(json['product']), orderId: json['order_id'], orderNumber: json['order_number']);
 }
 
 /// GET /api/products/{id}: the product plus its reviews and related products.
 class ProductDetail {
   final Product product;
   final List<Review> reviews;
+  final ReviewSummary summary;
   final List<Product> related;
 
-  const ProductDetail({required this.product, this.reviews = const [], this.related = const []});
+  /// The logged-in customer's own review, and whether they may write one (it was delivered to them).
+  final Review? myReview;
+  final bool canReview;
+
+  const ProductDetail({
+    required this.product,
+    this.reviews = const [],
+    this.summary = const ReviewSummary(),
+    this.related = const [],
+    this.myReview,
+    this.canReview = false,
+  });
 
   factory ProductDetail.fromJson(Map<String, dynamic> json) => ProductDetail(
         product: Product.fromJson(json),
         reviews: [for (final r in json['reviews'] as List? ?? []) Review.fromJson(r)],
+        summary: json['review_summary'] == null ? const ReviewSummary() : ReviewSummary.fromJson(json['review_summary']),
         related: [for (final p in json['related'] as List? ?? []) Product.fromJson(p)],
+        myReview: json['my_review'] == null ? null : Review.fromJson(json['my_review']),
+        canReview: json['can_review'] ?? false,
       );
 }
 

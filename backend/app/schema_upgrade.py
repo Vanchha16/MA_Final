@@ -6,13 +6,14 @@ Safe to run any number of times (MySQL or SQLite).
 from sqlalchemy import inspect, text
 
 from .extensions import db
-from .models import Notification, Order, User
+from .models import Notification, Order, Review, User
 
 # table -> columns added after the first release
 NEW_COLUMNS = {
     Order.__table__: ("discount", "coupon_code", "delivery_method"),
     Notification.__table__: ("event", "order_id", "promo_code"),
     User.__table__: ("notify_orders", "notify_offers", "notify_news"),
+    Review.__table__: ("tags", "updated_at"),
 }
 
 

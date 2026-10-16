@@ -75,6 +75,8 @@ The Word copies (`.docx`) are made from these Markdown files with `python make_d
 | UC-19 | Change settings | Customer, Admin | FR-A02 | Settings |
 | UC-20 | Send a message to the shop | Customer | FR-A04 | Contact Us |
 | UC-21 | Read help, about and legal pages | Customer | FR-A03, FR-A05 | Help, About, Legal |
+| UC-22 | Rate a product (edit / delete my review) | Customer | FR-R01, FR-R02 | Rate sheet (from Order Details, Notifications, To review, Product Details) |
+| UC-23 | Read reviews | Customer | FR-R03, FR-R04 | Product Details, Reviews |
 | UC-A1 | View dashboard and live activity | Admin | FR-AD01 | Admin Dashboard |
 | UC-A2 | Manage orders (next step, cancel) | Admin | FR-AD02 | Admin Orders, Admin Order Details |
 | UC-A3 | Add / edit product and photos | Admin | FR-AD03 | Admin Products, Add / Edit Product |
@@ -260,6 +262,29 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 
 **Alternative flows**
 - A1 (step 2): no orders yet. Empty state with "Start shopping".
+
+### UC-22 Rate a product
+
+| | |
+|---|---|
+| **Actor** | Customer |
+| **Precondition** | The product is in one of the customer's delivered orders. |
+| **Trigger** | "Rate it" on an item of a delivered order, on the "Delivered" notification, in Profile > To review, or "You bought this. Rate it" on the product page. |
+
+**Main flow**
+1. The app opens the rating sheet with the product photo and name ("Rate your figure").
+2. The customer taps a star; the star pops and the word under it changes (Terrible ... Excellent). Post review stays disabled until a star is chosen.
+3. The customer may pick quick tags and write a comment.
+4. The customer taps Post review; the app sends `POST /api/products/<id>/reviews`.
+5. The system checks that the product was delivered to them, validates the data and saves the review (or updates their existing one).
+6. The sheet shows "Thanks for your review!" and closes; the item now shows its stars and "Reviewed", and the product's rating is updated.
+
+**Alternative flows**
+- A1 (step 5): not delivered to this customer. `403`, "You can review a product once it has been delivered to you".
+- A2 (step 5): comment longer than 1,000 characters, unknown tag or rating not 1-5. `422`; the sheet shows the message and stays open.
+- A3: the customer already reviewed it. The sheet opens as "Edit your review" with their stars, tags and comment; Save changes edits it, Delete review (after a confirmation) removes it.
+
+**Postcondition** The review is on the product page and the Reviews page, marked as a verified buyer.
 
 ### UC-A2 Manage orders
 
