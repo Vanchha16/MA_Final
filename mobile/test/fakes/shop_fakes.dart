@@ -108,6 +108,44 @@ class FakeShopService extends ShopService {
   @override
   Future<int> cartCount() async => cart;
 
+  /// Products the wishlist can show (defaults to [demoProducts]).
+  List<Product> catalog = demoProducts;
+  bool failWishlist = false;
+  final List<List<int>> moves = [];
+
+  @override
+  Future<List<Product>> wishlistItems() async {
+    if (failWishlist) throw ApiException('Cannot connect to server. Check your internet connection.');
+    return [for (final id in wishlist) catalog.firstWhere((p) => p.id == id)];
+  }
+
+  @override
+  Future<Set<int>> removeManyFromWishlist(List<int> productIds) async => {...wishlist..removeAll(productIds)};
+
+  @override
+  Future<Set<int>> addManyToWishlist(List<int> productIds) async {
+    // Back on top, like the API
+    final rest = wishlist.difference(productIds.toSet());
+    wishlist
+      ..clear()
+      ..addAll([...productIds, ...rest]);
+    return {...wishlist};
+  }
+
+  @override
+  Future<MoveToCartResult> moveToCart(List<int> productIds) async {
+    moves.add(productIds);
+    final moved = [for (final id in productIds) if (!catalog.firstWhere((p) => p.id == id).soldOut) id];
+    wishlist.removeAll(moved);
+    cart += moved.length;
+    return MoveToCartResult(
+      moved: moved,
+      skipped: [for (final id in productIds) if (!moved.contains(id)) id],
+      wishlistIds: {...wishlist},
+      cartCount: cart,
+    );
+  }
+
   /// What was added through this fake, for the cart totals (free delivery from $50, else $2).
   double subtotal = 0;
 
