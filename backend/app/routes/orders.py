@@ -1,21 +1,22 @@
-import re
+import uuid
 
 from flask import Blueprint, current_app, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from .. import notify, payments
 from ..extensions import db
-from ..models import Address, CartItem, Order, OrderItem, Review, User
+from ..models import Address, CartItem, Order, OrderItem, Product, Review, User
 from ..pricing import DELIVERY_METHODS, find_coupon, shipping_for, summarize
 from ..utils.clock import utcnow
 from ..utils.responses import error, success
+from ..utils.validators import Fields, json_body
 
 bp = Blueprint("orders", __name__, url_prefix="/api")
 
 PAYMENT_METHODS = ("cod", "khqr")
 STORE = {"name": "Anime World Shop", "address": "#88 St. 315, Boeung Kak 2, Toul Kork, Phnom Penh", "hours": "9:00 - 20:00"}
-PHONE = re.compile(r"^\+?[0-9 ]{8,15}$")
 
 
 def _user_id():
@@ -32,25 +33,26 @@ def _addresses(user_id):
     return Address.query.filter_by(user_id=user_id).order_by(Address.is_default.desc(), Address.id.desc()).all()
 
 
-def _address_errors(data):
-    errors = {}
-    for field, label in (("recipient_name", "Name"), ("phone", "Phone number"), ("street", "Street address"), ("city", "District")):
-        if not str(data.get(field) or "").strip():
-            errors[field] = f"{label} is required"
-    phone = str(data.get("phone") or "").strip()
-    if phone and not PHONE.match(phone):
-        errors["phone"] = "Enter a valid phone number"
-    return errors
+def _read_address(data):
+    """Checks an address body; returns (fields, errors). Text longer than its column is refused, not cut."""
+    f = Fields(data)
+    fields = {
+        "label": f.text("label", max_len=50, label="Label") or "Home",
+        "recipient_name": f.person_name("recipient_name"),
+        "phone": f.phone(required=True),
+        "street": f.text("street", required=True, max_len=255, label="Street address"),
+        "city": f.text("city", required=True, max_len=100, label="District"),
+        "province": f.text("province", max_len=100, label="Province"),
+        "postal_code": f.text("postal_code", max_len=20, label="Postal code"),
+    }
+    if f.has("is_default") and data["is_default"] is not None:
+        f.boolean("is_default")
+    return fields, f.errors
 
 
-def _fill(address, data):
-    address.label = (str(data.get("label") or "Home").strip() or "Home")[:50]
-    address.recipient_name = str(data["recipient_name"]).strip()[:100]
-    address.phone = str(data["phone"]).strip()[:20]
-    address.street = str(data["street"]).strip()[:255]
-    address.city = str(data["city"]).strip()[:100]
-    address.province = (str(data.get("province") or "").strip() or None)
-    address.postal_code = (str(data.get("postal_code") or "").strip() or None)
+def _fill(address, fields):
+    for name, value in fields.items():
+        setattr(address, name, value)
 
 
 def _make_default(address):
@@ -67,17 +69,17 @@ def list_addresses():
 @bp.post("/addresses")
 @jwt_required()
 def add_address():
-    data = request.get_json(silent=True) or {}
-    errors = _address_errors(data)
+    data = json_body()
+    fields, errors = _read_address(data)
     if errors:
         return error("Validation failed", 422, errors)
     user_id = _user_id()
     address = Address(user_id=user_id)
-    _fill(address, data)
+    _fill(address, fields)
     db.session.add(address)
     db.session.flush()
     # The first address, or one marked default, becomes the default
-    if data.get("is_default") or Address.query.filter_by(user_id=user_id).count() == 1:
+    if data.get("is_default") is True or Address.query.filter_by(user_id=user_id).count() == 1:
         _make_default(address)
     db.session.commit()
     return success(address.to_dict(), "Address saved", 201)
@@ -89,12 +91,12 @@ def update_address(address_id):
     address = _own_address(address_id)
     if not address:
         return error("Address not found", 404)
-    data = request.get_json(silent=True) or {}
-    errors = _address_errors(data)
+    data = json_body()
+    fields, errors = _read_address(data)
     if errors:
         return error("Validation failed", 422, errors)
-    _fill(address, data)
-    if data.get("is_default"):
+    _fill(address, fields)
+    if data.get("is_default") is True:
         _make_default(address)
     db.session.commit()
     return success(address.to_dict(), "Address updated")
@@ -150,10 +152,10 @@ def checkout_preview():
     })
 
 
-def _next_order_number():
-    prefix = f"AWS-{utcnow():%Y%m%d}-"
-    count = Order.query.filter(Order.order_number.like(f"{prefix}%")).count()
-    return f"{prefix}{count + 1:04d}"
+def _order_number(order):
+    """AWS-<date>-<id>: built from the order's own id, so two orders placed at the same
+    moment can never get the same number (five digits keep it apart from older numbers)."""
+    return f"AWS-{order.created_at:%Y%m%d}-{order.id:05d}"
 
 
 @bp.post("/orders")
@@ -161,20 +163,19 @@ def _next_order_number():
 def place_order():
     """Body: {"address_id": 1, "delivery_method": "standard", "payment_method": "khqr", "coupon": "WELCOME10", "note": ""}.
     Turns the cart into an order, lowers stock and empties the cart."""
-    data = request.get_json(silent=True) or {}
+    data = json_body()
     user_id = _user_id()
-    delivery = data.get("delivery_method", "standard")
-    payment = data.get("payment_method")
-    errors = {}
-    if delivery not in DELIVERY_METHODS:
-        errors["delivery_method"] = "Choose Standard or Store pickup"
-    if payment not in PAYMENT_METHODS:
-        errors["payment_method"] = "Choose KHQR or Cash on delivery"
-    address = _own_address(data["address_id"]) if isinstance(data.get("address_id"), int) else None
+    f = Fields(data)
+    delivery = f.choice("delivery_method", DELIVERY_METHODS, default="standard", message="Choose Standard or Store pickup")
+    payment = f.choice("payment_method", PAYMENT_METHODS, required=True, message="Choose KHQR or Cash on delivery")
+    code = f.text("coupon", max_len=30, label="Promo code")
+    note = f.text("note", max_len=255, label="The note")
+    address_id = data.get("address_id")
+    address = _own_address(address_id) if isinstance(address_id, int) and not isinstance(address_id, bool) else None
     if delivery == "standard" and not address:
-        errors["address_id"] = "Choose a delivery address"
-    if errors:
-        return error("Validation failed", 422, errors)
+        f.errors["address_id"] = "Choose a delivery address"
+    if f.errors:
+        return error("Validation failed", 422, f.errors)
 
     items = _cart_items(user_id)
     if not items:
@@ -187,7 +188,6 @@ def place_order():
     if problems:
         return error("Some items changed. " + "; ".join(problems) + ".", 409, {"items": problems})
 
-    code = (data.get("coupon") or "").strip() or None
     if code:
         _, reason = find_coupon(code, sum(float(i.product.final_price) * i.quantity for i in items))
         if reason:
@@ -201,22 +201,35 @@ def place_order():
     else:
         name, phone, where = address.recipient_name, address.phone, address.one_line
 
+    # Take the stock with one conditional UPDATE per item: if someone else bought
+    # the last one a moment ago, the row no longer matches and nothing is sold twice.
+    for i in items:
+        taken = db.session.execute(
+            update(Product).where(Product.id == i.product_id, Product.stock >= i.quantity)
+            .values(stock=Product.stock - i.quantity).execution_options(synchronize_session=False)
+        )
+        if taken.rowcount != 1:
+            name, stock = db.session.execute(select(Product.name, Product.stock).where(Product.id == i.product_id)).one()
+            db.session.rollback()
+            problem = f"{name} is sold out" if stock <= 0 else f"Only {stock} left of {name}"
+            return error(f"Some items changed. {problem}.", 409, {"items": [problem]})
+
     order = Order(
-        order_number=_next_order_number(), user_id=user_id,
+        order_number=f"TMP-{uuid.uuid4().hex[:20]}", user_id=user_id, created_at=utcnow(),
         shipping_name=name, shipping_phone=phone, shipping_address=where,
         subtotal=totals["subtotal"], discount=totals["discount"], shipping_fee=totals["shipping_fee"], total=totals["total"],
         coupon_code=totals["coupon"]["code"] if totals["coupon"] else None,
         delivery_method=delivery, payment_method=payment, payment_status="unpaid", status="pending",
-        note=(str(data.get("note") or "").strip()[:255] or None),
+        note=note,
     )
     for i in items:
         p = i.product
         order.items.append(OrderItem(product_id=p.id, product_name=p.name, unit_price=p.final_price,
                                      quantity=i.quantity, subtotal=float(p.final_price) * i.quantity))
-        p.stock -= i.quantity
         db.session.delete(i)
     db.session.add(order)
     db.session.flush()
+    order.order_number = _order_number(order)
     notify.order_event(order, "placed_khqr" if payment == "khqr" else "placed_cod")
     db.session.commit()
     return success(order.to_dict(with_items=True), "Order placed", 201)

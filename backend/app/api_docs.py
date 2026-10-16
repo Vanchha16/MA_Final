@@ -133,7 +133,7 @@ SCHEMAS = {
     "OrderItem": obj(product_id=nullable(I), product_name=S, image_url=nullable(S), category=nullable(ref("Category")),
                      unit_price=N, quantity=I, subtotal=N,
                      my_rating=nullable({**I, "description": "Stars the customer gave this product (delivered orders), else null"})),
-    "Order": obj(id=I, order_number={**S, "example": "AWS-20261016-0001"},
+    "Order": obj(id=I, order_number={**S, "example": "AWS-20261016-00042"},
                  status={"type": "string", "enum": ["pending", "confirmed", "shipped", "delivered", "cancelled"]},
                  payment_method={"type": "string", "enum": ["cod", "khqr"]},
                  payment_status={"type": "string", "enum": ["unpaid", "paid", "failed", "refunded"]},
@@ -205,12 +205,13 @@ PATHS = {
 
     # Auth
     "/api/auth/register": {"post": op(AUTH, "Create a customer account", ok(TOKEN, "Registered", "201", "Registered successfully"), auth=False,
-                                      description="Also adds a WELCOME10 promo notification.", errors=(422,),
+                                      description="Also adds a WELCOME10 promo notification. Name 2-100 characters with letters, email up to 150, password 6-72, phone Cambodian. 20 sign-ups an hour per network (429).", errors=(422, 429),
                                       request_body=body(obj(["full_name", "email", "password"], full_name=S, email=S, phone=S,
                                                             password={**S, "minLength": 6}),
                                                         {"full_name": "Sok Dara", "email": "dara@example.com", "phone": "012345678", "password": "secret123"}))},
-    "/api/auth/login": {"post": op(AUTH, "Log in", ok(TOKEN, message="Logged in successfully"), auth=False, errors=(401, 403, 422),
-                                   description="401 for a wrong email or password, 403 for a blocked account. Tokens last 7 days.",
+    "/api/auth/login": {"post": op(AUTH, "Log in", ok(TOKEN, message="Logged in successfully"), auth=False, errors=(401, 403, 422, 429),
+                                   description="401 for a wrong email or password, 403 for a blocked account. Tokens last 7 days. "
+                                               "429 after 10 tries a minute from one network, or 10 in 15 minutes for one email.",
                                    request_body=body(obj(["email", "password"], email=S, password=S), {"email": "demo@shop.com", "password": "demo123"}))},
     "/api/auth/me": {"get": op(AUTH, "The logged-in user", ok(ref("User")), errors=(403, 404))},
     "/api/auth/forgot-password": {"post": op(
@@ -334,10 +335,10 @@ PATHS = {
     "/api/profile": {"put": op(PROFILE, "Change name and phone", ok(ref("User"), message="Profile updated"), errors=(422,),
                                request_body=body(obj(["full_name"], full_name=S, phone=nullable(S)), {"full_name": "Demo Customer", "phone": "012345678"}))},
     "/api/profile/summary": {"get": op(PROFILE, "Profile screen numbers: orders by status, points and tier", ok(ref("ProfileSummary")), errors=(404,))},
-    "/api/profile/password": {"put": op(PROFILE, "Change password", ok({"nullable": True}, message="Password changed"), errors=(422,),
+    "/api/profile/password": {"put": op(PROFILE, "Change password", ok(obj(token={**S, "description": "New login token for this device; the old ones stop working (401)"}), message="Password changed"), errors=(422,),
                                         request_body=body(obj(["current_password", "new_password"], current_password=S, new_password={**S, "minLength": 6})))},
     "/api/profile/avatar": {"post": op(PROFILE, "Upload a profile photo", ok(ref("User"), message="Photo updated"), errors=(422,),
-                                       description="JPG, PNG or WebP, 5 MB max.", request_body=upload())},
+                                       description="JPG, PNG or WebP, 5 MB max. It must open as a picture; it is saved again as a WebP (at most 512 px).", request_body=upload())},
     "/api/profile/preferences": {
         "get": op(PROFILE, "Settings > Notify me about", ok(ref("Preferences")), errors=(404,)),
         "put": op(PROFILE, "Save notification choices", ok(ref("Preferences"), message="Saved"), errors=(404, 422),
@@ -354,8 +355,9 @@ PATHS = {
     # Contact
     "/api/contact": {
         "get": op(CONTACT, "My Contact messages", ok(arr(ref("ContactMessage")))),
-        "post": op(CONTACT, "Send a message to the shop", ok(ref("ContactMessage"), "Sent", "201", "Message sent"), errors=(404, 422),
-                   description="The order is kept only for order and payment questions and must be yours. The reply arrives as a `support` notification.",
+        "post": op(CONTACT, "Send a message to the shop", ok(ref("ContactMessage"), "Sent", "201", "Message sent"), errors=(404, 422, 429),
+                   description="The order is kept only for order and payment questions and must be yours. The reply arrives as a `support` notification. "
+                               "At most 5 messages in 10 minutes and 30 a day per account (429).",
                    request_body=body(obj(["message"], topic={"type": "string", "enum": ["order", "payment", "product", "other"]},
                                          message={**S, "maxLength": 1000}, order_id=I),
                                      {"topic": "order", "order_id": 12, "message": "When will my Luffy figure arrive?"})),

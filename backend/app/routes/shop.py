@@ -6,6 +6,7 @@ from ..extensions import db
 from ..models import CartItem, Favorite, Product
 from ..pricing import find_coupon, summarize
 from ..utils.responses import error, success
+from ..utils.validators import json_body
 
 bp = Blueprint("shop", __name__, url_prefix="/api")
 
@@ -33,6 +34,16 @@ def _cart_summary(user_id, coupon_code=None):
     """Lines, subtotal, promo discount, delivery and total. Pass ?coupon=CODE to preview a promo code."""
     items = _cart_items(user_id)
     return {"items": [i.to_dict() for i in items], **summarize(items, coupon_code)}
+
+
+def _is_id(value):
+    """A real id: an int, not true/false (bool is an int in Python)."""
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _coupon(value):
+    """The promo code sent with a cart call, or None (anything but text is ignored)."""
+    return value.strip()[:30] or None if isinstance(value, str) else None
 
 
 def _max_qty(product):
@@ -76,8 +87,8 @@ def remove_from_wishlist(product_id):
 
 def _ids_from_body():
     """{"product_ids": [1, 2]} -> [1, 2], or None when the body is not a list of ids."""
-    ids = (request.get_json(silent=True) or {}).get("product_ids")
-    if not isinstance(ids, list) or not ids or not all(isinstance(i, int) for i in ids):
+    ids = json_body().get("product_ids")
+    if not isinstance(ids, list) or not ids or len(ids) > 100 or not all(_is_id(i) for i in ids):
         return None
     return list(dict.fromkeys(ids))
 
@@ -158,12 +169,12 @@ def cart():
 @jwt_required()
 def add_to_cart():
     """Body: {"product_id": 1, "quantity": 1}. Adds to the existing line if the product is already in the cart."""
-    data = request.get_json(silent=True) or {}
+    data = json_body()
     product_id = data.get("product_id")
     quantity = data.get("quantity", 1)
-    if not isinstance(product_id, int):
+    if not _is_id(product_id):
         return error("Validation failed", 422, {"product_id": "Product is required"})
-    if not isinstance(quantity, int) or quantity < 1:
+    if not _is_id(quantity):
         return error("Validation failed", 422, {"quantity": "Quantity must be at least 1"})
 
     product = _active_product(product_id)
@@ -183,7 +194,7 @@ def add_to_cart():
     else:
         db.session.add(CartItem(user_id=user_id, product_id=product_id, quantity=quantity))
     db.session.commit()
-    return success(_cart_summary(user_id, data.get("coupon")), "Added to cart", 201)
+    return success(_cart_summary(user_id, _coupon(data.get("coupon"))), "Added to cart", 201)
 
 
 def _own_item(item_id):
@@ -197,15 +208,15 @@ def update_cart_item(item_id):
     item = _own_item(item_id)
     if not item:
         return error("Item not in your cart", 404)
-    data = request.get_json(silent=True) or {}
+    data = json_body()
     quantity = data.get("quantity")
-    if not isinstance(quantity, int) or quantity < 1:
+    if not _is_id(quantity):
         return error("Validation failed", 422, {"quantity": "Quantity must be at least 1"})
     if quantity > _max_qty(item.product):
         return error(f"Only {_max_qty(item.product)} available for this item", 409)
     item.quantity = quantity
     db.session.commit()
-    return success(_cart_summary(item.user_id, data.get("coupon")))
+    return success(_cart_summary(item.user_id, _coupon(data.get("coupon"))))
 
 
 @bp.delete("/cart/<int:item_id>")
@@ -232,7 +243,7 @@ def clear_cart():
 @jwt_required()
 def apply_coupon():
     """Body: {"code": "WELCOME10"}. Checks the code against the current cart."""
-    code = ((request.get_json(silent=True) or {}).get("code") or "").strip()
+    code = _coupon(json_body().get("code")) or ""
     user_id = _user_id()
     subtotal = sum(float(i.product.final_price) * i.quantity for i in _cart_items(user_id))
     coupon, reason = find_coupon(code, subtotal)
