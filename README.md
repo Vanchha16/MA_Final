@@ -16,7 +16,7 @@ Final project (SU25 - Mobile Application). Flutter mobile app + Flask REST API +
 backend/     Flask REST API
 mobile/      Flutter app
 docs/        Requirement analysis, diagrams, API docs
-  database/  schema.sql, ERD.md, erd.dbml
+  database/  schema.sql, ERD.md (+ erd.png / erd.pdf), erd.dbml
 ```
 
 ## Run the backend
