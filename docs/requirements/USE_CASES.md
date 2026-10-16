@@ -213,7 +213,7 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 4. The customer chooses Standard delivery ($2, free from $50) or Store pickup (free).
 5. The customer chooses KHQR or Cash on delivery and can add a note.
 6. The customer taps "Place order"; the app sends `POST /api/orders`.
-7. The system checks every line against the current stock, then in one transaction creates the order (number like `AWS-20261016-0001`) and its items, lowers stock and empties the cart.
+7. The system checks every line against the current stock, then in one transaction takes the stock (a conditional update, so the last item can't be sold twice), creates the order (number like `AWS-20261016-00042`) and its items, and empties the cart.
 8. The system creates an "Order placed" notification.
 9. Cash on delivery: the app shows the Order Placed screen. KHQR: continue with UC-15.
 

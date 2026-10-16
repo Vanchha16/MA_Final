@@ -174,6 +174,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 8),
                   PillTextField(
                     fieldKey: const Key('edit_name'),
+                    maxLength: 100,
                     controller: _name,
                     label: 'Full name',
                     icon: Icons.person_outline,
@@ -202,6 +203,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 14),
                   PillTextField(
                     fieldKey: const Key('edit_phone'),
+                    maxLength: 30,
                     controller: _phone,
                     label: 'Phone (optional)',
                     hint: '012 345 678',

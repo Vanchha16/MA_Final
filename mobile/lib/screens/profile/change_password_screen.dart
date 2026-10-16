@@ -98,6 +98,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   const SizedBox(height: 24),
                   PillTextField(
                     fieldKey: const Key('cp_current'),
+                    maxLength: 200,
                     controller: _current,
                     label: 'Current password',
                     icon: Icons.lock_outline,
@@ -111,6 +112,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   const SizedBox(height: 14),
                   PillTextField(
                     fieldKey: const Key('cp_new'),
+                    maxLength: 72,
                     controller: _next,
                     label: 'New password',
                     icon: Icons.lock_outline,
@@ -131,6 +133,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   const SizedBox(height: 14),
                   PillTextField(
                     fieldKey: const Key('cp_confirm'),
+                    maxLength: 72,
                     controller: _confirm,
                     label: 'Confirm new password',
                     icon: Icons.lock_outline,

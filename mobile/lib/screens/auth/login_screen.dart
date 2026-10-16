@@ -128,6 +128,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             const SizedBox(height: 24),
                             PillTextField(
                               fieldKey: const Key('login_email'),
+                              maxLength: 150,
                               controller: _email,
                               label: 'Email',
                               hint: 'you@example.com',
@@ -147,6 +148,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             const SizedBox(height: 16),
                             PillTextField(
                               fieldKey: const Key('login_password'),
+                              maxLength: 200,
                               controller: _password,
                               label: 'Password',
                               icon: Icons.lock_outline,

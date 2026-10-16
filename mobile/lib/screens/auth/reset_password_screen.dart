@@ -83,6 +83,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   const SizedBox(height: 24),
                   PillTextField(
                     fieldKey: const Key('reset_password'),
+                    maxLength: 72,
                     controller: _password,
                     label: 'New password',
                     icon: Icons.lock_outline,
@@ -105,6 +106,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   const SizedBox(height: 14),
                   PillTextField(
                     fieldKey: const Key('reset_confirm'),
+                    maxLength: 72,
                     controller: _confirm,
                     label: 'Confirm new password',
                     icon: Icons.lock_outline,
