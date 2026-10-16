@@ -223,8 +223,33 @@ def place_order():
 @bp.get("/orders")
 @jwt_required()
 def list_orders():
-    orders = Order.query.filter_by(user_id=_user_id()).order_by(Order.created_at.desc(), Order.id.desc()).all()
-    return success([o.to_dict() for o in orders])
+    """Newest first, with their items. Unpaid KHQR orders past their time are cancelled first."""
+    orders = (
+        Order.query.filter_by(user_id=_user_id())
+        .options(selectinload(Order.items).selectinload(OrderItem.product))
+        .order_by(Order.created_at.desc(), Order.id.desc())
+        .all()
+    )
+    for order in orders:
+        if order.payment_method == "khqr" and order.status == "pending":
+            payments.refresh(order)
+    return success([o.to_dict(with_items=True) for o in orders])
+
+
+@bp.post("/orders/<int:order_id>/received")
+@jwt_required()
+def mark_received(order_id):
+    """"Got it": the customer has the parcel. Cash orders count as paid now."""
+    order = Order.query.filter_by(id=order_id, user_id=_user_id()).first()
+    if not order:
+        return error("Order not found", 404)
+    if order.status != "shipped":
+        return error("Only orders on the way can be marked as received", 409)
+    order.status = "delivered"
+    if order.payment_method == "cod":
+        order.payment_status = "paid"
+    db.session.commit()
+    return success(order.to_dict(with_items=True), "Enjoy your order!")
 
 
 @bp.get("/orders/<int:order_id>")

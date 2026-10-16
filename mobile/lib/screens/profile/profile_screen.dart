@@ -15,6 +15,7 @@ import '../../widgets/round_icon_button.dart';
 import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
 import '../settings/settings_sheet.dart';
+import '../orders/orders_screen.dart';
 import '../shell/main_shell.dart';
 import 'edit_profile_screen.dart';
 import 'widgets/collector_card.dart';
@@ -53,6 +54,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     }
+  }
+
+  Future<void> _openOrders() async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OrdersScreen()));
+    if (mounted) await _load(); // order counts may have changed
   }
 
   void _comingSoon(String feature) {
@@ -115,8 +121,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
               OrderStatusCard(
                 summary: _summary,
-                onViewAll: () => _comingSoon('My Orders'),
-                onStatus: (status) => _comingSoon('$status orders'),
+                onViewAll: _openOrders,
+                onStatus: (_) => _openOrders(),
               ),
               const SizedBox(height: 16),
               MenuCard(items: [

@@ -1,0 +1,131 @@
+import 'package:ecommerce_app/core/theme/app_theme.dart';
+import 'package:ecommerce_app/providers/shop_provider.dart';
+import 'package:ecommerce_app/screens/orders/orders_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+
+import 'fakes/checkout_fake.dart';
+import 'fakes/orders_fake.dart';
+import 'fakes/shop_fakes.dart';
+
+/// The current tracker step pulses forever, so these tests pump fixed times instead of settling.
+Future<(FakeOrderService, FakeShopService)> _pump(WidgetTester tester, {FakeOrderService? service}) async {
+  tester.view.physicalSize = const Size(412, 1600) * 2; // tall, so every card is built
+  tester.view.devicePixelRatio = 2;
+  addTearDown(tester.view.reset);
+  final orders = service ?? FakeOrderService();
+  final shop = FakeShopService();
+  await tester.pumpWidget(ChangeNotifierProvider(
+    create: (_) => ShopProvider(service: shop)..setSignedIn(true),
+    child: MaterialApp(theme: AppTheme.light, home: OrdersScreen(service: orders, paymentService: FakePaymentService())),
+  ));
+  // Cards come in and the trackers fill (step by step, so the animations run)
+  for (var i = 0; i < 15; i++) {
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+  return (orders, shop);
+}
+
+Finder _inOrder(int id, Finder f) => find.descendant(of: find.byKey(Key('order_$id')), matching: f);
+
+Future<void> _end(WidgetTester tester) async {
+  await tester.pump(const Duration(seconds: 5)); // let snack bars go
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(const Duration(milliseconds: 50)); // zero-length animation timers
+}
+
+void main() {
+  testWidgets('in progress first with trackers, then past orders', (tester) async {
+    await _pump(tester);
+    expect(find.text('In progress · 3'), findsOneWidget);
+    expect(find.text('Past orders'), findsOneWidget);
+
+    expect(_inOrder(1, find.text('Waiting for your KHQR payment')), findsOneWidget);
+    expect(find.byKey(const Key('order_pay_1')), findsOneWidget);
+    expect(_inOrder(2, find.textContaining('Packing your order')), findsOneWidget);
+    expect(_inOrder(3, find.textContaining('On the way')), findsOneWidget);
+    expect(_inOrder(3, find.text('Confirmed')), findsOneWidget); // cash orders are confirmed, not paid
+
+    // Filled up to where each order is
+    expect(_inOrder(1, find.byKey(const Key('step_done_0'))), findsOneWidget);
+    expect(_inOrder(1, find.byKey(const Key('step_done_1'))), findsNothing);
+    expect(_inOrder(3, find.byKey(const Key('step_done_2'))), findsOneWidget);
+    expect(_inOrder(3, find.byKey(const Key('step_done_3'))), findsNothing);
+
+    expect(_inOrder(4, find.text('Delivered')), findsOneWidget);
+    expect(_inOrder(5, find.text('Cancelled')), findsOneWidget);
+    await _end(tester);
+  });
+
+  testWidgets('Got it finishes the tracker, then the order moves to Past orders', (tester) async {
+    final (service, _) = await _pump(tester);
+    await tester.tap(find.byKey(const Key('order_received_3')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 900));
+    expect(service.received_, [3]);
+    expect(_inOrder(3, find.byKey(const Key('step_done_3'))), findsOneWidget);
+    expect(_inOrder(3, find.text('Delivered · enjoy your order!')), findsOneWidget);
+    expect(find.text('In progress · 3'), findsOneWidget); // still here for a moment
+
+    await tester.pump(OrdersScreen.moveAfter);
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.text('In progress · 2'), findsOneWidget);
+    expect(find.byKey(const Key('order_pill_3')), findsOneWidget);
+    expect(find.byKey(const Key('order_received_3')), findsNothing);
+    await _end(tester);
+  });
+
+  testWidgets('Buy again puts what is still sold back in the cart', (tester) async {
+    final (_, shop) = await _pump(tester);
+    await tester.tap(find.byKey(const Key('order_again_4')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(shop.cart, 1);
+    expect(find.text('Added 1 item to your cart. 1 no longer available.'), findsOneWidget);
+    await _end(tester);
+  });
+
+  testWidgets('order details: tracker, items, totals, and Got it', (tester) async {
+    await _pump(tester);
+    await tester.tap(find.byKey(const Key('order_3')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Order details'), findsOneWidget);
+    expect(find.byKey(const Key('details_number')), findsOneWidget);
+    expect(find.text('Pay the rider in USD or riel'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('details_received')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Delivered · enjoy your order!'), findsOneWidget);
+    expect(find.byKey(const Key('details_again')), findsOneWidget);
+    expect(find.text('Paid'), findsOneWidget);
+    await _end(tester);
+  });
+
+  testWidgets('Pay now opens the KHQR screen', (tester) async {
+    await _pump(tester);
+    await tester.tap(find.byKey(const Key('order_pay_1')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byKey(const Key('khqr_card')), findsOneWidget);
+    await tester.pumpWidget(const SizedBox()); // stop the payment timers
+  });
+
+  testWidgets('empty, and an error with Try again', (tester) async {
+    await _pump(tester, service: FakeOrderService(orders: []));
+    expect(find.byKey(const Key('orders_empty')), findsOneWidget);
+
+    final failing = FakeOrderService()..fail = true;
+    await tester.pumpWidget(const SizedBox()); // a fresh screen
+    await _pump(tester, service: failing);
+    expect(find.byKey(const Key('orders_retry')), findsOneWidget);
+    failing.fail = false;
+    await tester.tap(find.byKey(const Key('orders_retry')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('In progress · 3'), findsOneWidget);
+    await _end(tester);
+  });
+}

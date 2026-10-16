@@ -155,8 +155,13 @@ class Product(TimestampMixin, db.Model):
     def final_price(self):
         return self.discount_price if self.discount_price is not None else self.price
 
-    def to_dict(self):
+    @property
+    def photo_url(self):
+        """Absolute URL of the main photo, or None."""
         primary = next((i for i in self.images if i.is_primary), self.images[0] if self.images else None)
+        return absolute_url(primary.image_url) if primary else None
+
+    def to_dict(self):
         ratings = [r.rating for r in self.reviews]
         return {
             "id": self.id,
@@ -170,7 +175,7 @@ class Product(TimestampMixin, db.Model):
             "discount_price": float(self.discount_price) if self.discount_price is not None else None,
             "stock": self.stock,
             "is_featured": self.is_featured,
-            "image_url": absolute_url(primary.image_url) if primary else None,
+            "image_url": self.photo_url,
             "images": [absolute_url(i.image_url) for i in self.images],
             "rating": round(sum(ratings) / len(ratings), 1) if ratings else 0,
             "review_count": len(ratings),
@@ -285,10 +290,15 @@ class OrderItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     subtotal = db.Column(db.Numeric(10, 2), nullable=False)
 
+    product = db.relationship("Product")
+
     def to_dict(self):
         return {
             "product_id": self.product_id,
             "product_name": self.product_name,
+            # Live photo and category (for the placeholder icon); the name and price above are the snapshot
+            "image_url": self.product.photo_url if self.product else None,
+            "category": self.product.category.to_dict() if self.product else None,
             "unit_price": float(self.unit_price),
             "quantity": self.quantity,
             "subtotal": float(self.subtotal),
