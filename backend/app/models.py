@@ -295,6 +295,36 @@ class OrderItem(db.Model):
         }
 
 
+class Payment(TimestampMixin, db.Model):
+    """One KHQR payment attempt for an order. The QR (and its md5) is made once
+    and reused for every status check, because a new QR is a new transaction."""
+    __tablename__ = "payments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, index=True)
+    provider = db.Column(db.Enum("mock", "bakong", name="payment_provider"), nullable=False)
+    qr = db.Column(db.Text, nullable=False)
+    md5 = db.Column(db.String(32), nullable=False, unique=True)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default="USD")
+    status = db.Column(db.Enum("pending", "paid", "expired", name="khqr_status"), nullable=False, default="pending")
+    expires_at = db.Column(db.DateTime, nullable=False)
+    paid_at = db.Column(db.DateTime)
+
+    order = db.relationship("Order", backref=db.backref("payments", cascade="all, delete-orphan"))
+
+    def to_dict(self):
+        return {
+            "qr": self.qr,
+            "amount": float(self.amount),
+            "currency": self.currency,
+            "status": self.status,
+            "expires_at": self.expires_at.isoformat() + "Z",
+            "paid_at": self.paid_at.isoformat() + "Z" if self.paid_at else None,
+            "demo": self.provider == "mock",
+        }
+
+
 class Notification(TimestampMixin, db.Model):
     __tablename__ = "notifications"
 

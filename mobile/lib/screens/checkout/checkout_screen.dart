@@ -9,12 +9,14 @@ import '../../core/utils/format.dart';
 import '../../models/order.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/checkout_service.dart';
+import '../../services/payment_service.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
 import '../../widgets/product_image.dart';
 import 'address_form_screen.dart';
 import 'address_picker_sheet.dart';
+import 'khqr_payment_screen.dart';
 import 'order_placed_screen.dart';
 
 /// Checkout (Figma: Checkout A - One page): deliver to, delivery (Standard
@@ -27,7 +29,10 @@ class CheckoutScreen extends StatefulWidget {
   final String? coupon;
   final CheckoutService? service;
 
-  const CheckoutScreen({super.key, this.coupon, this.service});
+  /// For the KHQR screen opened after Place order.
+  final PaymentService? paymentService;
+
+  const CheckoutScreen({super.key, this.coupon, this.service, this.paymentService});
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -123,7 +128,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!mounted) return;
       context.read<ShopProvider>().setCartCount(0);
       await Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => OrderPlacedScreen(order: order)),
+        MaterialPageRoute(
+          builder: (_) => order.paymentMethod == PaymentMethod.khqr ? KhqrPaymentScreen(order: order, fromCheckout: true, service: widget.paymentService) : OrderPlacedScreen(order: order),
+        ),
         result: true,
       );
     } on ApiException catch (e) {

@@ -166,6 +166,24 @@ CREATE TABLE order_items (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
 );
 
+-- One KHQR payment per order attempt. The QR string and its md5 are made once
+-- and reused for every status check (a new QR would be a new transaction).
+CREATE TABLE payments (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_id   INT UNSIGNED  NOT NULL,
+  provider   ENUM('mock','bakong') NOT NULL,
+  qr         TEXT          NOT NULL,
+  md5        CHAR(32)      NOT NULL UNIQUE,
+  amount     DECIMAL(10,2) NOT NULL,
+  currency   CHAR(3)       NOT NULL DEFAULT 'USD',
+  status     ENUM('pending','paid','expired') NOT NULL DEFAULT 'pending',
+  expires_at DATETIME      NOT NULL,
+  paid_at    DATETIME      NULL,
+  created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  INDEX idx_payments_order (order_id)
+);
+
 -- -------------------------------------------------------------
 -- Extras
 -- -------------------------------------------------------------

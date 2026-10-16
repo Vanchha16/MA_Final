@@ -1,9 +1,10 @@
 import re
 
-from flask import Blueprint, request
+from flask import Blueprint, current_app, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy.orm import selectinload
 
+from .. import payments
 from ..extensions import db
 from ..models import Address, CartItem, Order, OrderItem, User
 from ..pricing import DELIVERY_METHODS, find_coupon, shipping_for, summarize
@@ -233,3 +234,57 @@ def get_order(order_id):
     if not order:
         return error("Order not found", 404)
     return success(order.to_dict(with_items=True))
+
+
+# ---------- KHQR payment ----------
+
+def _own_order(order_id):
+    return Order.query.filter_by(id=order_id, user_id=_user_id()).first()
+
+
+def _payment_response(order, payment):
+    return success({"payment": payment.to_dict(), "order": order.to_dict(with_items=True)})
+
+
+@bp.post("/orders/<int:order_id>/khqr")
+@jwt_required()
+def start_khqr(order_id):
+    """Makes (once) and returns the order's KHQR code. Calling it again returns the same code."""
+    order = _own_order(order_id)
+    if not order:
+        return error("Order not found", 404)
+    if order.payment_method != "khqr":
+        return error("This order is paid in cash", 409)
+    existing = payments.active_payment(order)
+    if existing is None and order.payment_status == "paid":
+        return error("This order is already paid", 409)
+    if order.status == "cancelled" and (existing is None or existing.status != "paid"):
+        return error("This order was cancelled", 409)
+    return _payment_response(order, payments.start(order))
+
+
+@bp.get("/orders/<int:order_id>/payment")
+@jwt_required()
+def payment_status(order_id):
+    """Polled by the app every few seconds: pending, paid or expired."""
+    order = _own_order(order_id)
+    payment = payments.active_payment(order) if order else None
+    if not payment:
+        return error("No KHQR payment for this order", 404)
+    return _payment_response(order, payments.refresh(order, payment))
+
+
+@bp.post("/orders/<int:order_id>/payment/simulate")
+@jwt_required()
+def simulate_payment(order_id):
+    """Demo mode only: pretend the customer paid from their bank app."""
+    order = _own_order(order_id)
+    payment = payments.active_payment(order) if order else None
+    if not payment:
+        return error("No KHQR payment for this order", 404)
+    if payment.provider != "mock" or current_app.config["PAYMENT_PROVIDER"] != "mock":
+        return error("Payments can only be simulated in demo mode", 403)
+    payment = payments.refresh(order, payment)
+    if payment.status == "expired":
+        return error("This KHQR code has expired", 409)
+    return _payment_response(order, payments.mark_paid(order, payment))
