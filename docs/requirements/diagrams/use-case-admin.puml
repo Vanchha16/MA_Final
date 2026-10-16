@@ -1,0 +1,58 @@
+@startuml use-case-admin
+' Anime World Shop - the shop owner's tools (admin app tabs and the /admin web panel)
+!pragma layout smetana
+!include style.iuml
+left to right direction
+title Anime World Shop - Admin Use Cases
+
+actor Admin
+actor Customer
+
+rectangle "Anime World Shop - admin app and web panel" {
+  package "Dashboard" {
+    usecase "View sales and\n7-day revenue" as A_Stats
+    usecase "Follow live activity" as A_Feed
+  }
+  package "Orders" {
+    usecase "Search and filter orders" as A_Orders
+    usecase "View order details" as A_OrderDetail
+    usecase "Move order to next step\n(confirm, ship, deliver)" as A_Step
+    usecase "Cancel order" as A_Cancel
+    usecase "Notify the customer" as A_Notify
+  }
+  package "Products" {
+    usecase "Add / edit product" as A_Product
+    usecase "Upload product photos" as A_Photos
+    usecase "Update stock" as A_Stock
+    usecase "Show / hide in shop" as A_Hide
+    usecase "Manage categories" as A_Cats
+  }
+  package "Customers and messages" {
+    usecase "View customers\nand their orders" as A_Customers
+    usecase "Block / unblock customer" as A_Block
+    usecase "Reply to a message" as A_Reply
+  }
+}
+
+Admin --> A_Stats
+Admin --> A_Feed
+Admin --> A_Orders
+Admin --> A_OrderDetail
+Admin --> A_Step
+Admin --> A_Cancel
+A_Step .> A_Notify : <<include>>
+Admin --> A_Product
+A_Photos .> A_Product : <<extend>>
+Admin --> A_Stock
+Admin --> A_Hide
+Admin --> A_Cats
+Admin --> A_Customers
+A_Block .> A_Customers : <<extend>>
+Admin --> A_Reply
+A_Notify --> Customer
+note right of A_Notify
+  Also sent when an order
+  is cancelled or a
+  message is answered
+end note
+@enduml
