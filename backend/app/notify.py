@@ -1,6 +1,12 @@
-"""Messages for the Notifications screen. Callers commit."""
+"""Messages for the Notifications screen. Callers commit.
+Each user chooses in Settings which kinds they get (orders, offers, news)."""
 from .extensions import db
-from .models import Notification
+from .models import Notification, User
+
+
+def _wants(user_id, kind):
+    user = db.session.get(User, user_id)
+    return user is None or getattr(user, f"notify_{kind}", True)
 
 # event -> (type, title, message); {number} and {total} come from the order
 ORDER_TEXT = {
@@ -17,6 +23,8 @@ ORDER_TEXT = {
 
 def order_event(order, key):
     """Adds the message for one step of an order (key from ORDER_TEXT)."""
+    if not _wants(order.user_id, "orders"):
+        return
     title, text = ORDER_TEXT[key]
     event = key.split("_")[0] if key.startswith("placed") else ("shipped" if key == "ready" else key)
     db.session.add(Notification(
@@ -26,6 +34,8 @@ def order_event(order, key):
 
 
 def welcome(user_id):
+    if not _wants(user_id, "offers"):
+        return
     db.session.add(Notification(
         user_id=user_id, type="promo", event="welcome", promo_code="WELCOME10",
         title="Welcome to Anime World Shop", message="Here is 10% off your first order.",
@@ -33,8 +43,12 @@ def welcome(user_id):
 
 
 def promo(user_id, title, message, code):
+    if not _wants(user_id, "offers"):
+        return
     db.session.add(Notification(user_id=user_id, type="promo", event="promo", promo_code=code, title=title, message=message))
 
 
 def news(user_id, title, message):
+    if not _wants(user_id, "news"):
+        return
     db.session.add(Notification(user_id=user_id, type="system", event="news", title=title, message=message))

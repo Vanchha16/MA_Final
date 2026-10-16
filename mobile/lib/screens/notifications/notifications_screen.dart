@@ -23,6 +23,7 @@ import '../../widgets/product_image.dart';
 import '../checkout/khqr_payment_screen.dart';
 import '../orders/order_actions.dart';
 import '../orders/order_details_screen.dart';
+import '../../l10n/l10n.dart';
 
 /// Notifications (picked from the notification previews, B): rich cards with
 /// the product photo and a button (Track, View order, Rate it, Buy again);
@@ -274,7 +275,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     Flexible(
-                      child: Text('Notifications', maxLines: 1, overflow: TextOverflow.ellipsis,
+                      child: Text(context.l10n.notificationsTitle, maxLines: 1, overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(width: 6),
@@ -283,7 +284,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: Text(
-                      !_loaded ? '' : (_unread > 0 ? '$_unread new' : 'All caught up'),
+                      !_loaded ? '' : (_unread > 0 ? context.l10n.newCount(_unread) : context.l10n.allCaughtUp),
                       key: ValueKey(_unread > 0),
                       style: TextStyle(fontSize: 13, color: _unread > 0 ? scheme.onSurfaceVariant : AppTheme.success, fontWeight: _unread > 0 ? null : FontWeight.w600),
                     ),
@@ -294,7 +295,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 key: const Key('notifications_read_all'),
                 onPressed: _unread > 0 ? _markAllRead : null,
                 icon: const Icon(Icons.done_all_rounded, size: 18),
-                label: const Text('Mark all read', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: Text(context.l10n.markAllRead, style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ]),
           ),

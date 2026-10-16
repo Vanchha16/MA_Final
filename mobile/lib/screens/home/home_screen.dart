@@ -16,6 +16,7 @@ import '../search/search_screen.dart';
 import 'widgets/filter_sheet.dart';
 import 'widgets/promo_carousel.dart';
 import 'widgets/series_tabs.dart';
+import '../../l10n/l10n.dart';
 
 /// Home tab (Figma: Home C - Series Tabs Feed): brand bar with bell and
 /// cart, search with filters, series tabs, promo banner slider and a product
@@ -198,12 +199,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             key: const Key('home_see_all'),
                             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                               builder: (_) => ProductListScreen(
-                                title: 'All products',
+                                title: context.l10n.allProducts,
                                 query: ProductQuery(sort: _query.sort),
                                 catalogService: widget.catalogService,
                               ),
                             )),
-                            child: const Text('See all'),
+                            child: Text(context.l10n.seeAll),
                           ),
                       ],
                     ),
@@ -243,7 +244,7 @@ class _BrandBar extends StatelessWidget {
               Text('Anime World',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: dark ? scheme.primary : AppTheme.primaryDark)),
               Text(
-                firstName == null ? 'Hi there, welcome' : 'Hi $firstName, welcome back',
+                firstName == null ? context.l10n.homeGreetingGuest : context.l10n.homeGreeting(firstName),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),

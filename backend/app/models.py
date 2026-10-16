@@ -35,6 +35,11 @@ class User(TimestampMixin, db.Model):
     orders = db.relationship("Order", backref="user")
     notifications = db.relationship("Notification", backref="user", cascade="all, delete-orphan")
 
+    # Settings > Notify me about
+    notify_orders = db.Column(db.Boolean, nullable=False, default=True)
+    notify_offers = db.Column(db.Boolean, nullable=False, default=True)
+    notify_news = db.Column(db.Boolean, nullable=False, default=True)
+
     def to_dict(self):
         return {
             "id": self.id,

@@ -12,6 +12,7 @@ import '../../widgets/product_image.dart';
 import '../../widgets/shop_search_bar.dart';
 import '../search/search_screen.dart';
 import 'product_list_screen.dart';
+import '../../l10n/l10n.dart';
 
 /// Categories tab (Figma: Categories A - Photo Grid): a 2-column grid of
 /// categories with a product photo and item count, then "Shop by anime"
@@ -103,7 +104,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Categories', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                                Text(context.l10n.categoriesTitle, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
                                 Text(
                                   categories == null ? 'Find your next collectible' : '${categories.length} categories · $total products',
                                   style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant),
@@ -178,10 +179,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   ),
                 ),
                 if (_series.isNotEmpty) ...[
-                  const SliverPadding(
-                    padding: EdgeInsets.fromLTRB(24, 26, 24, 14),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 26, 24, 14),
                     sliver: SliverToBoxAdapter(
-                      child: Text('Shop by anime', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      child: Text(context.l10n.shopByAnime, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   SliverToBoxAdapter(
