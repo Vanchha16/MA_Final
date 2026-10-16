@@ -105,7 +105,10 @@ Table orders {
   shipping_address varchar(500) [not null]
   subtotal decimal(10,2) [not null]
   shipping_fee decimal(10,2) [default: 0]
+  discount decimal(10,2) [default: 0]
+  coupon_code varchar(30)
   total decimal(10,2) [not null]
+  delivery_method varchar [note: 'standard | pickup']
   status varchar [note: 'pending | confirmed | shipped | delivered | cancelled']
   payment_method varchar [note: 'cod | khqr | card']
   payment_status varchar [note: 'unpaid | paid | failed | refunded']
