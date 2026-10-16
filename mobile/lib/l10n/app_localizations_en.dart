@@ -284,14 +284,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutTitle => 'About';
 
   @override
-  String get aboutTagline =>
-      'Figures, plush, model kits and anime cards in Phnom Penh.';
-
-  @override
-  String get aboutMadeBy =>
-      'A SETEC Institute final project (SU25, Mobile Application).';
-
-  @override
   String get aboutCredit =>
+      'Product images belong to their respective owners and are used for educational purposes only.';
+
+  @override
+  String get aboutStory =>
+      'Figures, plush, model kits and anime cards, picked by fans for fans. Pay with KHQR and pick up in store or get it delivered.';
+
+  @override
+  String get aboutCity => 'Phnom Penh';
+
+  @override
+  String get aboutWeSell => 'WE SELL';
+
+  @override
+  String get aboutMadeByLabel => 'MADE BY';
+
+  @override
+  String get aboutSchool => 'SETEC Institute';
+
+  @override
+  String get aboutProject => 'Final project · SU25 · Mobile Application';
+
+  @override
+  String get licenses => 'Open-source licenses';
+
+  @override
+  String get privacyPolicy => 'Privacy policy';
+
+  @override
+  String get termsOfUse => 'Terms of use';
+
+  @override
+  String get privacy1t => 'What we collect';
+
+  @override
+  String get privacy1b =>
+      'Your name, email, phone number and delivery addresses, so we can deliver your orders.';
+
+  @override
+  String get privacy2t => 'Payments';
+
+  @override
+  String get privacy2b =>
+      'You pay KHQR codes in your own bank app. We never see or keep your bank or card details.';
+
+  @override
+  String get privacy3t => 'How we use it';
+
+  @override
+  String get privacy3b =>
+      'Only to run your orders, send the notifications you turned on and answer you when you contact us. We never sell your data.';
+
+  @override
+  String get privacy4t => 'Your choices';
+
+  @override
+  String get privacy4b =>
+      'Edit your profile and addresses, or turn notifications off, any time in Settings. To delete your account, contact us.';
+
+  @override
+  String get terms1t => 'Orders and prices';
+
+  @override
+  String get terms1b =>
+      'Prices are in US dollars. An order is confirmed once its KHQR payment goes through.';
+
+  @override
+  String get terms2t => 'Paying in time';
+
+  @override
+  String get terms2b =>
+      'A KHQR code is valid for 15 minutes. Unpaid orders are cancelled and the items go back on sale.';
+
+  @override
+  String get terms3t => 'Delivery and pickup';
+
+  @override
+  String get terms3b =>
+      'Delivery in Phnom Penh is free from \$50 and store pickup is always free. Please check your items when they arrive.';
+
+  @override
+  String get terms4t => 'Product photos';
+
+  @override
+  String get terms4b =>
       'Product images belong to their respective owners and are used for educational purposes only.';
 }

@@ -584,23 +584,161 @@ abstract class AppLocalizations {
   /// **'About'**
   String get aboutTitle;
 
-  /// No description provided for @aboutTagline.
-  ///
-  /// In en, this message translates to:
-  /// **'Figures, plush, model kits and anime cards in Phnom Penh.'**
-  String get aboutTagline;
-
-  /// No description provided for @aboutMadeBy.
-  ///
-  /// In en, this message translates to:
-  /// **'A SETEC Institute final project (SU25, Mobile Application).'**
-  String get aboutMadeBy;
-
   /// No description provided for @aboutCredit.
   ///
   /// In en, this message translates to:
   /// **'Product images belong to their respective owners and are used for educational purposes only.'**
   String get aboutCredit;
+
+  /// No description provided for @aboutStory.
+  ///
+  /// In en, this message translates to:
+  /// **'Figures, plush, model kits and anime cards, picked by fans for fans. Pay with KHQR and pick up in store or get it delivered.'**
+  String get aboutStory;
+
+  /// No description provided for @aboutCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Phnom Penh'**
+  String get aboutCity;
+
+  /// No description provided for @aboutWeSell.
+  ///
+  /// In en, this message translates to:
+  /// **'WE SELL'**
+  String get aboutWeSell;
+
+  /// No description provided for @aboutMadeByLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'MADE BY'**
+  String get aboutMadeByLabel;
+
+  /// No description provided for @aboutSchool.
+  ///
+  /// In en, this message translates to:
+  /// **'SETEC Institute'**
+  String get aboutSchool;
+
+  /// No description provided for @aboutProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Final project · SU25 · Mobile Application'**
+  String get aboutProject;
+
+  /// No description provided for @licenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source licenses'**
+  String get licenses;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @termsOfUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of use'**
+  String get termsOfUse;
+
+  /// No description provided for @privacy1t.
+  ///
+  /// In en, this message translates to:
+  /// **'What we collect'**
+  String get privacy1t;
+
+  /// No description provided for @privacy1b.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name, email, phone number and delivery addresses, so we can deliver your orders.'**
+  String get privacy1b;
+
+  /// No description provided for @privacy2t.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments'**
+  String get privacy2t;
+
+  /// No description provided for @privacy2b.
+  ///
+  /// In en, this message translates to:
+  /// **'You pay KHQR codes in your own bank app. We never see or keep your bank or card details.'**
+  String get privacy2b;
+
+  /// No description provided for @privacy3t.
+  ///
+  /// In en, this message translates to:
+  /// **'How we use it'**
+  String get privacy3t;
+
+  /// No description provided for @privacy3b.
+  ///
+  /// In en, this message translates to:
+  /// **'Only to run your orders, send the notifications you turned on and answer you when you contact us. We never sell your data.'**
+  String get privacy3b;
+
+  /// No description provided for @privacy4t.
+  ///
+  /// In en, this message translates to:
+  /// **'Your choices'**
+  String get privacy4t;
+
+  /// No description provided for @privacy4b.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit your profile and addresses, or turn notifications off, any time in Settings. To delete your account, contact us.'**
+  String get privacy4b;
+
+  /// No description provided for @terms1t.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders and prices'**
+  String get terms1t;
+
+  /// No description provided for @terms1b.
+  ///
+  /// In en, this message translates to:
+  /// **'Prices are in US dollars. An order is confirmed once its KHQR payment goes through.'**
+  String get terms1b;
+
+  /// No description provided for @terms2t.
+  ///
+  /// In en, this message translates to:
+  /// **'Paying in time'**
+  String get terms2t;
+
+  /// No description provided for @terms2b.
+  ///
+  /// In en, this message translates to:
+  /// **'A KHQR code is valid for 15 minutes. Unpaid orders are cancelled and the items go back on sale.'**
+  String get terms2b;
+
+  /// No description provided for @terms3t.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery and pickup'**
+  String get terms3t;
+
+  /// No description provided for @terms3b.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery in Phnom Penh is free from \$50 and store pickup is always free. Please check your items when they arrive.'**
+  String get terms3b;
+
+  /// No description provided for @terms4t.
+  ///
+  /// In en, this message translates to:
+  /// **'Product photos'**
+  String get terms4t;
+
+  /// No description provided for @terms4b.
+  ///
+  /// In en, this message translates to:
+  /// **'Product images belong to their respective owners and are used for educational purposes only.'**
+  String get terms4b;
 }
 
 class _AppLocalizationsDelegate
