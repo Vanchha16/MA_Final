@@ -1,5 +1,5 @@
 /// What a notification is about; picks its icon and button.
-enum NotificationEvent { placed, paid, confirmed, shipped, delivered, cancelled, welcome, promo, news }
+enum NotificationEvent { placed, paid, confirmed, shipped, delivered, cancelled, welcome, promo, news, support }
 
 /// A message on the Notifications screen (GET /api/notifications).
 class ShopNotification {

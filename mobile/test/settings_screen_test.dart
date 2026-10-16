@@ -6,11 +6,11 @@ import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/providers/locale_provider.dart';
 import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/providers/theme_provider.dart';
+import 'package:ecommerce_app/screens/settings/contact_screen.dart';
 import 'package:ecommerce_app/screens/settings/settings_screen.dart';
 import 'package:ecommerce_app/services/preferences_service.dart';
 import 'package:ecommerce_app/widgets/theme_reveal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -129,23 +129,21 @@ void main() {
     expect(find.text('New address'), findsOneWidget);
   });
 
-  testWidgets('Help copies the phone number and opens questions; About shows the credit', (tester) async {
-    String? copied;
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
-      if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
-      return null;
-    });
-    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+  testWidgets('Help opens Contact us and the questions; About shows the credit', (tester) async {
     await _pump(tester);
 
     await tester.tap(find.byKey(const Key('settings_help')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('help_phone')));
-    await tester.pump();
-    expect(copied, '+855 12 345 678');
     await tester.tap(find.byKey(const Key('faq_0')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Delivery is free from \$50'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('help_contact')));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(ContactScreen), findsOneWidget);
+    await tester.pageBack();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(seconds: 1));
 
     await tester.pageBack();
     await tester.pumpAndSettle();
