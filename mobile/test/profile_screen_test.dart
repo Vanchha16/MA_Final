@@ -4,6 +4,7 @@ import 'package:ecommerce_app/core/network/api_client.dart';
 import 'package:ecommerce_app/models/profile_summary.dart';
 import 'package:ecommerce_app/models/user.dart';
 import 'package:ecommerce_app/providers/auth_provider.dart';
+import 'package:ecommerce_app/providers/locale_provider.dart';
 import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/providers/theme_provider.dart';
 import 'package:ecommerce_app/screens/profile/change_password_screen.dart';
@@ -76,6 +77,7 @@ Future<AuthProvider> _pump(WidgetTester tester, Widget home, {bool signedIn = tr
     providers: [
       ChangeNotifierProvider.value(value: auth),
       ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ChangeNotifierProvider(create: (_) => ShopProvider(service: FakeShopService())),
     ],
     child: MaterialApp(home: home),
@@ -104,7 +106,7 @@ void main() {
     expect(find.text('Silver Collector'), findsOneWidget);
     expect(find.text('1,250'), findsOneWidget);
     expect(find.text('750 pts to Gold'), findsOneWidget);
-    for (final label in ['To Pay', 'To Ship', 'To Receive', 'To Review', 'My Wishlist', 'Addresses', 'Help & Contact', 'About App']) {
+    for (final label in ['To Pay', 'To Ship', 'To Receive', 'To Review', 'My Wishlist', 'Addresses', 'Help & contact', 'About App']) {
       expect(find.text(label), findsOneWidget, reason: label);
     }
     // Badges only where there is something to do
@@ -151,13 +153,13 @@ void main() {
     expect(find.byKey(const Key('profile_logout')), findsNothing);
   });
 
-  testWidgets('settings sheet switches to dark mode', (tester) async {
+  testWidgets('the gear opens Settings, where Dark switches the theme', (tester) async {
     await _pump(tester, ProfileScreen(service: FakeProfileService()));
     await _tap(tester, find.byTooltip('Settings'));
-    expect(find.text('Appearance'), findsOneWidget);
+    expect(find.text('APPEARANCE'), findsOneWidget);
 
-    await _tap(tester, find.text('Dark'));
-    final theme = Provider.of<ThemeProvider>(tester.element(find.text('Appearance')), listen: false);
+    await _tap(tester, find.byKey(const Key('theme_dark')));
+    final theme = Provider.of<ThemeProvider>(tester.element(find.byKey(const Key('theme_dark'))), listen: false);
     expect(theme.mode, ThemeMode.dark);
   });
 

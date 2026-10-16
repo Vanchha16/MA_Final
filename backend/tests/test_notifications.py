@@ -60,3 +60,15 @@ def test_advance_orders_command(app, client, user):
     events = [n.event for n in Notification.query.order_by(Notification.id)]
     assert events == ["placed", "confirmed", "shipped"]
     assert Notification.query.order_by(Notification.id.desc()).first().title == "Ready to pick up"
+
+
+def test_preferences_turn_messages_off(client, user):
+    h = _auth(client)
+    assert client.get("/api/profile/preferences", headers=h).get_json()["data"] == {
+        "notify_orders": True, "notify_offers": True, "notify_news": True}
+    res = client.put("/api/profile/preferences", json={"notify_orders": False, "notify_news": False}, headers=h)
+    assert res.get_json()["data"] == {"notify_orders": False, "notify_offers": True, "notify_news": False}
+    assert client.put("/api/profile/preferences", json={"notify_offers": "no"}, headers=h).status_code == 422
+
+    _order(client, h, "cod")  # no "Order placed" message now
+    assert Notification.query.count() == 0

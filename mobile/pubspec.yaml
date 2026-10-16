@@ -57,6 +57,9 @@ dependencies:
   flutter_card_swiper: ^7.2.0
   flutter_staggered_grid_view: ^0.7.0
   qr_flutter: ^4.1.0
+  flutter_localizations:
+    sdk: flutter
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:
@@ -76,6 +79,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true # English / Khmer text from lib/l10n (flutter gen-l10n)
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

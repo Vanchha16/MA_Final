@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../models/profile_summary.dart';
+import '../../../l10n/l10n.dart';
 
 /// "My Orders" card with To Pay / To Ship / To Receive / To Review shortcuts
 /// and coral count badges (Figma: My Orders).
@@ -17,10 +18,10 @@ class OrderStatusCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final items = [
-      ('To Pay', Icons.payments_rounded, summary?.toPay ?? 0),
-      ('To Ship', Icons.inventory_2_rounded, summary?.toShip ?? 0),
-      ('To Receive', Icons.local_shipping_rounded, summary?.toReceive ?? 0),
-      ('To Review', Icons.rate_review_rounded, summary?.toReview ?? 0),
+      (context.l10n.toPay, Icons.payments_rounded, summary?.toPay ?? 0),
+      (context.l10n.toShip, Icons.inventory_2_rounded, summary?.toShip ?? 0),
+      (context.l10n.toReceive, Icons.local_shipping_rounded, summary?.toReceive ?? 0),
+      (context.l10n.toReview, Icons.rate_review_rounded, summary?.toReview ?? 0),
     ];
 
     return Container(
@@ -36,13 +37,13 @@ class OrderStatusCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(child: Text('My Orders', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              Expanded(child: Text(context.l10n.myOrders, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
               TextButton(
                 onPressed: onViewAll,
                 style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: [Text('View all'), Icon(Icons.chevron_right_rounded, size: 18)],
+                  children: [Text(context.l10n.viewAll), const Icon(Icons.chevron_right_rounded, size: 18)],
                 ),
               ),
             ],
