@@ -74,6 +74,78 @@ def remove_from_wishlist(product_id):
     return success({"product_id": product_id, "in_wishlist": False}, "Removed from wishlist")
 
 
+def _ids_from_body():
+    """{"product_ids": [1, 2]} -> [1, 2], or None when the body is not a list of ids."""
+    ids = (request.get_json(silent=True) or {}).get("product_ids")
+    if not isinstance(ids, list) or not ids or not all(isinstance(i, int) for i in ids):
+        return None
+    return list(dict.fromkeys(ids))
+
+
+def _wishlist_ids(user_id):
+    favs = Favorite.query.filter_by(user_id=user_id).order_by(Favorite.created_at.desc(), Favorite.id.desc()).all()
+    return [f.product_id for f in favs if f.product.is_active]
+
+
+@bp.post("/wishlist/batch-remove")
+@jwt_required()
+def remove_many_from_wishlist():
+    """Body: {"product_ids": [1, 2]}. Used by the Select view's Remove button."""
+    ids = _ids_from_body()
+    if ids is None:
+        return error("Validation failed", 422, {"product_ids": "Choose at least one product"})
+    user_id = _user_id()
+    Favorite.query.filter(Favorite.user_id == user_id, Favorite.product_id.in_(ids)).delete(synchronize_session=False)
+    db.session.commit()
+    return success({"ids": _wishlist_ids(user_id)}, f"Removed {len(ids)} from wishlist")
+
+
+@bp.post("/wishlist/batch-add")
+@jwt_required()
+def add_many_to_wishlist():
+    """Body: {"product_ids": [1, 2]}. Puts items back (Undo); unknown products are skipped."""
+    ids = _ids_from_body()
+    if ids is None:
+        return error("Validation failed", 422, {"product_ids": "Choose at least one product"})
+    user_id = _user_id()
+    have = {f.product_id for f in Favorite.query.filter_by(user_id=user_id)}
+    # Oldest first, so the first id ends up at the top again
+    for product_id in reversed(ids):
+        if product_id not in have and _active_product(product_id):
+            db.session.add(Favorite(user_id=user_id, product_id=product_id))
+            db.session.flush()
+    db.session.commit()
+    return success({"ids": _wishlist_ids(user_id)}, "Saved to wishlist")
+
+
+@bp.post("/wishlist/move-to-cart")
+@jwt_required()
+def move_wishlist_to_cart():
+    """Body: {"product_ids": [1, 2]}. Adds one of each to the cart and takes it off the wishlist.
+    Sold-out items, and items whose cart line is already at the limit, stay in the wishlist (skipped)."""
+    ids = _ids_from_body()
+    if ids is None:
+        return error("Validation failed", 422, {"product_ids": "Choose at least one product"})
+    user_id = _user_id()
+    moved, skipped = [], []
+    for product_id in ids:
+        product = _active_product(product_id)
+        item = CartItem.query.filter_by(user_id=user_id, product_id=product_id).first()
+        if not product or product.stock <= 0 or (item.quantity if item else 0) + 1 > _max_qty(product):
+            skipped.append(product_id)
+            continue
+        if item:
+            item.quantity += 1
+        else:
+            db.session.add(CartItem(user_id=user_id, product_id=product_id, quantity=1))
+        Favorite.query.filter_by(user_id=user_id, product_id=product_id).delete()
+        moved.append(product_id)
+    db.session.commit()
+    count = sum(i.quantity for i in CartItem.query.filter_by(user_id=user_id))
+    message = f"Moved {len(moved)} to your cart" if moved else "Nothing could be moved to your cart"
+    return success({"moved": moved, "skipped": skipped, "ids": _wishlist_ids(user_id), "cart_count": count}, message)
+
+
 # ---------- Cart ----------
 
 @bp.get("/cart")

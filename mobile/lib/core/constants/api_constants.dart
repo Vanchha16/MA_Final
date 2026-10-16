@@ -27,5 +27,8 @@ class ApiConstants {
   static const String searchSuggestions = '/search/suggestions';
   static const String products = '/products';
   static const String wishlist = '/wishlist';
+  static const String wishlistBatchRemove = '/wishlist/batch-remove';
+  static const String wishlistBatchAdd = '/wishlist/batch-add';
+  static const String wishlistMoveToCart = '/wishlist/move-to-cart';
   static const String cart = '/cart';
 }

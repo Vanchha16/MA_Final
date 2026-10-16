@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/network/api_client.dart';
 import '../models/cart.dart';
+import '../models/catalog.dart';
 import '../services/shop_service.dart';
 
 /// Wishlist hearts and the cart badge, shared by every product card.
@@ -19,6 +20,9 @@ class ShopProvider extends ChangeNotifier {
   bool get signedIn => _signedIn;
   int get cartCount => _cartCount;
   bool isWishlisted(int productId) => _wishlist.contains(productId);
+
+  /// The saved product ids, so the Wishlist tab can notice hearts tapped elsewhere.
+  Set<int> get wishlistIds => _wishlist;
 
   /// Called by the provider tree whenever the auth state changes.
   void setSignedIn(bool value) {
@@ -58,6 +62,30 @@ class ShopProvider extends ChangeNotifier {
       _set(productId, !adding);
       rethrow;
     }
+  }
+
+  /// The saved products for the Wishlist tab (also refreshes the hearts).
+  Future<List<Product>> loadWishlist() async {
+    final items = await _service.wishlistItems();
+    _setIds({for (final p in items) p.id});
+    return items;
+  }
+
+  Future<void> removeManyFromWishlist(List<int> productIds) async => _setIds(await _service.removeManyFromWishlist(productIds));
+
+  /// Undo for a removal.
+  Future<void> restoreWishlist(List<int> productIds) async => _setIds(await _service.addManyToWishlist(productIds));
+
+  Future<MoveToCartResult> moveToCart(List<int> productIds) async {
+    final result = await _service.moveToCart(productIds);
+    _cartCount = result.cartCount;
+    _setIds(result.wishlistIds);
+    return result;
+  }
+
+  void _setIds(Set<int> ids) {
+    _wishlist = ids;
+    notifyListeners();
   }
 
   /// The Cart screen reports the count after each change it makes.
