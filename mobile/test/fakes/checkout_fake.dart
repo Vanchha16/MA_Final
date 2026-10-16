@@ -2,6 +2,7 @@ import 'package:ecommerce_app/core/network/api_client.dart';
 import 'package:ecommerce_app/models/cart.dart';
 import 'package:ecommerce_app/models/order.dart';
 import 'package:ecommerce_app/services/checkout_service.dart';
+import 'package:ecommerce_app/services/payment_service.dart';
 
 import 'shop_fakes.dart';
 
@@ -112,4 +113,55 @@ class FakeCheckoutService extends CheckoutService {
 
   @override
   Future<List<Address>> deleteAddress(int id) async => [...saved..removeWhere((a) => a.id == id)];
+}
+
+/// KHQR payments in memory: pending until [simulate] is called (or [status] is changed).
+class FakePaymentService extends PaymentService {
+  KhqrStatus state;
+  bool demo;
+  int checks = 0;
+
+  FakePaymentService({this.state = KhqrStatus.pending, this.demo = true});
+
+  static const order = Order(
+    id: 7,
+    number: 'AWS-20261016-0007',
+    paymentMethod: PaymentMethod.khqr,
+    subtotal: 179,
+    discount: 17.9,
+    couponCode: 'WELCOME10',
+    total: 161.1,
+    itemCount: 3,
+    lines: [
+      OrderLine(productId: 1, name: 'Monkey D. Luffy Gear 5 1/7 Scale Figure', unitPrice: 169, quantity: 1),
+      OrderLine(productId: 3, name: 'One Piece Booster Pack #3', unitPrice: 5, quantity: 2),
+    ],
+  );
+
+  (KhqrPayment, Order) get _now => (
+        KhqrPayment(
+          qr: '00020101021229180014demo_shop@devb5204599953038405406161.105802KH6304ABCD',
+          amount: 161.1,
+          status: state,
+          expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 15)),
+          paidAt: state == KhqrStatus.paid ? DateTime.utc(2026, 10, 16, 3, 42) : null,
+          demo: demo,
+        ),
+        order,
+      );
+
+  @override
+  Future<(KhqrPayment, Order)> start(int orderId) async => _now;
+
+  @override
+  Future<(KhqrPayment, Order)> status(int orderId) async {
+    checks++;
+    return _now;
+  }
+
+  @override
+  Future<(KhqrPayment, Order)> simulate(int orderId) async {
+    state = KhqrStatus.paid;
+    return _now;
+  }
 }
