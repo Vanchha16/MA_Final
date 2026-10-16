@@ -349,7 +349,7 @@ class Notification(TimestampMixin, db.Model):
     message = db.Column(db.Text, nullable=False)
     type = db.Column(db.Enum("order", "promo", "system", name="notification_type"), nullable=False, default="system")
     # What happened, so the app can pick the icon and button: placed, paid, confirmed,
-    # shipped, delivered, cancelled, welcome, promo, news
+    # shipped, delivered, cancelled, welcome, promo, news, support
     event = db.Column(db.String(20))
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id", ondelete="CASCADE"))
     promo_code = db.Column(db.String(30))
@@ -370,6 +370,38 @@ class Notification(TimestampMixin, db.Model):
             "image_url": first.product.photo_url if first is not None and first.product is not None else None,
             "promo_code": self.promo_code,
             "created_at": self.created_at.isoformat() + "Z",
+        }
+
+
+class ContactMessage(TimestampMixin, db.Model):
+    """A question sent from the Contact screen; the shop's reply comes back as a notification."""
+
+    __tablename__ = "contact_messages"
+
+    TOPICS = ("order", "payment", "product", "other")
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    # Only for questions about an order or a payment
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id", ondelete="SET NULL"))
+    topic = db.Column(db.Enum(*TOPICS, name="contact_topic"), nullable=False, default="other")
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.Enum("open", "answered", name="contact_status"), nullable=False, default="open")
+    reply = db.Column(db.Text)
+    replied_at = db.Column(db.DateTime)
+
+    order = db.relationship("Order")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "topic": self.topic,
+            "message": self.message,
+            "status": self.status,
+            "reply": self.reply,
+            "order": {"id": self.order.id, "number": self.order.order_number} if self.order is not None else None,
+            "created_at": self.created_at.isoformat() + "Z",
+            "replied_at": self.replied_at.isoformat() + "Z" if self.replied_at else None,
         }
 
 

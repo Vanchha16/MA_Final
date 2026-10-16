@@ -354,6 +354,7 @@ class _NotificationCardState extends State<_NotificationCard> {
         NotificationEvent.cancelled => (Icons.cancel_rounded, const Color(0xFF64748B)),
         NotificationEvent.welcome || NotificationEvent.promo => (Icons.local_offer_rounded, AppTheme.coral),
         NotificationEvent.news => (Icons.campaign_rounded, AppTheme.primaryDark),
+        NotificationEvent.support => (Icons.support_agent_rounded, AppTheme.success),
       };
 
   static String? _actionLabel(NotificationEvent e) => switch (e) {

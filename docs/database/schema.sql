@@ -197,7 +197,7 @@ CREATE TABLE notifications (
   title      VARCHAR(150) NOT NULL,
   message    TEXT         NOT NULL,
   type       ENUM('order','promo','system') NOT NULL DEFAULT 'system',
-  -- placed, paid, confirmed, shipped, delivered, cancelled, welcome, promo, news
+  -- placed, paid, confirmed, shipped, delivered, cancelled, welcome, promo, news, support
   event      VARCHAR(20)  NULL,
   order_id   INT UNSIGNED NULL,
   promo_code VARCHAR(30)  NULL,
@@ -205,6 +205,21 @@ CREATE TABLE notifications (
   created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+
+-- Questions sent from the app's Contact screen; replies arrive as notifications
+CREATE TABLE contact_messages (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  order_id   INT UNSIGNED NULL,
+  topic      ENUM('order','payment','product','other') NOT NULL DEFAULT 'other',
+  message    TEXT         NOT NULL,
+  status     ENUM('open','answered') NOT NULL DEFAULT 'open',
+  reply      TEXT         NULL,
+  replied_at DATETIME     NULL,
+  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
 );
 
 -- Bonus: product reviews & ratings

@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../l10n/l10n.dart';
 import '../../widgets/circle_back_button.dart';
+import 'contact_screen.dart';
 
-/// Help & contact: how to reach the shop (tap to copy) and common questions.
+/// Help & contact: a card that opens Contact us, then common questions.
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
-
-  static const phone = '+855 12 345 678';
-  static const telegram = '@animeworldshop_kh';
-  static const email = 'hello@animeworld.shop';
-  static const address = '#88 St. 315, Boeung Kak 2, Toul Kork, Phnom Penh';
 
   @override
   Widget build(BuildContext context) {
@@ -20,27 +15,6 @@ class HelpScreen extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = dark ? scheme.surfaceContainer : Colors.white;
-
-    void copy(String value) {
-      Clipboard.setData(ClipboardData(text: value));
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l.copied(value)), behavior: SnackBarBehavior.floating));
-    }
-
-    Widget contact(String key, IconData icon, Color color, String title, String value) => ListTile(
-          key: Key('help_$key'),
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.14), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: Text(value),
-          trailing: Tooltip(message: l.tapToCopy, child: Icon(Icons.copy_rounded, size: 18, color: scheme.onSurfaceVariant)),
-          onTap: () => copy(value),
-        );
 
     final faqs = [(l.faq1q, l.faq1a), (l.faq2q, l.faq2a), (l.faq3q, l.faq3a), (l.faq4q, l.faq4a)];
     Widget label(String text) => Padding(
@@ -61,18 +35,26 @@ class HelpScreen extends StatelessWidget {
                     maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
               ),
             ]),
-            label(l.contactUs),
+            const SizedBox(height: 18),
             Card(
               color: cardColor,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
               clipBehavior: Clip.antiAlias,
-              child: Column(children: [
-                contact('phone', Icons.call_rounded, AppTheme.success, l.callUs, phone),
-                contact('telegram', Icons.send_rounded, AppTheme.primaryDark, l.telegram, telegram),
-                contact('email', Icons.mail_rounded, AppTheme.coral, l.emailUs, email),
-                contact('shop', Icons.storefront_rounded, const Color(0xFF7C3AED), l.visitShop, '$address\n${l.openHours}'),
-              ]),
+              child: ListTile(
+                key: const Key('help_contact'),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                leading: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(color: AppTheme.success.withValues(alpha: 0.14), shape: BoxShape.circle),
+                  child: const Icon(Icons.support_agent_rounded, color: AppTheme.success, size: 22),
+                ),
+                title: Text(l.contactTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                subtitle: Text(l.helpContactSub),
+                trailing: Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ContactScreen())),
+              ),
             ),
             label(l.faq),
             Card(
