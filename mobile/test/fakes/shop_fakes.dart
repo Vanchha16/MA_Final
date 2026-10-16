@@ -24,6 +24,7 @@ class FakeCatalogService extends CatalogService {
   final List<ProductQuery> queries = [];
   final List<int> pages = [];
   bool fail = false;
+  bool failCategories = false;
 
   FakeCatalogService({List<Product>? products}) : products_ = products ?? demoProducts;
 
@@ -33,7 +34,10 @@ class FakeCatalogService extends CatalogService {
   Future<List<Series>> series() async => [onePiece, pokemon];
 
   @override
-  Future<List<Category>> categories() async => [figures, boosters];
+  Future<List<Category>> categories() async {
+    if (failCategories) throw ApiException('Cannot connect to server. Check your internet connection.');
+    return [figures, boosters];
+  }
 
   @override
   Future<List<String>> brands() async => ['Bandai', 'Good Smile Company', 'The Pokemon Company'];

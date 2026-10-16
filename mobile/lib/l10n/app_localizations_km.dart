@@ -281,14 +281,91 @@ class AppLocalizationsKm extends AppLocalizations {
   String get aboutTitle => 'អំពី';
 
   @override
-  String get aboutTagline =>
-      'រូបចម្លាក់ តុក្កតា ម៉ូដែល និងកាតអានីមេ នៅភ្នំពេញ។';
-
-  @override
-  String get aboutMadeBy =>
-      'គម្រោងបញ្ចប់ការសិក្សា វិទ្យាស្ថាន SETEC (SU25, Mobile Application)។';
-
-  @override
   String get aboutCredit =>
+      'រូបភាពផលិតផលជាកម្មសិទ្ធិរបស់ម្ចាស់រៀងៗខ្លួន ហើយប្រើសម្រាប់គោលបំណងអប់រំតែប៉ុណ្ណោះ។';
+
+  @override
+  String get aboutStory =>
+      'រូបចម្លាក់ តុក្កតា ម៉ូដែល និងកាតអានីមេ ជ្រើសរើសដោយអ្នកចូលចិត្ត សម្រាប់អ្នកចូលចិត្ត។ បង់ប្រាក់តាម KHQR ហើយមកយកនៅហាង ឬឱ្យយើងដឹកជូន។';
+
+  @override
+  String get aboutCity => 'ភ្នំពេញ';
+
+  @override
+  String get aboutWeSell => 'យើងលក់';
+
+  @override
+  String get aboutMadeByLabel => 'បង្កើតដោយ';
+
+  @override
+  String get aboutSchool => 'វិទ្យាស្ថាន SETEC';
+
+  @override
+  String get aboutProject =>
+      'គម្រោងបញ្ចប់ការសិក្សា · SU25 · Mobile Application';
+
+  @override
+  String get licenses => 'អាជ្ញាប័ណ្ណកូដបើកចំហ';
+
+  @override
+  String get privacyPolicy => 'គោលការណ៍ឯកជនភាព';
+
+  @override
+  String get termsOfUse => 'លក្ខខណ្ឌប្រើប្រាស់';
+
+  @override
+  String get privacy1t => 'អ្វីដែលយើងប្រមូល';
+
+  @override
+  String get privacy1b =>
+      'ឈ្មោះ អ៊ីមែល លេខទូរស័ព្ទ និងអាសយដ្ឋានដឹកជញ្ជូនរបស់អ្នក ដើម្បីដឹកការបញ្ជាទិញជូនអ្នក។';
+
+  @override
+  String get privacy2t => 'ការបង់ប្រាក់';
+
+  @override
+  String get privacy2b =>
+      'អ្នកបង់កូដ KHQR នៅក្នុងកម្មវិធីធនាគាររបស់អ្នកផ្ទាល់។ យើងមិនដែលឃើញ ឬរក្សាទុកព័ត៌មានធនាគារ ឬកាតរបស់អ្នកទេ។';
+
+  @override
+  String get privacy3t => 'របៀបដែលយើងប្រើ';
+
+  @override
+  String get privacy3b =>
+      'សម្រាប់តែដំណើរការការបញ្ជាទិញ ផ្ញើការជូនដំណឹងដែលអ្នកបានបើក និងឆ្លើយតបពេលអ្នកទាក់ទងមកយើង។ យើងមិនដែលលក់ទិន្នន័យរបស់អ្នកទេ។';
+
+  @override
+  String get privacy4t => 'ជម្រើសរបស់អ្នក';
+
+  @override
+  String get privacy4b =>
+      'កែប្រវត្តិរូប និងអាសយដ្ឋាន ឬបិទការជូនដំណឹង បានគ្រប់ពេលក្នុងការកំណត់។ ដើម្បីលុបគណនី សូមទាក់ទងមកយើង។';
+
+  @override
+  String get terms1t => 'ការបញ្ជាទិញ និងតម្លៃ';
+
+  @override
+  String get terms1b =>
+      'តម្លៃគិតជាដុល្លារអាមេរិក។ ការបញ្ជាទិញត្រូវបានបញ្ជាក់ នៅពេលការបង់ប្រាក់ KHQR ជោគជ័យ។';
+
+  @override
+  String get terms2t => 'បង់ប្រាក់ទាន់ពេល';
+
+  @override
+  String get terms2b =>
+      'កូដ KHQR មានសុពលភាព ១៥ នាទី។ ការបញ្ជាទិញដែលមិនបានបង់ នឹងត្រូវលុបចោល ហើយទំនិញត្រឡប់មកលក់វិញ។';
+
+  @override
+  String get terms3t => 'ការដឹកជញ្ជូន និងការមកយក';
+
+  @override
+  String get terms3b =>
+      'ដឹកជញ្ជូនក្នុងភ្នំពេញ ឥតគិតថ្លៃចាប់ពី \$50 ហើយមកយកនៅហាង ឥតគិតថ្លៃជានិច្ច។ សូមពិនិត្យទំនិញពេលទទួលបាន។';
+
+  @override
+  String get terms4t => 'រូបភាពផលិតផល';
+
+  @override
+  String get terms4b =>
       'រូបភាពផលិតផលជាកម្មសិទ្ធិរបស់ម្ចាស់រៀងៗខ្លួន ហើយប្រើសម្រាប់គោលបំណងអប់រំតែប៉ុណ្ណោះ។';
 }
