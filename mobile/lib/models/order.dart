@@ -111,7 +111,10 @@ class OrderLine {
   final String? imageUrl;
   final Category? category;
 
-  const OrderLine({this.productId, required this.name, required this.unitPrice, required this.quantity, this.imageUrl, this.category});
+  /// Stars the customer gave this product (delivered orders only), or null.
+  final int? myRating;
+
+  const OrderLine({this.productId, required this.name, required this.unitPrice, required this.quantity, this.imageUrl, this.category, this.myRating});
 
   factory OrderLine.fromJson(Map<String, dynamic> json) => OrderLine(
         productId: json['product_id'],
@@ -120,7 +123,11 @@ class OrderLine {
         quantity: json['quantity'],
         imageUrl: json['image_url'],
         category: json['category'] == null ? null : Category.fromJson(json['category']),
+        myRating: json['my_rating'],
       );
+
+  OrderLine withRating(int? rating) =>
+      OrderLine(productId: productId, name: name, unitPrice: unitPrice, quantity: quantity, imageUrl: imageUrl, category: category, myRating: rating);
 
   /// For the photo placeholder when there is no photo.
   ProductKind get kind => category?.kind ?? ProductKind.figure;
@@ -192,7 +199,7 @@ class Order {
         OrderStage.cancelled => 1,
       };
 
-  Order copyWith({String? status, String? paymentStatus}) => Order(
+  Order copyWith({String? status, String? paymentStatus, List<OrderLine>? lines}) => Order(
         id: id,
         number: number,
         status: status ?? this.status,
@@ -209,7 +216,7 @@ class Order {
         shippingAddress: shippingAddress,
         note: note,
         createdAt: createdAt,
-        lines: lines,
+        lines: lines ?? this.lines,
       );
 
   factory Order.fromJson(Map<String, dynamic> json) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/network/api_client.dart';
@@ -8,22 +9,29 @@ import '../../core/utils/format.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 import '../../services/payment_service.dart';
+import '../../services/review_service.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/pill_button.dart';
 import '../../widgets/product_image.dart';
+import '../../widgets/review_sheet.dart';
 import '../checkout/khqr_payment_screen.dart';
 import 'order_actions.dart';
 import 'receipt_screen.dart';
 import 'widgets/order_tracker.dart';
 
 /// One order: the tracker, what to do now (Pay now / Got it), the items,
-/// where it goes, how it is paid and the totals. Past orders can be bought again.
+/// where it goes, how it is paid and the totals. Past orders can be bought again,
+/// and each item of a delivered order can be rated.
 class OrderDetailsScreen extends StatefulWidget {
   final Order order;
   final OrderService? service;
   final PaymentService? paymentService;
+  final ReviewService? reviewService;
 
-  const OrderDetailsScreen({super.key, required this.order, this.service, this.paymentService});
+  /// Open the review sheet for the first item not rated yet (the "Rate it" notification).
+  final bool rateFirst;
+
+  const OrderDetailsScreen({super.key, required this.order, this.service, this.paymentService, this.reviewService, this.rateFirst = false});
 
   @override
   State<OrderDetailsScreen> createState() => _OrderDetailsScreenState();
@@ -33,6 +41,27 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   late final OrderService _service = widget.service ?? OrderService();
   late Order _order = widget.order;
   bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.rateFirst) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final line = _order.stage == OrderStage.delivered ? _order.lines.where((l) => l.productId != null && l.myRating == null).firstOrNull : null;
+        if (line != null && mounted) _rate(line);
+      });
+    }
+  }
+
+  Future<void> _rate(OrderLine line) async {
+    final outcome = await showReviewSheet(context,
+        productId: line.productId!, productName: line.name, imageUrl: line.imageUrl, kind: line.kind, service: widget.reviewService);
+    if (outcome == null || !mounted) return;
+    setState(() => _order = _order.copyWith(lines: [
+          for (final l in _order.lines) l.productId == line.productId ? l.withRating(outcome.review?.rating) : l,
+        ]));
+    OrderActions.snack(context, outcome.deleted ? 'Review deleted' : 'Review posted');
+  }
 
   Future<void> _refresh() async {
     try {
@@ -161,9 +190,27 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Text(line.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, height: 1.3)),
                                 Text('${formatPrice(line.unitPrice)}  ×  ${line.quantity}', style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant)),
+                                if (line.myRating != null) ...[
+                                  const SizedBox(height: 3),
+                                  KeyedSubtree(
+                                    key: Key('details_my_rating_${line.productId}'),
+                                    child: RatingBarIndicator(
+                                      rating: line.myRating!.toDouble(),
+                                      itemCount: 5,
+                                      itemSize: 15,
+                                      unratedColor: scheme.outlineVariant,
+                                      itemBuilder: (_, _) => const Icon(Icons.star_rounded, color: AppTheme.amber),
+                                    ),
+                                  ),
+                                ],
                               ]),
                             ),
-                            Text(formatPrice(line.unitPrice * line.quantity), style: const TextStyle(fontWeight: FontWeight.bold)),
+                            if (o.stage == OrderStage.delivered && line.productId != null)
+                              line.myRating == null
+                                  ? _RateButton(key: Key('details_rate_${line.productId}'), onTap: () => _rate(line))
+                                  : Text('Reviewed', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: AppTheme.success))
+                            else
+                              Text(formatPrice(line.unitPrice * line.quantity), style: const TextStyle(fontWeight: FontWeight.bold)),
                           ]),
                         ),
                     ]),
@@ -212,6 +259,33 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       bottomNavigationBar: bottom == null
           ? null
           : Padding(padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + MediaQuery.paddingOf(context).bottom), child: bottom),
+    );
+  }
+}
+
+class _RateButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _RateButton({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.primary.withValues(alpha: 0.1),
+      shape: const StadiumBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.star_rounded, size: 16, color: AppTheme.amber),
+            const SizedBox(width: 4),
+            Text('Rate it', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.bold, fontSize: 12.5)),
+          ]),
+        ),
+      ),
     );
   }
 }

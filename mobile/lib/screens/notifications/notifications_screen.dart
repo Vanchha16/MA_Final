@@ -170,7 +170,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   /// Opens the order the message is about; the button picks what to do there.
-  Future<void> _openOrder(ShopNotification n, {bool buyAgain = false}) async {
+  Future<void> _openOrder(ShopNotification n, {bool buyAgain = false, bool rate = false}) async {
     _markRead(n);
     if (n.orderId == null) return;
     try {
@@ -181,7 +181,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (order.stage == OrderStage.toPay) {
         await navigator.push(MaterialPageRoute(builder: (_) => KhqrPaymentScreen(order: order, service: widget.paymentService)));
       } else {
-        await navigator.push(MaterialPageRoute(builder: (_) => OrderDetailsScreen(order: order, service: _orders, paymentService: widget.paymentService)));
+        await navigator.push(MaterialPageRoute(
+            builder: (_) => OrderDetailsScreen(order: order, service: _orders, paymentService: widget.paymentService, rateFirst: rate)));
       }
     } on ApiException catch (e) {
       if (mounted) OrderActions.snack(context, e.message);
@@ -239,7 +240,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   readDelay: _readStagger * i,
                   copied: _copied == n.id,
                   onTap: () => n.orderId != null ? _openOrder(n) : _markRead(n),
-                  onAction: () => _openOrder(n, buyAgain: n.event == NotificationEvent.cancelled),
+                  onAction: () => _openOrder(n, buyAgain: n.event == NotificationEvent.cancelled, rate: n.event == NotificationEvent.delivered),
                   onCopy: () => _copy(n),
                 ),
               ),

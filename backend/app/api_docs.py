@@ -111,8 +111,16 @@ SCHEMAS = {
     "Product": obj(id=I, category=ref("Category"), series=nullable(ref("Series")), brand=nullable(S), name=S, slug=S,
                    description=nullable(S), price=N, discount_price=nullable(N), stock=I, is_featured=B,
                    image_url=nullable({**S, "description": "Main photo"}), images=arr(S), rating=N, review_count=I),
-    "Review": obj(id=I, user=S, rating={"type": "integer", "minimum": 1, "maximum": 5}, comment=nullable(S), created_at=DT),
-    "ProductDetail": {"allOf": [ref("Product"), obj(reviews=arr(ref("Review")), related=arr(ref("Product")))]},
+    "Review": obj(id=I, product_id=I, user=S, rating={"type": "integer", "minimum": 1, "maximum": 5}, comment=nullable(S),
+                  tags=arr({"type": "string", "enum": ["quality", "as_pictured", "packaging", "delivery", "value"]}),
+                  created_at=DT, edited=B, is_mine={**B, "description": "True for the logged-in customer's own review"}),
+    "ReviewSummary": obj(rating={**N, "example": 4.6}, count=I,
+                         stars={"type": "object", "description": "How many reviews gave each star", "example": {"5": 49, "4": 12, "3": 4, "2": 2, "1": 1}},
+                         with_comment=I, tags={"type": "object", "description": "How many reviews chose each tag", "example": {"quality": 31, "packaging": 24}}),
+    "ProductDetail": {"allOf": [ref("Product"), obj(reviews=arr(ref("Review")), review_summary=ref("ReviewSummary"),
+                                                     my_review=nullable(ref("Review")),
+                                                     can_review={**B, "description": "Logged in and the product was delivered to them"},
+                                                     related=arr(ref("Product")))]},
     "CartItem": obj(id=I, quantity=I, subtotal=N, product=ref("Product")),
     "Totals": obj(count=I, subtotal=N, discount=N, shipping_fee=N, free_shipping_min=N, total=N, savings=N,
                   coupon=nullable(obj(code=S, description=S, discount=N)), coupon_error=nullable(S)),
@@ -123,7 +131,8 @@ SCHEMAS = {
                         phone={**S, "example": "012 345 678"}, street=S, city={**S, "description": "District"},
                         province=S, postal_code=S, is_default=B),
     "OrderItem": obj(product_id=nullable(I), product_name=S, image_url=nullable(S), category=nullable(ref("Category")),
-                     unit_price=N, quantity=I, subtotal=N),
+                     unit_price=N, quantity=I, subtotal=N,
+                     my_rating=nullable({**I, "description": "Stars the customer gave this product (delivered orders), else null"})),
     "Order": obj(id=I, order_number={**S, "example": "AWS-20261016-0001"},
                  status={"type": "string", "enum": ["pending", "confirmed", "shipped", "delivered", "cancelled"]},
                  payment_method={"type": "string", "enum": ["cod", "khqr"]},
@@ -185,8 +194,8 @@ RESPONSES = {
 # Paths
 # ---------------------------------------------------------------------------
 
-AUTH, CATALOG, WISHLIST, CART, ADDRESSES, ORDERS, PAY, PROFILE, NOTES, CONTACT, ADMIN = (
-    "Auth", "Catalog", "Wishlist", "Cart", "Addresses", "Orders", "KHQR payment", "Profile", "Notifications", "Contact", "Admin")
+AUTH, CATALOG, REVIEWS, WISHLIST, CART, ADDRESSES, ORDERS, PAY, PROFILE, NOTES, CONTACT, ADMIN = (
+    "Auth", "Catalog", "Reviews", "Wishlist", "Cart", "Addresses", "Orders", "KHQR payment", "Profile", "Notifications", "Contact", "Admin")
 TOKEN = obj(token={**S, "description": "Send as `Authorization: Bearer <token>`"}, user=ref("User"))
 IDS = body(obj(["product_ids"], product_ids=arr(I)), {"product_ids": [3, 7]})
 CART_COUPON = query("coupon", S, "Promo code to preview, e.g. WELCOME10")
@@ -230,6 +239,27 @@ PATHS = {
                                         query("sort", {"type": "string", "enum": ["newest", "price_asc", "price_desc", "name"]}), *PAGE_PARAMS])},
     "/api/products/{product_id}": {"get": op(CATALOG, "Product details with reviews and related products", ok(ref("ProductDetail")),
                                              auth=False, params=[path("product_id")], errors=(404,))},
+
+    # Reviews
+    "/api/products/{product_id}/reviews": {
+        "get": op(REVIEWS, "Reviews of a product with the rating summary",
+                  ok(obj(summary=ref("ReviewSummary"), items=arr(ref("Review")), page=I, per_page=I, total=I, total_pages=I)),
+                  auth=False, params=[path("product_id"), query("rating", I, "Only this many stars (1-5)"),
+                                      query("with_comment", S, "1 = only reviews with a comment"), *PAGE_PARAMS],
+                  errors=(404, 422), description="Login is optional; when logged in, the customer's own review comes first and has is_mine = true."),
+        "post": op(REVIEWS, "Rate a product (posting again edits the review)",
+                   ok(obj(review=ref("Review"), summary=ref("ReviewSummary")), "Review created", "201", "Thanks for your review!"),
+                   params=[path("product_id")], errors=(403, 404, 422),
+                   description="Only for products in one of the customer's delivered orders (403 otherwise). 200 \"Review updated\" when editing.",
+                   request_body=body(obj(["rating"], rating={"type": "integer", "minimum": 1, "maximum": 5},
+                                         comment={**S, "maxLength": 1000},
+                                         tags=arr({"type": "string", "enum": ["quality", "as_pictured", "packaging", "delivery", "value"]})),
+                                     {"rating": 5, "comment": "Exactly like the photos!", "tags": ["quality", "packaging"]})),
+    },
+    "/api/products/{product_id}/reviews/mine": {"delete": op(REVIEWS, "Delete my review of this product", ok(obj(summary=ref("ReviewSummary")), message="Review deleted"),
+                                                             params=[path("product_id")], errors=(404,))},
+    "/api/reviews/to-review": {"get": op(REVIEWS, "Delivered products I haven't rated yet",
+                                         ok(arr(obj(product=ref("Product"), order_id=I, order_number=S))))},
 
     # Wishlist
     "/api/wishlist": {"get": op(WISHLIST, "Saved products, newest first", ok(obj(ids=arr(I), items=arr(ref("Product")))))},
@@ -397,6 +427,7 @@ PATHS = {
 TAGS = [
     (AUTH, "Register, log in, forgot password"),
     (CATALOG, "Categories, series, brands, products and search (no login needed)"),
+    (REVIEWS, "Star ratings and reviews; customers review products delivered to them"),
     (WISHLIST, "Saved products"),
     (CART, "Shopping cart and promo codes"),
     (ADDRESSES, "Delivery addresses"),

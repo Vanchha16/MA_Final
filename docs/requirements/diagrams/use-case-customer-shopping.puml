@@ -15,6 +15,7 @@ rectangle "Anime World Shop - customer app" {
     usecase "Search products" as C_Search
     usecase "Filter and sort\n(category, series, brand,\nprice, in stock)" as C_Filter
     usecase "View product details" as C_Details
+    usecase "Read reviews\n(filter by stars)" as C_Reviews
   }
   package "Cart and wishlist" {
     usecase "Add to cart" as C_Add
@@ -32,6 +33,7 @@ Customer --> C_Search
 Customer --> C_Details
 C_Filter .> C_List : <<extend>>
 C_Filter .> C_Search : <<extend>>
+C_Reviews .> C_Details : <<extend>>
 Customer --> C_Add
 Customer --> C_Qty
 Customer --> C_Remove

@@ -13,6 +13,7 @@ import '../../widgets/menu_card.dart';
 import '../../widgets/pill_button.dart';
 import '../../widgets/notification_bell.dart';
 import '../../widgets/round_icon_button.dart';
+import '../../widgets/to_review_sheet.dart';
 import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
 import '../settings/about_screen.dart';
@@ -65,6 +66,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _openOrders() async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OrdersScreen()));
     if (mounted) await _load(); // order counts may have changed
+  }
+
+  Future<void> _openToReview() async {
+    final rated = await showToReviewSheet(context);
+    if (rated == true && mounted) await _load(); // the To review count went down
   }
 
   Future<void> _open(Widget page) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
@@ -125,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               OrderStatusCard(
                 summary: _summary,
                 onViewAll: _openOrders,
-                onStatus: (_) => _openOrders(),
+                onStatus: (label) => label == context.l10n.toReview ? _openToReview() : _openOrders(),
               ),
               const SizedBox(height: 16),
               MenuCard(items: [
