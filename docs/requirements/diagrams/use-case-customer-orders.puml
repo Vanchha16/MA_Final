@@ -1,0 +1,38 @@
+@startuml use-case-customer-orders
+' Anime World Shop - everything a signed-in customer can do
+!pragma layout smetana
+!include style.iuml
+left to right direction
+title Anime World Shop - Customer: Checkout and Orders
+
+actor Customer
+actor "Bakong KHQR\n(payment system)" as Bakong <<system>>
+
+rectangle "Anime World Shop - customer app" {
+  package "Checkout and orders" {
+    usecase "Place order" as C_Order
+    usecase "Choose delivery\naddress" as C_Addr
+    usecase "Choose delivery and\npayment method" as C_Method
+    usecase "Apply coupon" as C_Coupon
+    usecase "Pay with KHQR" as C_Khqr
+    usecase "View order history" as C_History
+    usecase "View order details\nand tracking" as C_OrderDetails
+    usecase "Confirm order received" as C_Received
+    usecase "View / save receipt" as C_Receipt
+    usecase "Buy again" as C_Again
+  }
+}
+
+Customer --> C_Order
+C_Order .> C_Addr : <<include>>
+C_Order .> C_Method : <<include>>
+C_Coupon .> C_Order : <<extend>>
+C_Khqr .> C_Order : <<extend>>\n(payment = KHQR)
+C_Khqr --> Bakong
+Customer --> C_History
+Customer --> C_OrderDetails
+C_Received .> C_OrderDetails : <<extend>>
+C_Receipt .> C_OrderDetails : <<extend>>
+C_Again .> C_OrderDetails : <<extend>>
+@enduml
+

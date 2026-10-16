@@ -1,0 +1,63 @@
+@startuml use-case-overview
+' Anime World Shop - use case overview (all actors, main use cases)
+' Render: java -jar plantuml.jar -tpng docs/requirements/diagrams/*.puml
+!pragma layout smetana
+!include style.iuml
+left to right direction
+title Anime World Shop - Use Case Overview
+
+actor "User\n(not signed in)" as User
+actor Customer
+actor Admin
+actor "Bakong KHQR\n(payment system)" as Bakong <<system>>
+actor "Email service" as Mail <<system>>
+
+Customer -up-|> User
+Admin -up-|> User
+
+rectangle "Anime World Shop (mobile app + backend)" {
+  usecase "Register" as UC_Reg
+  usecase "Log in / Log out" as UC_Login
+  usecase "Reset forgotten password" as UC_Reset
+
+  usecase "Manage profile\nand addresses" as UC_Profile
+  usecase "Browse and search\nproducts" as UC_Browse
+  usecase "Manage cart" as UC_Cart
+  usecase "Manage wishlist" as UC_Wish
+  usecase "Place order and pay\n(cash or KHQR)" as UC_Order
+  usecase "Track orders and\nview receipts" as UC_Track
+  usecase "Read notifications" as UC_Notif
+  usecase "Contact the shop" as UC_Contact
+  usecase "Change settings\n(theme, language)" as UC_Settings
+
+  usecase "View dashboard" as UC_Dash
+  usecase "Manage orders" as UC_MOrders
+  usecase "Manage products\nand stock" as UC_MProducts
+  usecase "Manage categories" as UC_MCats
+  usecase "Manage customers" as UC_MCust
+  usecase "Answer messages" as UC_MMsg
+}
+
+User --> UC_Reg
+User --> UC_Login
+User --> UC_Reset
+UC_Reset --> Mail
+
+Customer --> UC_Profile
+Customer --> UC_Browse
+Customer --> UC_Cart
+Customer --> UC_Wish
+Customer --> UC_Order
+Customer --> UC_Track
+Customer --> UC_Notif
+Customer --> UC_Contact
+Customer --> UC_Settings
+UC_Order --> Bakong
+
+Admin --> UC_Dash
+Admin --> UC_MOrders
+Admin --> UC_MProducts
+Admin --> UC_MCats
+Admin --> UC_MCust
+Admin --> UC_MMsg
+@enduml

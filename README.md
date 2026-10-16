@@ -16,7 +16,11 @@ Final project (SU25 - Mobile Application). Flutter mobile app + Flask REST API +
 backend/     Flask REST API
 mobile/      Flutter app
 docs/        Requirement analysis, diagrams, API docs
+  requirements/  REQUIREMENTS (Requirement Analysis) and USE_CASES (Use Case
+                 Diagram + specifications), each as .md, .docx and .pdf;
+                 diagrams/ has the PlantUML sources and PNGs
   database/  schema.sql, ERD.md (+ erd.png / erd.pdf), erd.dbml
+  API.md     API documentation (also live at /api/docs)
 ```
 
 ## Run the backend
