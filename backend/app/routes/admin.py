@@ -9,7 +9,7 @@ from slugify import slugify
 from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 
-from ..admin_ops import AdminError, delete_category, next_statuses, reply_contact, set_customer_active, set_order_status, stats
+from ..admin_ops import AdminError, activity, delete_category, next_statuses, reply_contact, set_customer_active, set_order_status, stats
 from ..extensions import db
 from ..models import Category, ContactMessage, Order, OrderItem, Product, ProductImage, Series, User
 from ..product_images import add_uploaded_photo, remove_photo
@@ -53,6 +53,13 @@ def _body():
 @admin_required
 def dashboard():
     return success(stats())
+
+
+@bp.get("/activity")
+@admin_required
+def live_activity():
+    """The dashboard's Live activity feed. Query: limit (default 20, max 50)."""
+    return success(activity(min(max(request.args.get("limit", 20, type=int), 1), 50)))
 
 
 # ---------------------------------------------------------------------------
@@ -392,8 +399,10 @@ def update_customer(user_id):
 
 def _order_dict(o, with_items=False):
     data = o.to_dict(with_items=with_items)
-    data["customer"] = {"id": o.user.id, "full_name": o.user.full_name, "email": o.user.email}
+    data["customer"] = {"id": o.user.id, "full_name": o.user.full_name, "email": o.user.email, "phone": o.shipping_phone}
     data["next_statuses"] = list(next_statuses(o))
+    first = next((i for i in o.items if i.product is not None and i.product.photo_url), None)
+    data["image_url"] = first.product.photo_url if first else None  # for the list's thumbnail
     return data
 
 
@@ -401,7 +410,7 @@ def _order_dict(o, with_items=False):
 @admin_required
 def list_orders():
     """Every customer's orders, newest first. Query: status, q (order number or customer), page, per_page."""
-    query = Order.query.join(User, Order.user_id == User.id).options(selectinload(Order.items), selectinload(Order.user))
+    query = Order.query.join(User, Order.user_id == User.id).options(selectinload(Order.items).selectinload(OrderItem.product).selectinload(Product.images), selectinload(Order.user))
     if status := request.args.get("status"):
         if status not in ("pending", "confirmed", "shipped", "delivered", "cancelled"):
             return error("Validation failed", 422, {"status": "Unknown status"})

@@ -757,7 +757,8 @@ Shop owner only: an admin account's token
 
 | Method | Path | What it does | Login |
 |---|---|---|---|
-| `GET` | `/api/admin/stats` | Dashboard numbers | admin |
+| `GET` | `/api/admin/stats` | Dashboard numbers, with paid revenue for each of the last 7 days | admin |
+| `GET` | `/api/admin/activity` | Live activity: payments, new orders, messages, sold-out products | admin |
 | `GET` | `/api/admin/products` | All products, hidden ones too | admin |
 | `POST` | `/api/admin/products` | Add a product | admin |
 | `GET` | `/api/admin/products/{product_id}` | One product | admin |
@@ -780,9 +781,21 @@ Shop owner only: an admin account's token
 
 #### `GET /api/admin/stats`
 
-Dashboard numbers.
+Dashboard numbers, with paid revenue for each of the last 7 days.
 
 Response 200: `data` = `Stats`
+
+Errors: 401, 403
+
+#### `GET /api/admin/activity`
+
+Live activity: payments, new orders, messages, sold-out products.
+
+Newest first. Each event says which action still applies (confirm, ship, reply, restock).
+
+Parameters: `limit` (query) - How many (default 20, max 50).
+
+Response 200: `data` = list of `ActivityEvent`
 
 Errors: 401, 403
 
@@ -1153,7 +1166,7 @@ Errors: 401, 403, 404, 422
 
 ### AdminOrder
 
-`Order` + {customer: {id, full_name, email}, next_statuses: list of string}
+`Order` + {customer: {id, full_name, email, phone}, next_statuses: list of string, image_url: string or null}
 
 ### AdminOrderDetail
 
@@ -1161,4 +1174,8 @@ Errors: 401, 403, 404, 422
 
 ### Stats
 
-{products: integer, low_stock: integer, categories: integer, customers: integer, orders: integer, orders_to_handle: integer, revenue: number, open_messages: integer}
+{week: list of {date, revenue}, week_revenue: number, products: integer, low_stock: integer, categories: integer, customers: integer, orders: integer, orders_to_handle: integer, revenue: number, open_messages: integer}
+
+### ActivityEvent
+
+{id: string, kind: `paid` \| `order` \| `message` \| `sold_out`, at: string, title: string, message: string, image_url: string or null, action: `confirm` \| `ship` \| `reply` \| `restock`, status: string or null, order_id: integer or null, order_number: string or null, message_id: integer or null, product_id: integer or null}

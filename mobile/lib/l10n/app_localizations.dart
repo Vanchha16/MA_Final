@@ -913,6 +913,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancelled'**
   String get stageCancelled;
+
+  /// No description provided for @adminTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop admin'**
+  String get adminTitle;
+
+  /// No description provided for @adminEntrySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders, products and customers'**
+  String get adminEntrySub;
+
+  /// No description provided for @goodMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning, {name}'**
+  String goodMorning(String name);
+
+  /// No description provided for @goodAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon, {name}'**
+  String goodAfternoon(String name);
+
+  /// No description provided for @goodEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening, {name}'**
+  String goodEvening(String name);
+
+  /// No description provided for @adminShop.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop'**
+  String get adminShop;
+
+  /// No description provided for @revenuePaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue (paid)'**
+  String get revenuePaid;
+
+  /// No description provided for @thisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'+ {amount} this week'**
+  String thisWeek(String amount);
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @toHandle.
+  ///
+  /// In en, this message translates to:
+  /// **'To handle'**
+  String get toHandle;
+
+  /// No description provided for @lowStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Low stock'**
+  String get lowStock;
+
+  /// No description provided for @messagesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get messagesLabel;
+
+  /// No description provided for @liveActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Live activity'**
+  String get liveActivity;
+
+  /// No description provided for @noActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing yet. New orders and messages show up here.'**
+  String get noActivity;
+
+  /// No description provided for @actConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get actConfirm;
+
+  /// No description provided for @actShip.
+  ///
+  /// In en, this message translates to:
+  /// **'Ship it'**
+  String get actShip;
+
+  /// No description provided for @actReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get actReply;
+
+  /// No description provided for @actRestock.
+  ///
+  /// In en, this message translates to:
+  /// **'Restock'**
+  String get actRestock;
+
+  /// No description provided for @doneConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed · customer told'**
+  String get doneConfirmed;
+
+  /// No description provided for @doneShipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipped · customer told'**
+  String get doneShipped;
+
+  /// No description provided for @doneReplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Replied'**
+  String get doneReplied;
+
+  /// No description provided for @doneRestocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in stock'**
+  String doneRestocked(int count);
+
+  /// No description provided for @replyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply to the customer'**
+  String get replyTitle;
+
+  /// No description provided for @replyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer goes to their Notifications'**
+  String get replyHint;
+
+  /// No description provided for @sendReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reply'**
+  String get sendReply;
+
+  /// No description provided for @restockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How many are in stock now?'**
+  String get restockTitle;
+
+  /// No description provided for @saveStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Save stock'**
+  String get saveStock;
+
+  /// No description provided for @navDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get navDashboard;
+
+  /// No description provided for @navOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders'**
+  String get navOrders;
+
+  /// No description provided for @navProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Products'**
+  String get navProducts;
+
+  /// No description provided for @navMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get navMore;
+
+  /// No description provided for @addProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Add product'**
+  String get addProduct;
+
+  /// No description provided for @adminComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'This part of the admin comes next.'**
+  String get adminComingSoon;
 }
 
 class _AppLocalizationsDelegate

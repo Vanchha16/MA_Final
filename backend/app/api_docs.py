@@ -154,11 +154,18 @@ SCHEMAS = {
     "AdminCategory": {"allOf": [ref("Category"), obj(product_count=I)]},
     "Customer": {"allOf": [ref("User"), obj(is_active=B, order_count=I, total_spent=N)]},
     "CustomerDetail": {"allOf": [ref("Customer"), obj(addresses=arr(ref("Address")), orders=arr(ref("Order")))]},
-    "AdminOrder": {"allOf": [ref("Order"), obj(customer=obj(id=I, full_name=S, email=S),
-                                               next_statuses=arr({**S, "description": "Statuses this order can move to"}))]},
+    "AdminOrder": {"allOf": [ref("Order"), obj(customer=obj(id=I, full_name=S, email=S, phone=S),
+                                               next_statuses=arr({**S, "description": "Statuses this order can move to"}),
+                                               image_url=nullable({**S, "description": "First item's photo"}))]},
     "AdminOrderDetail": {"allOf": [ref("OrderDetail"), ref("AdminOrder")]},
-    "Stats": obj(products=I, low_stock={**I, "description": "In the shop with 3 or fewer left"}, categories=I, customers=I,
+    "Stats": obj(week=arr(obj(date={"type": "string", "format": "date"}, revenue=N)), week_revenue=N, products=I, low_stock={**I, "description": "In the shop with 3 or fewer left"}, categories=I, customers=I,
                  orders=I, orders_to_handle={**I, "description": "Pending or confirmed"}, revenue=N, open_messages=I),
+    "ActivityEvent": obj(id={**S, "example": "paid-12"}, kind={"type": "string", "enum": ["paid", "order", "message", "sold_out"]},
+                         at=DT, title=S, message=S, image_url=nullable(S),
+                         action=nullable({"type": "string", "enum": ["confirm", "ship", "reply", "restock"],
+                                          "description": "What the shop can do now; null once handled"}),
+                         status=nullable({**S, "description": "Order or message status"}), order_id=nullable(I), order_number=nullable(S),
+                         message_id=nullable(I), product_id=nullable(I)),
 }
 
 RESPONSES = {
@@ -325,7 +332,10 @@ PATHS = {
     },
 
     # Admin
-    "/api/admin/stats": {"get": op(ADMIN, "Dashboard numbers", ok(ref("Stats")), errors=(403,))},
+    "/api/admin/stats": {"get": op(ADMIN, "Dashboard numbers, with paid revenue for each of the last 7 days", ok(ref("Stats")), errors=(403,))},
+    "/api/admin/activity": {"get": op(ADMIN, "Live activity: payments, new orders, messages, sold-out products", ok(arr(ref("ActivityEvent"))),
+                                      errors=(403,), params=[query("limit", I, "How many (default 20, max 50)")],
+                                      description="Newest first. Each event says which action still applies (confirm, ship, reply, restock).")},
     "/api/admin/products": {
         "get": op(ADMIN, "All products, hidden ones too", ok(page_of(ref("AdminProduct"))), errors=(403,),
                   params=[query("q", S, "Name or brand"), query("category_id", I), query("active", S, "1 = in the shop, 0 = hidden"),
