@@ -4,6 +4,7 @@ from datetime import timedelta
 from flask import Blueprint, current_app, request
 from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, jwt_required
 
+from .. import notify
 from ..extensions import bcrypt, db
 from ..models import PasswordReset, User
 from ..utils.clock import utcnow
@@ -44,6 +45,8 @@ def register():
         password_hash=bcrypt.generate_password_hash(data["password"]).decode(),
     )
     db.session.add(user)
+    db.session.flush()
+    notify.welcome(user.id)
     db.session.commit()
     return success({"token": _token_for(user), "user": user.to_dict()}, "Registered successfully", 201)
 

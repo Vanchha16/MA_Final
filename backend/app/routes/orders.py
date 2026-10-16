@@ -4,7 +4,7 @@ from flask import Blueprint, current_app, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy.orm import selectinload
 
-from .. import payments
+from .. import notify, payments
 from ..extensions import db
 from ..models import Address, CartItem, Order, OrderItem, User
 from ..pricing import DELIVERY_METHODS, find_coupon, shipping_for, summarize
@@ -216,6 +216,8 @@ def place_order():
         p.stock -= i.quantity
         db.session.delete(i)
     db.session.add(order)
+    db.session.flush()
+    notify.order_event(order, "placed_khqr" if payment == "khqr" else "placed_cod")
     db.session.commit()
     return success(order.to_dict(with_items=True), "Order placed", 201)
 
@@ -248,6 +250,7 @@ def mark_received(order_id):
     order.status = "delivered"
     if order.payment_method == "cod":
         order.payment_status = "paid"
+    notify.order_event(order, "delivered")
     db.session.commit()
     return success(order.to_dict(with_items=True), "Enjoy your order!")
 

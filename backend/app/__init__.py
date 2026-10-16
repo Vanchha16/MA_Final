@@ -17,13 +17,14 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     cors.init_app(app)
 
-    from .routes import auth, catalog, orders, profile, shop
+    from .routes import auth, catalog, notifications, orders, profile, shop
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(catalog.bp)
     app.register_blueprint(profile.bp)
     app.register_blueprint(shop.bp)
     app.register_blueprint(orders.bp)
+    app.register_blueprint(notifications.bp)
     register_error_handlers(app)
 
     @app.get("/api/health")
@@ -75,9 +76,31 @@ def create_app(config_class=Config):
     @app.cli.command("seed-demo")
     def seed_demo():
         """Add the demo customer's sample orders and wishlist (safe to run twice)."""
-        from .seed import seed_coupons, seed_demo_orders
+        from .seed import seed_coupons, seed_demo_notifications, seed_demo_orders
 
         seed_coupons()
         seed_demo_orders()
+        seed_demo_notifications()
+
+    @app.cli.command("advance-orders")
+    def advance_orders():
+        # For the demo video: moves every open order one step on, like the shop would
+        # (cash orders get confirmed, paid orders get shipped) and sends the notification.
+        from . import notify
+        from .models import Order
+
+        moved = 0
+        for order in Order.query.filter(Order.status.in_(["pending", "confirmed"])).all():
+            if order.status == "pending" and order.payment_method == "cod":
+                order.status = "confirmed"
+                notify.order_event(order, "confirmed")
+            elif order.status == "confirmed":
+                order.status = "shipped"
+                notify.order_event(order, "ready" if order.delivery_method == "pickup" else "shipped")
+            else:
+                continue  # unpaid KHQR orders wait for the payment
+            moved += 1
+        db.session.commit()
+        print(f"Moved {moved} order(s) one step on.")
 
     return app
