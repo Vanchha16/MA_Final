@@ -109,7 +109,7 @@ def _keywords(texts, q, limit=5):
 @bp.get("/search/suggestions")
 def search_suggestions():
     """While typing: up to 5 matching products, search phrases and the total match count."""
-    q = request.args.get("q", "").strip()
+    q = request.args.get("q", "").strip()[:100]
     if not q:
         return success({"products": [], "keywords": [], "total": 0})
     matches = _search_filter(Product.query.filter(Product.is_active.is_(True)), q)
@@ -137,7 +137,20 @@ def list_products():
     query = Product.query.filter(Product.is_active.is_(True))
     final_price = func.coalesce(Product.discount_price, Product.price)
 
-    if q := args.get("q", "").strip():
+    # Price filters: numbers, not negative, and min no more than max
+    bad = {}
+    for name in ("min_price", "max_price"):
+        if args.get(name) not in (None, "") and args.get(name, type=float) is None:
+            bad[name] = "Must be a number"
+        elif (args.get(name, type=float) or 0) < 0:
+            bad[name] = "Can't be below 0"
+    low, high = args.get("min_price", type=float), args.get("max_price", type=float)
+    if not bad and low is not None and high is not None and low > high:
+        bad["max_price"] = "Max price must be at least the min price"
+    if bad:
+        return error("Validation failed", 422, bad)
+
+    if q := args.get("q", "").strip()[:100]:
         query = _search_filter(query, q)
     if category_id := args.get("category_id", type=int):
         query = query.filter(Product.category_id == category_id)

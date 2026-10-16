@@ -8,6 +8,7 @@ from ..extensions import db
 from ..models import REVIEW_TAGS, Order, OrderItem, Product, Review
 from ..utils.clock import utcnow
 from ..utils.responses import error, success
+from ..utils.validators import json_body
 
 bp = Blueprint("reviews", __name__, url_prefix="/api")
 
@@ -92,7 +93,7 @@ def save_review(product_id):
     if product_id not in delivered_product_ids(user_id):
         return error("You can review a product once it has been delivered to you", 403)
 
-    data = request.get_json(silent=True) or {}
+    data = json_body()
     errors = {}
     rating = data.get("rating")
     if not isinstance(rating, int) or isinstance(rating, bool) or not 1 <= rating <= 5:

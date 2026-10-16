@@ -43,7 +43,7 @@ def restock(order):
 
 def set_order_status(order, status):
     """Moves an order one step on and tells the customer. Commits."""
-    if status not in ORDER_STEPS:
+    if not isinstance(status, str) or status not in ORDER_STEPS:
         raise AdminError(f"Unknown status: {status}")
     if status not in next_statuses(order):
         raise AdminError(f"A {order.status} order cannot be marked {status}")
@@ -87,9 +87,11 @@ def delete_category(category):
 
 def reply_contact(message, text):
     """Answers a Contact message; the customer gets it in Notifications. Commits."""
-    text = (text or "").strip()
+    text = text.strip() if isinstance(text, str) else ""
     if not text:
         raise AdminError("Write a reply")
+    if len(text) > 2000:
+        raise AdminError("Keep the reply under 2000 characters")
     message.reply, message.status, message.replied_at = text, "answered", utcnow()
     notify.support_reply(message)
     db.session.commit()
