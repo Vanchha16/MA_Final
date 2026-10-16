@@ -31,4 +31,7 @@ class ApiConstants {
   static const String wishlistBatchAdd = '/wishlist/batch-add';
   static const String wishlistMoveToCart = '/wishlist/move-to-cart';
   static const String cart = '/cart';
+  static const String checkout = '/checkout';
+  static const String orders = '/orders';
+  static const String addresses = '/addresses';
 }
