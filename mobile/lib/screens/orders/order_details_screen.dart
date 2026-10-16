@@ -13,6 +13,7 @@ import '../../widgets/pill_button.dart';
 import '../../widgets/product_image.dart';
 import '../checkout/khqr_payment_screen.dart';
 import 'order_actions.dart';
+import 'receipt_screen.dart';
 import 'widgets/order_tracker.dart';
 
 /// One order: the tracker, what to do now (Pay now / Got it), the items,
@@ -129,6 +130,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         const SizedBox(width: 8),
                         Expanded(child: Text(text, key: const Key('details_status'), style: TextStyle(fontWeight: FontWeight.w600, color: color))),
                       ]),
+                      // Paid orders keep their receipt
+                      if (o.paymentStatus == 'paid' && o.stage != OrderStage.cancelled) ...[
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ReceiptAction(
+                            key: const Key('details_view_receipt'),
+                            label: 'View receipt',
+                            icon: Icons.receipt_rounded,
+                            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ReceiptScreen(order: o))),
+                          ),
+                        ),
+                      ],
                     ]),
                   ),
                   _Section(
