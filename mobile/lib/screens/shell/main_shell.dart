@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
 import '../../services/cart_service.dart';
 import '../../services/catalog_service.dart';
 import '../cart/cart_screen.dart';
 import '../../services/profile_service.dart';
 import '../../widgets/cart_tab_icon.dart';
-import '../../widgets/icon_circle.dart';
 import '../catalog/categories_screen.dart';
 import '../home/home_screen.dart';
 import '../profile/profile_screen.dart';
+import '../wishlist/wishlist_screen.dart';
 
 /// The app after login / "Just browsing": 5 tabs with a bottom navigation
 /// bar (Figma: Bottom Nav). Tabs keep their state when switching.
 class MainShell extends StatefulWidget {
+  static const wishlistTab = 2;
   static const cartTab = 3;
   static const profileTab = 4;
 
@@ -73,7 +73,7 @@ class _MainShellState extends State<MainShell> {
         children: [
           HomeScreen(catalogService: widget.catalogService, onOpenCart: () => setState(() => _index = MainShell.cartTab)),
           CategoriesScreen(catalogService: widget.catalogService, onOpenCart: () => setState(() => _index = MainShell.cartTab)),
-          const _ComingSoonTab(icon: Icons.favorite_rounded, title: 'Wishlist'),
+          WishlistScreen(catalogService: widget.catalogService),
           CartScreen(cartService: widget.cartService, catalogService: widget.catalogService),
           ProfileScreen(service: widget.profileService),
         ],
@@ -99,34 +99,3 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-/// Placeholder for tabs that are built in later branches.
-class _ComingSoonTab extends StatelessWidget {
-  final IconData icon;
-  final String title;
-
-  const _ComingSoonTab({required this.icon, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconCircle(icon: icon, color: title == 'Wishlist' ? AppTheme.coral : null),
-                const SizedBox(height: 20),
-                Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Text('Coming soon', style: TextStyle(color: scheme.onSurfaceVariant)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

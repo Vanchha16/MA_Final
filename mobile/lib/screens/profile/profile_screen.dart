@@ -15,6 +15,7 @@ import '../../widgets/round_icon_button.dart';
 import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
 import '../settings/settings_sheet.dart';
+import '../shell/main_shell.dart';
 import 'edit_profile_screen.dart';
 import 'widgets/collector_card.dart';
 import 'widgets/order_status_card.dart';
@@ -123,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   icon: Icons.favorite_rounded,
                   label: 'My Wishlist',
                   badge: null,
-                  onTap: () => _comingSoon('Wishlist'),
+                  onTap: () => MainShell.requestedTab.value = MainShell.wishlistTab,
                 ),
                 MenuItemData(icon: Icons.location_on_rounded, label: 'Addresses', onTap: () => _comingSoon('Addresses')),
                 ..._infoItems,
