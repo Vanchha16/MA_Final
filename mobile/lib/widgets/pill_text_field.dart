@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/theme/app_theme.dart';
 import 'shake.dart';
@@ -31,6 +32,9 @@ class PillTextField extends StatefulWidget {
   final ValueChanged<String>? onFieldSubmitted;
   final FormFieldValidator<String>? validator;
 
+  /// Most characters that can be typed (matches the server's limit); no counter is shown.
+  final int? maxLength;
+
   const PillTextField({
     super.key,
     this.fieldKey,
@@ -49,6 +53,7 @@ class PillTextField extends StatefulWidget {
     this.onChanged,
     this.onFieldSubmitted,
     this.validator,
+    this.maxLength,
   });
 
   @override
@@ -159,6 +164,7 @@ class _PillTextFieldState extends State<PillTextField> {
             onChanged: widget.onChanged,
             onFieldSubmitted: widget.onFieldSubmitted,
             validator: widget.validator == null ? null : _validate,
+            inputFormatters: widget.maxLength == null ? null : [LengthLimitingTextInputFormatter(widget.maxLength)],
             decoration: InputDecoration(
               labelText: widget.label,
               hintText: widget.hint,

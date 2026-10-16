@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/network/api_client.dart';
@@ -270,6 +271,13 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     }
   }
 
+  /// A typed price as a number when it is one, else the text (the server explains what's wrong).
+  static Object _money(String text) {
+    final t = text.trim();
+    final v = double.tryParse(t);
+    return v != null && v.isFinite ? v : t;
+  }
+
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
     final fields = <String, dynamic>{
@@ -278,8 +286,8 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       'series_id': _seriesId,
       'brand': _brand.text.trim(),
       'description': _description.text.trim(),
-      'price': double.tryParse(_price.text.trim()) ?? _price.text.trim(),
-      'discount_price': _sale.text.trim().isEmpty ? null : (double.tryParse(_sale.text.trim()) ?? _sale.text.trim()),
+      'price': _money(_price.text),
+      'discount_price': _sale.text.trim().isEmpty ? null : _money(_sale.text),
       'stock': _stock,
       'is_featured': _featured,
       'is_active': _active,
@@ -406,7 +414,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 if (_error != null) ...[ErrorBanner(message: _error!), const SizedBox(height: 12)],
-                TextField(key: const Key('admin_product_name'), controller: _name, textCapitalization: TextCapitalization.words, decoration: _deco('Name', 'name')),
+                TextField(key: const Key('admin_product_name'), controller: _name, inputFormatters: [LengthLimitingTextInputFormatter(150)], textCapitalization: TextCapitalization.words, decoration: _deco('Name', 'name')),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(
@@ -435,12 +443,12 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                   ),
                 ]),
                 const SizedBox(height: 12),
-                TextField(key: const Key('admin_product_brand'), controller: _brand, decoration: _deco('Brand', 'brand')),
+                TextField(key: const Key('admin_product_brand'), controller: _brand, inputFormatters: [LengthLimitingTextInputFormatter(100)], decoration: _deco('Brand', 'brand')),
                 const SizedBox(height: 12),
                 Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Expanded(child: TextField(key: const Key('admin_product_price'), controller: _price, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: _deco('Price', 'price', prefix: r'$ '))),
+                  Expanded(child: TextField(key: const Key('admin_product_price'), controller: _price, inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')), LengthLimitingTextInputFormatter(10)], keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: _deco('Price', 'price', prefix: r'$ '))),
                   const SizedBox(width: 10),
-                  Expanded(child: TextField(key: const Key('admin_product_sale'), controller: _sale, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: _deco('Sale price', 'discount_price', prefix: r'$ '))),
+                  Expanded(child: TextField(key: const Key('admin_product_sale'), controller: _sale, inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')), LengthLimitingTextInputFormatter(10)], keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: _deco('Sale price', 'discount_price', prefix: r'$ '))),
                 ]),
                 const SizedBox(height: 12),
                 AdminCard(
@@ -456,7 +464,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                   ]),
                 ),
                 const SizedBox(height: 12),
-                TextField(key: const Key('admin_product_description'), controller: _description, minLines: 3, maxLines: 6, decoration: _deco('Description', 'description')),
+                TextField(key: const Key('admin_product_description'), controller: _description, inputFormatters: [LengthLimitingTextInputFormatter(5000)], minLines: 3, maxLines: 6, decoration: _deco('Description', 'description')),
               ]),
             ),
           ]),

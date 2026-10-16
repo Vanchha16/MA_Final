@@ -143,6 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                           const SizedBox(height: 20),
                           PillTextField(
                             fieldKey: const Key('register_name'),
+                            maxLength: 100,
                             controller: _name,
                             label: 'Full name',
                             icon: Icons.person_outline,
@@ -160,6 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                           const SizedBox(height: 14),
                           PillTextField(
                             fieldKey: const Key('register_email'),
+                            maxLength: 150,
                             controller: _email,
                             label: 'Email',
                             hint: 'you@example.com',
@@ -179,6 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                           const SizedBox(height: 14),
                           PillTextField(
                             fieldKey: const Key('register_phone'),
+                            maxLength: 30,
                             controller: _phone,
                             label: 'Phone (optional)',
                             hint: '012 345 678',
@@ -198,6 +201,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                           const SizedBox(height: 14),
                           PillTextField(
                             fieldKey: const Key('register_password'),
+                            maxLength: 72,
                             controller: _password,
                             label: 'Password',
                             icon: Icons.lock_outline,
@@ -224,6 +228,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                           const SizedBox(height: 14),
                           PillTextField(
                             fieldKey: const Key('register_confirm'),
+                            maxLength: 72,
                             controller: _confirm,
                             label: 'Confirm password',
                             icon: Icons.lock_outline,
