@@ -9,6 +9,7 @@ import '../catalog/categories_screen.dart';
 import '../home/home_screen.dart';
 import '../profile/profile_screen.dart';
 import '../wishlist/wishlist_screen.dart';
+import '../../l10n/l10n.dart';
 
 /// The app after login / "Just browsing": 5 tabs with a bottom navigation
 /// bar (Figma: Bottom Nav). Tabs keep their state when switching.
@@ -56,13 +57,13 @@ class _MainShellState extends State<MainShell> {
     setState(() => _index = tab);
   }
 
-  static const _tabs = [
-    (Icons.home_outlined, Icons.home_rounded, 'Home'),
-    (Icons.widgets_outlined, Icons.widgets_rounded, 'Categories'),
-    (Icons.favorite_border_rounded, Icons.favorite_rounded, 'Wishlist'),
-    (Icons.shopping_cart_outlined, Icons.shopping_cart_rounded, 'Cart'),
-    (Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
-  ];
+  static List<(IconData, IconData, String)> _tabs(AppLocalizations l) => [
+        (Icons.home_outlined, Icons.home_rounded, l.navHome),
+        (Icons.widgets_outlined, Icons.widgets_rounded, l.navCategories),
+        (Icons.favorite_border_rounded, Icons.favorite_rounded, l.navWishlist),
+        (Icons.shopping_cart_outlined, Icons.shopping_cart_rounded, l.navCart),
+        (Icons.person_outline_rounded, Icons.person_rounded, l.navProfile),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +89,7 @@ class _MainShellState extends State<MainShell> {
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: [
-            for (final (i, (icon, selected, label)) in _tabs.indexed)
+            for (final (i, (icon, selected, label)) in _tabs(context.l10n).indexed)
               i == MainShell.cartTab
                   ? NavigationDestination(icon: const CartTabIcon(), selectedIcon: const CartTabIcon(selected: true), label: label)
                   : NavigationDestination(icon: Icon(icon), selectedIcon: Icon(selected), label: label),
