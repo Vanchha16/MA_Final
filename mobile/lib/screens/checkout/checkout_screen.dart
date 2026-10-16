@@ -18,6 +18,7 @@ import 'address_form_screen.dart';
 import 'address_picker_sheet.dart';
 import 'khqr_payment_screen.dart';
 import 'order_placed_screen.dart';
+import '../../l10n/l10n.dart';
 
 /// Checkout (Figma: Checkout A - One page): deliver to, delivery (Standard
 /// or Store pickup), payment (Bakong KHQR or Cash on delivery), the items,
@@ -243,7 +244,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               child: Row(children: [
                 const CircleBackButton(),
                 const SizedBox(width: 14),
-                Text('Checkout', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                Text(context.l10n.checkoutTitle, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
               ]),
             ),
             Expanded(child: body),
@@ -590,7 +591,7 @@ class _PlaceBar extends StatelessWidget {
         ]),
         const SizedBox(width: 16),
         Expanded(
-          child: PillButton(key: const Key('checkout_place'), label: 'Place order', leadingIcon: Icons.lock_rounded, loading: placing, onPressed: placing ? null : onPlace),
+          child: PillButton(key: const Key('checkout_place'), label: context.l10n.placeOrder, leadingIcon: Icons.lock_rounded, loading: placing, onPressed: placing ? null : onPlace),
         ),
       ]),
     );

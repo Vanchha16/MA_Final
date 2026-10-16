@@ -19,6 +19,7 @@ import '../shell/main_shell.dart';
 import 'order_actions.dart';
 import 'order_details_screen.dart';
 import 'widgets/order_tracker.dart';
+import '../../l10n/l10n.dart';
 
 /// My orders (picked from the order-history previews, C): orders in progress
 /// first, each with a tracker that fills up and a pulsing current step, then
@@ -159,7 +160,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
               sliver: SliverToBoxAdapter(
                 child: Text(
-                  _active.isEmpty ? 'Nothing in progress' : 'In progress · ${_active.length}',
+                  _active.isEmpty ? context.l10n.nothingInProgress : context.l10n.inProgress(_active.length),
                   key: const Key('orders_active_title'),
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: _active.isEmpty ? scheme.onSurfaceVariant : null),
                 ),
@@ -189,7 +190,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 14, 24, 8),
                 sliver: SliverToBoxAdapter(
-                  child: enter(_active.length, const Text('Past orders', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
+                  child: enter(_active.length, Text(context.l10n.pastOrders, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
                 ),
               ),
             SliverPadding(
@@ -230,7 +231,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 children: [
                   const CircleBackButton(),
                   const SizedBox(width: 14),
-                  Flexible(child: Text('My orders', maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold))),
+                  Flexible(child: Text(context.l10n.ordersTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold))),
                 ],
               ),
             ),

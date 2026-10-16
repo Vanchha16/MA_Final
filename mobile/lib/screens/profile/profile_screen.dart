@@ -15,12 +15,16 @@ import '../../widgets/notification_bell.dart';
 import '../../widgets/round_icon_button.dart';
 import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
-import '../settings/settings_sheet.dart';
+import '../settings/about_screen.dart';
+import '../settings/addresses_screen.dart';
+import '../settings/help_screen.dart';
+import '../settings/settings_screen.dart';
 import '../orders/orders_screen.dart';
 import '../shell/main_shell.dart';
 import 'edit_profile_screen.dart';
 import 'widgets/collector_card.dart';
 import 'widgets/order_status_card.dart';
+import '../../l10n/l10n.dart';
 
 /// Profile tab (Figma: "28 - Profile" / "28b - Profile (Guest)").
 class ProfileScreen extends StatefulWidget {
@@ -62,11 +66,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) await _load(); // order counts may have changed
   }
 
-  void _comingSoon(String feature) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('$feature is coming in the next update')));
-  }
+  Future<void> _open(Widget page) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+
 
   Future<void> _openEdit() async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => EditProfileScreen(service: _service)));
@@ -83,18 +84,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _topBar({required bool signedIn}) => Row(
         children: [
-          Expanded(child: Text('Profile', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold))),
+          Expanded(child: Text(context.l10n.profileTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold))),
           if (signedIn) ...[
             const NotificationBell(),
             const SizedBox(width: 10),
           ],
-          RoundIconButton(icon: Icons.settings_rounded, tooltip: 'Settings', onPressed: () => showSettingsSheet(context)),
+          RoundIconButton(icon: Icons.settings_rounded, tooltip: context.l10n.settingsTitle, onPressed: () => _open(const SettingsScreen())),
         ],
       );
 
   List<MenuItemData> get _infoItems => [
-        MenuItemData(icon: Icons.headset_mic_rounded, label: 'Help & Contact', onTap: () => _comingSoon('Help & Contact')),
-        MenuItemData(icon: Icons.info_rounded, label: 'About App', onTap: () => _comingSoon('About App')),
+        MenuItemData(icon: Icons.headset_mic_rounded, label: context.l10n.helpContact, onTap: () => _open(const HelpScreen())),
+        MenuItemData(icon: Icons.info_rounded, label: context.l10n.aboutApp, onTap: () => _open(const AboutScreen())),
       ];
 
   @override
@@ -129,17 +130,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               MenuCard(items: [
                 MenuItemData(
                   icon: Icons.favorite_rounded,
-                  label: 'My Wishlist',
+                  label: context.l10n.myWishlist,
                   badge: null,
                   onTap: () => MainShell.requestedTab.value = MainShell.wishlistTab,
                 ),
-                MenuItemData(icon: Icons.location_on_rounded, label: 'Addresses', onTap: () => _comingSoon('Addresses')),
+                MenuItemData(icon: Icons.location_on_rounded, label: context.l10n.addresses, onTap: () => _open(const AddressesScreen())),
                 ..._infoItems,
               ]),
               const SizedBox(height: 20),
               PillButton.danger(
                 key: const Key('profile_logout'),
-                label: 'Log out',
+                label: context.l10n.logOut,
                 leadingIcon: Icons.logout_rounded,
                 onPressed: _confirmLogout,
               ),

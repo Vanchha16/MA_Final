@@ -19,6 +19,7 @@ import '../shop/shop_actions.dart';
 import 'widgets/wishlist_board_view.dart';
 import 'widgets/wishlist_select_view.dart';
 import 'widgets/wishlist_swipe_view.dart';
+import '../../l10n/l10n.dart';
 
 /// The three ways to look at the wishlist. Swipe is the default; the
 /// customer can switch to Board or Select and the choice is remembered.
@@ -249,10 +250,10 @@ class _WishlistScreenState extends State<WishlistScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Wishlist', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                        Text(context.l10n.wishlistTitle, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
                         if (items != null && items.isNotEmpty)
                           Text(
-                            '${items.length} saved ${items.length == 1 ? 'item' : 'items'}',
+                            context.l10n.savedItems(items.length),
                             key: const Key('wishlist_count'),
                             style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant),
                           ),

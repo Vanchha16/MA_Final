@@ -164,3 +164,34 @@ def upload_avatar():
         except OSError:
             pass
     return success(user.to_dict(), "Photo updated")
+
+
+PREFERENCES = ("notify_orders", "notify_offers", "notify_news")
+
+
+@bp.get("/preferences")
+@jwt_required()
+def get_preferences():
+    """Settings > Notify me about."""
+    user = _current_user()
+    if not user:
+        return error("User not found", 404)
+    return success({k: getattr(user, k) for k in PREFERENCES})
+
+
+@bp.put("/preferences")
+@jwt_required()
+def update_preferences():
+    """Body: any of {"notify_orders": true, "notify_offers": false, "notify_news": true}."""
+    user = _current_user()
+    if not user:
+        return error("User not found", 404)
+    data = request.get_json(silent=True) or {}
+    bad = {k: "Must be true or false" for k in PREFERENCES if k in data and not isinstance(data[k], bool)}
+    if bad:
+        return error("Validation failed", 422, bad)
+    for k in PREFERENCES:
+        if k in data:
+            setattr(user, k, data[k])
+    db.session.commit()
+    return success({k: getattr(user, k) for k in PREFERENCES}, "Saved")

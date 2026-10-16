@@ -18,6 +18,10 @@ CREATE TABLE users (
   avatar_url    VARCHAR(255)  NULL,
   role          ENUM('customer','admin') NOT NULL DEFAULT 'customer',
   is_active     BOOLEAN       NOT NULL DEFAULT TRUE,
+    -- Settings > Notify me about
+  notify_orders  BOOLEAN NOT NULL DEFAULT TRUE,
+  notify_offers  BOOLEAN NOT NULL DEFAULT TRUE,
+  notify_news    BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

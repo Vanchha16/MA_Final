@@ -24,6 +24,7 @@ import '../auth/login_screen.dart';
 import '../checkout/checkout_screen.dart';
 import '../shell/main_shell.dart';
 import '../shop/shop_actions.dart';
+import '../../l10n/l10n.dart';
 
 /// Cart tab (Figma: Cart C - Receipt): items with a quantity stepper and
 /// swipe-left-to-remove (with Undo), a promo code box, a receipt-style order
@@ -308,7 +309,7 @@ class _CartScreenState extends State<CartScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Shopping Cart', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                        Text(context.l10n.cartTitle, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
                         if (cart != null && !cart.isEmpty)
                           Text(
                             '${cart.lines.length} ${cart.lines.length == 1 ? 'product' : 'products'} · ${cart.count} ${cart.count == 1 ? 'item' : 'items'}',
@@ -322,7 +323,7 @@ class _CartScreenState extends State<CartScreen> {
                       key: const Key('cart_clear'),
                       onPressed: _clear,
                       style: TextButton.styleFrom(foregroundColor: AppTheme.coral),
-                      child: const Text('Clear'),
+                      child: Text(context.l10n.clear),
                     ),
                 ],
               ),
@@ -705,7 +706,7 @@ class _CheckoutBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Total', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+              Text(context.l10n.total, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
               Text(formatPrice(cart.total),
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: dark ? scheme.primary : AppTheme.primaryDark)),
             ],
@@ -723,13 +724,13 @@ class _CheckoutBar extends StatelessWidget {
                   shape: const StadiumBorder(),
                   textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Flexible(child: Text('Go to checkout', maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_rounded, size: 20),
+                    Flexible(child: Text(context.l10n.goToCheckout, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward_rounded, size: 20),
                   ],
                 ),
               ),
