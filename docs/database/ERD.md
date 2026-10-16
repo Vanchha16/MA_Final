@@ -168,6 +168,8 @@ erDiagram
         int user_id FK
         tinyint rating "1-5"
         text comment
+        json tags
+        datetime updated_at
     }
     COUPONS {
         int id PK

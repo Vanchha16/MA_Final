@@ -17,7 +17,7 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     cors.init_app(app)
 
-    from .routes import admin, auth, catalog, contact, notifications, orders, profile, shop
+    from .routes import admin, auth, catalog, contact, notifications, orders, profile, reviews, shop
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(catalog.bp)
@@ -26,6 +26,7 @@ def create_app(config_class=Config):
     app.register_blueprint(orders.bp)
     app.register_blueprint(notifications.bp)
     app.register_blueprint(contact.bp)
+    app.register_blueprint(reviews.bp)
     app.register_blueprint(admin.bp)
     register_error_handlers(app)
 
@@ -83,12 +84,13 @@ def create_app(config_class=Config):
 
     @app.cli.command("seed-demo")
     def seed_demo():
-        """Add the demo customer's sample orders and wishlist (safe to run twice)."""
-        from .seed import seed_coupons, seed_demo_notifications, seed_demo_orders
+        """Add the demo customer's sample orders and wishlist, and sample reviews (safe to run twice)."""
+        from .seed import seed_coupons, seed_demo_notifications, seed_demo_orders, seed_demo_reviews
 
         seed_coupons()
         seed_demo_orders()
         seed_demo_notifications()
+        seed_demo_reviews()
 
     @app.cli.command("advance-orders")
     def advance_orders():

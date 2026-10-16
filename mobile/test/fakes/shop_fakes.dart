@@ -57,6 +57,10 @@ class FakeCatalogService extends CatalogService {
     return SearchSuggestions(products: matches.take(5).toList(), keywords: words.take(5).toList(), total: matches.length);
   }
 
+  /// What the product page knows about the customer's own review.
+  bool canReview = false;
+  Review? myReview;
+
   @override
   Future<ProductDetail> product(int id) async {
     if (detailFails) throw ApiException('Cannot connect to server. Check your internet connection.');
@@ -68,6 +72,8 @@ class FakeCatalogService extends CatalogService {
         Review(id: 2, user: 'Sok Dara', rating: 4, comment: 'Box arrived perfect.', createdAt: DateTime.now().subtract(const Duration(days: 3))),
       ],
       related: products_.where((o) => o.id != id && o.series?.id == p.series?.id).take(3).toList(),
+      canReview: canReview,
+      myReview: myReview,
     );
   }
 

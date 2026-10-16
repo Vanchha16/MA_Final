@@ -221,6 +221,53 @@ def seed_demo_orders():
     print(f"Seeded {len(DEMO_ORDERS)} demo orders and {len(DEMO_WISHLIST)} wishlist items for demo@shop.com.")
 
 
+# Sample shoppers' reviews so product pages and the Reviews screen have real content.
+# (name, email, [(product name, stars, comment or None, tags, days ago)])
+DEMO_REVIEWERS = [
+    ("Sok Dara", "dara@example.com", [
+        ("P.O.P SA-MAXIMUM Monkey D. Luffy Gear 5 Figure", 5, "Exactly like the photos. Packed in a double box with bubble wrap, not a scratch.", ["as_pictured", "packaging"], 2),
+        ("Nendoroid Anya Forger", 5, "So cute! The face plates are perfect.", ["quality"], 6),
+        ("Nesoberi Pochita Plush", 4, "Soft and the right size. Wish it came in a bag.", ["value"], 9),
+    ]),
+    ("Chan Sreyneang", "sreyneang@example.com", [
+        ("P.O.P SA-MAXIMUM Monkey D. Luffy Gear 5 Figure", 4, "Great paint work. The base is a bit small but Luffy looks amazing on my shelf.", ["quality"], 7),
+        ("Satoru Gojo Tokyo Jujutsu High School Ver. 1/7 Figure", 5, "Best Gojo figure I have seen. Worth every dollar.", ["quality", "value"], 12),
+        ("One Piece Card Game Romance Dawn OP-01 Booster Box (24 packs)", 5, None, ["delivery"], 15),
+    ]),
+    ("Vuthy Rith", "vuthy@example.com", [
+        ("P.O.P SA-MAXIMUM Monkey D. Luffy Gear 5 Figure", 5, "Arrived the next day in Phnom Penh!", ["delivery", "packaging"], 20),
+        ("Pokemon TCG Battle Partners Booster Box (30 packs)", 4, "Sealed and original. Pulled two good cards.", ["as_pictured"], 5),
+        ("Rengoku Kyojuro Mugen Train 1/8 Scale Figure", 3, "Nice figure but one flame part was loose. The shop helped me fix it.", [], 18),
+    ]),
+    ("Mealea Kong", "mealea@example.com", [
+        ("Nendoroid Anya Forger", 4, "Good quality, a little smaller than I expected.", ["quality"], 3),
+        ("Nesoberi Pochita Plush", 5, "My little sister loves it.", ["value", "delivery"], 11),
+        ("Satoru Gojo Tokyo Jujutsu High School Ver. 1/7 Figure", 4, None, ["packaging"], 21),
+    ]),
+]
+
+
+def seed_demo_reviews():
+    """Idempotent: sample shoppers (password demo123) and their reviews."""
+    if User.query.filter_by(email=DEMO_REVIEWERS[0][1]).first():
+        return
+    products = {p.name: p for p in Product.query}
+    pw = bcrypt.generate_password_hash("demo123").decode()
+    now = utcnow()
+    count = 0
+    for name, email, reviews in DEMO_REVIEWERS:
+        user = User(full_name=name, email=email, password_hash=pw, created_at=now - timedelta(days=60))
+        db.session.add(user)
+        db.session.flush()
+        for product_name, rating, comment, tags, days_ago in reviews:
+            if product_name in products:
+                db.session.add(Review(product=products[product_name], user=user, rating=rating, comment=comment,
+                                      tags=tags, created_at=now - timedelta(days=days_ago)))
+                count += 1
+    db.session.commit()
+    print(f"Seeded {len(DEMO_REVIEWERS)} sample shoppers and {count} reviews.")
+
+
 def seed_demo_notifications():
     """Idempotent: a welcome code, a flash sale and a news message for the demo customer."""
     from . import notify

@@ -203,6 +203,72 @@ Response 200: `data` = `ProductDetail`
 
 Errors: 404
 
+### Reviews
+
+Star ratings and reviews; customers review products delivered to them
+
+| Method | Path | What it does | Login |
+|---|---|---|---|
+| `GET` | `/api/products/{product_id}/reviews` | Reviews of a product with the rating summary | - |
+| `POST` | `/api/products/{product_id}/reviews` | Rate a product (posting again edits the review) | yes |
+| `DELETE` | `/api/products/{product_id}/reviews/mine` | Delete my review of this product | yes |
+| `GET` | `/api/reviews/to-review` | Delivered products I haven't rated yet | yes |
+
+#### `GET /api/products/{product_id}/reviews`
+
+Reviews of a product with the rating summary.
+
+Login is optional; when logged in, the customer's own review comes first and has is_mine = true.
+
+Parameters: `product_id` (path, required), `rating` (query) - Only this many stars (1-5), `with_comment` (query) - 1 = only reviews with a comment, `page` (query) - Page number, from 1, `per_page` (query) - Rows per page (max 100 for admin lists, 50 for products).
+
+Response 200: `data` = {summary: `ReviewSummary`, items: list of `Review`, page: integer, per_page: integer, total: integer, total_pages: integer}
+
+Errors: 404, 422
+
+#### `POST /api/products/{product_id}/reviews`
+
+Rate a product (posting again edits the review).
+
+Only for products in one of the customer's delivered orders (403 otherwise). 200 "Review updated" when editing.
+
+Parameters: `product_id` (path, required).
+
+Body (application/json): {rating: integer, comment: string, tags: list of `quality` \| `as_pictured` \| `packaging` \| `delivery` \| `value`}
+
+```json
+{
+  "rating": 5,
+  "comment": "Exactly like the photos!",
+  "tags": [
+    "quality",
+    "packaging"
+  ]
+}
+```
+
+Response 201: `data` = {review: `Review`, summary: `ReviewSummary`}
+
+Errors: 401, 403, 404, 422
+
+#### `DELETE /api/products/{product_id}/reviews/mine`
+
+Delete my review of this product.
+
+Parameters: `product_id` (path, required).
+
+Response 200: `data` = {summary: `ReviewSummary`}
+
+Errors: 401, 404
+
+#### `GET /api/reviews/to-review`
+
+Delivered products I haven't rated yet.
+
+Response 200: `data` = list of {product: `Product`, order_id: integer, order_number: string}
+
+Errors: 401
+
 ### Wishlist
 
 Saved products
@@ -1082,11 +1148,15 @@ Errors: 401, 403, 404, 422
 
 ### Review
 
-{id: integer, user: string, rating: integer, comment: string or null, created_at: string}
+{id: integer, product_id: integer, user: string, rating: integer, comment: string or null, tags: list of `quality` \| `as_pictured` \| `packaging` \| `delivery` \| `value`, created_at: string, edited: boolean, is_mine: boolean}
+
+### ReviewSummary
+
+{rating: number, count: integer, stars: object, with_comment: integer, tags: object}
 
 ### ProductDetail
 
-`Product` + {reviews: list of `Review`, related: list of `Product`}
+`Product` + {reviews: list of `Review`, review_summary: `ReviewSummary`, my_review: `Review` or null, can_review: boolean, related: list of `Product`}
 
 ### CartItem
 
@@ -1110,7 +1180,7 @@ Errors: 401, 403, 404, 422
 
 ### OrderItem
 
-{product_id: integer or null, product_name: string, image_url: string or null, category: `Category` or null, unit_price: number, quantity: integer, subtotal: number}
+{product_id: integer or null, product_name: string, image_url: string or null, category: `Category` or null, unit_price: number, quantity: integer, subtotal: number, my_rating: integer or null}
 
 ### Order
 
