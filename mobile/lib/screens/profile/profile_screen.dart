@@ -20,6 +20,7 @@ import '../settings/addresses_screen.dart';
 import '../settings/help_screen.dart';
 import '../settings/settings_screen.dart';
 import '../orders/orders_screen.dart';
+import '../admin/admin_shell.dart';
 import '../shell/main_shell.dart';
 import 'edit_profile_screen.dart';
 import 'widgets/collector_card.dart';
@@ -128,6 +129,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 16),
               MenuCard(items: [
+                if (context.watch<AuthProvider>().user?.isAdmin ?? false)
+                  MenuItemData(icon: Icons.admin_panel_settings_rounded, label: context.l10n.adminTitle, onTap: () => AdminShell.open(context)),
                 MenuItemData(
                   icon: Icons.favorite_rounded,
                   label: context.l10n.myWishlist,

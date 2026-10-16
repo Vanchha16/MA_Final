@@ -1,10 +1,13 @@
 """Shop-owner actions shared by the admin API (/api/admin) and the web panel (/admin),
 so both send the same notifications and keep stock right. Callers handle AdminError."""
+from datetime import timedelta
+
 from sqlalchemy import func
+from sqlalchemy.orm import selectinload
 
 from . import notify
 from .extensions import db
-from .models import Category, ContactMessage, Order, Product, User
+from .models import Category, ContactMessage, Order, OrderItem, Product, User
 from .utils.clock import utcnow
 
 
@@ -93,10 +96,25 @@ def reply_contact(message, text):
     return message
 
 
+def _paid_on(order):
+    """When the money came in: the KHQR payment time, else when the order was placed."""
+    times = [p.paid_at for p in order.payments if p.paid_at]
+    return max(times) if times else order.created_at
+
+
 def stats():
-    """Numbers for the dashboard."""
+    """Numbers for the dashboard, with paid revenue for each of the last 7 days (UTC, oldest first)."""
     paid = Order.query.filter(Order.payment_status == "paid", Order.status != "cancelled")
+    today = utcnow().date()
+    days = [today - timedelta(days=n) for n in range(6, -1, -1)]
+    per_day = dict.fromkeys(days, 0.0)
+    for order in paid.filter(Order.created_at >= utcnow() - timedelta(days=14)).options(selectinload(Order.payments)):
+        day = _paid_on(order).date()
+        if day in per_day:
+            per_day[day] += float(order.total)
     return {
+        "week": [{"date": d.isoformat(), "revenue": round(v, 2)} for d, v in per_day.items()],
+        "week_revenue": round(sum(per_day.values()), 2),
         "products": Product.query.filter_by(is_active=True).count(),
         "low_stock": Product.query.filter(Product.is_active.is_(True), Product.stock <= 3).count(),
         "categories": Category.query.count(),
@@ -106,3 +124,41 @@ def stats():
         "revenue": float(paid.with_entities(func.coalesce(func.sum(Order.total), 0)).scalar()),
         "open_messages": ContactMessage.query.filter_by(status="open").count(),
     }
+
+
+def _first_photo(order):
+    item = next((i for i in order.items if i.product is not None and i.product.photo_url), None)
+    return item.product.photo_url if item else None
+
+
+def activity(limit=20):
+    """What just happened, newest first: payments, new orders, Contact messages and sold-out
+    products. `action` is what the shop can do about it now (None once it has been handled)."""
+    events = []
+    orders = (
+        Order.query.options(selectinload(Order.items).selectinload(OrderItem.product), selectinload(Order.payments), selectinload(Order.user))
+        .order_by(Order.created_at.desc()).limit(30).all()
+    )
+    for o in orders:
+        name, total = o.user.full_name, f"${float(o.total):,.2f}"
+        base = {"order_id": o.id, "order_number": o.order_number, "status": o.status, "image_url": _first_photo(o)}
+        paid = next((p for p in o.payments if p.status == "paid"), None)
+        if paid is not None:
+            events.append({**base, "id": f"paid-{o.id}", "kind": "paid", "at": paid.paid_at, "title": "Payment received",
+                           "message": f"{name} paid {total} by KHQR", "action": "ship" if o.status == "confirmed" else None})
+        pay = "cash" if o.payment_method == "cod" else "KHQR"
+        events.append({**base, "id": f"order-{o.id}", "kind": "order", "at": o.created_at, "title": f"New order {o.order_number}",
+                       "message": f"{name} · {total} · {pay}",
+                       "action": "confirm" if o.status == "pending" and o.payment_method == "cod" else
+                                 "ship" if o.status == "confirmed" and paid is None else None})
+    for m in ContactMessage.query.order_by(ContactMessage.created_at.desc()).limit(10):
+        events.append({"id": f"message-{m.id}", "kind": "message", "at": m.created_at, "title": "New message",
+                       "message": f'"{m.message[:90]}"', "message_id": m.id, "status": m.status,
+                       "action": "reply" if m.status == "open" else None, "image_url": None})
+    for p in Product.query.filter(Product.is_active.is_(True), Product.stock <= 0).options(selectinload(Product.images)).limit(10):
+        events.append({"id": f"stock-{p.id}", "kind": "sold_out", "at": p.updated_at, "title": "Sold out",
+                       "message": f"{p.name} has 0 left", "product_id": p.id, "action": "restock", "image_url": p.photo_url})
+    events.sort(key=lambda e: e["at"], reverse=True)
+    for e in events:
+        e["at"] = e["at"].isoformat() + "Z"
+    return events[:limit]
