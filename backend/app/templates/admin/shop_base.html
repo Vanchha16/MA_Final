@@ -1,0 +1,51 @@
+{% extends 'admin/base.html' %}
+
+{# Anime World Shop colors on top of the Cerulean swatch: solid buttons, no gradients. #}
+{% block head_tail %}
+  <link rel="icon" href="{{ url_for('static', filename='admin/logo.png') }}">
+  <style {{ admin_csp_nonce_attribute }}>
+    :root { --brand: #0284C7; --brand-dark: #0369A1; --ink: #0F172A; --muted: #64748B; --line: #E2E8F0; --bg: #F5F9FC; --danger: #DC2626; --success: #16A34A; --amber: #F59E0B; }
+    body { background: var(--bg); color: var(--ink); font-family: Roboto, "Segoe UI", system-ui, sans-serif; }
+    .navbar.bg-dark { background: var(--ink) !important; border-radius: 0 0 16px 16px; padding: .6rem 1rem; }
+    .navbar-brand { display: flex; align-items: center; gap: .55rem; font-weight: 700; }
+    .navbar-brand img { width: 30px; height: 30px; }
+    .btn { border-radius: 999px; font-weight: 600; background-image: none !important; box-shadow: none !important; }
+    .btn-primary, .btn-primary:focus { background: var(--brand); border-color: var(--brand); }
+    .btn-primary:hover { background: var(--brand-dark); border-color: var(--brand-dark); }
+    .btn-danger, .btn-danger:hover { background: var(--danger); border-color: var(--danger); }
+    .btn-success, .btn-success:hover { background: var(--success); border-color: var(--success); }
+    a { color: var(--brand); }
+    .nav-tabs .nav-link.active { color: var(--brand); font-weight: 600; }
+    .table { background: #fff; border-radius: 14px; overflow: hidden; }
+    .table thead th { border-top: 0; color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+    .table td { vertical-align: middle; }
+    .badge { border-radius: 999px; padding: .35em .7em; font-weight: 600; }
+    .badge-primary { background: var(--brand); }
+    .badge-success { background: var(--success); }
+    .badge-info { background: #06B6D4; }
+    .badge-warning { background: var(--amber); color: #fff; }
+    .badge-danger { background: var(--danger); }
+    .badge-light { background: #F1F5F9; color: var(--ink); }
+    .thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 10px; background: #fff; border: 1px solid var(--line); }
+    .thumb.lg { width: 110px; height: 110px; margin: 0 .5rem .5rem 0; }
+    .form-control, .custom-select { border-radius: 12px; }
+    .card { border: 0; border-radius: 20px; box-shadow: 0 5px 16px rgba(2, 132, 199, .07); }
+    .stat .num { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+    .stat .label { color: var(--muted); font-size: .85rem; }
+    .stat .icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .muted { color: var(--muted); }
+  </style>
+{% endblock %}
+
+{% block brand %}
+  <a class="navbar-brand" href="{{ admin_view.admin.url }}">
+    <img src="{{ url_for('static', filename='admin/logo.png') }}" alt="">{{ admin_view.admin.name }}
+  </a>
+{% endblock %}
+
+{% block access_control %}
+  {% if current_user.is_authenticated %}
+    <span class="navbar-text text-light mr-3 small">{{ current_user.email }}</span>
+    <a class="btn btn-sm btn-outline-light" href="{{ url_for('admin.logout') }}">Log out</a>
+  {% endif %}
+{% endblock %}
