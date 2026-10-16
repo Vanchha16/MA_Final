@@ -25,15 +25,18 @@ def find_coupon(code, subtotal):
     return coupon, None
 
 
-def summarize(items, coupon_code=None):
-    """Totals for cart lines (anything with .product and .quantity)."""
+DELIVERY_METHODS = ("standard", "pickup")
+
+
+def summarize(items, coupon_code=None, delivery_method="standard"):
+    """Totals for cart lines (anything with .product and .quantity). Store pickup has no delivery fee."""
     subtotal = round(sum(float(i.product.final_price) * i.quantity for i in items), 2)
     sale_savings = round(sum((float(i.product.price) - float(i.product.final_price)) * i.quantity for i in items), 2)
     coupon, coupon_error = (None, None)
     if coupon_code:
         coupon, coupon_error = find_coupon(coupon_code, subtotal)
     discount = coupon.discount_for(subtotal) if coupon else 0.0
-    shipping = shipping_for(subtotal)
+    shipping = 0.0 if delivery_method == "pickup" else shipping_for(subtotal)
     return {
         "count": sum(i.quantity for i in items),
         "subtotal": subtotal,

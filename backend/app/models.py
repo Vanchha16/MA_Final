@@ -83,7 +83,13 @@ class Address(TimestampMixin, db.Model):
             "province": self.province,
             "postal_code": self.postal_code,
             "is_default": self.is_default,
+            "one_line": self.one_line,
         }
+
+    @property
+    def one_line(self):
+        """'#24 St. 271, Chamkar Mon, Phnom Penh' - what is copied onto an order."""
+        return ", ".join(part for part in (self.street, self.city, self.province) if part)
 
 
 class Category(TimestampMixin, db.Model):
@@ -223,7 +229,10 @@ class Order(TimestampMixin, db.Model):
     shipping_address = db.Column(db.String(500), nullable=False)
     subtotal = db.Column(db.Numeric(10, 2), nullable=False)
     shipping_fee = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    discount = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    coupon_code = db.Column(db.String(30))
     total = db.Column(db.Numeric(10, 2), nullable=False)
+    delivery_method = db.Column(db.Enum("standard", "pickup", name="delivery_method"), nullable=False, default="standard")
     status = db.Column(
         db.Enum("pending", "confirmed", "shipped", "delivered", "cancelled", name="order_status"),
         nullable=False, default="pending",
@@ -247,7 +256,10 @@ class Order(TimestampMixin, db.Model):
             "payment_status": self.payment_status,
             "subtotal": float(self.subtotal),
             "shipping_fee": float(self.shipping_fee),
+            "discount": float(self.discount or 0),
+            "coupon_code": self.coupon_code,
             "total": float(self.total),
+            "delivery_method": self.delivery_method,
             "item_count": sum(i.quantity for i in self.items),
             "created_at": self.created_at.isoformat(),
         }

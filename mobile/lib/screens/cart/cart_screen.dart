@@ -21,6 +21,7 @@ import '../../widgets/product_card.dart';
 import '../../widgets/product_image.dart';
 import '../../widgets/quantity_chip.dart';
 import '../auth/login_screen.dart';
+import '../checkout/checkout_screen.dart';
 import '../shell/main_shell.dart';
 import '../shop/shop_actions.dart';
 
@@ -229,7 +230,14 @@ class _CartScreenState extends State<CartScreen> {
     await _load();
   }
 
-  void _checkout() => _snack('Checkout is the next screen we build');
+  Future<void> _checkout() async {
+    final placed = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => CheckoutScreen(coupon: _coupon)));
+    if (placed != true || !mounted) return;
+    // The order used the promo code and emptied the cart
+    await _saveCoupon(null);
+    setState(() => _promoError = null);
+    await _load();
+  }
 
   @override
   Widget build(BuildContext context) {
