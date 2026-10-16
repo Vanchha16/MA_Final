@@ -219,3 +219,18 @@ def seed_demo_orders():
             db.session.add(Favorite(user_id=demo.id, product_id=products[name].id))
     db.session.commit()
     print(f"Seeded {len(DEMO_ORDERS)} demo orders and {len(DEMO_WISHLIST)} wishlist items for demo@shop.com.")
+
+
+def seed_demo_notifications():
+    """Idempotent: a welcome code, a flash sale and a news message for the demo customer."""
+    from . import notify
+    from .models import Notification
+
+    demo = User.query.filter_by(email="demo@shop.com").first()
+    if not demo or Notification.query.filter_by(user_id=demo.id).first():
+        return
+    notify.welcome(demo.id)
+    notify.news(demo.id, "New: pay with Bakong KHQR", "Scan with ABA, ACLEDA, Wing or any bank app.")
+    notify.promo(demo.id, "Weekend flash sale", "Big haul this weekend? Take $40 off orders from $300.", "BIGSALE40")
+    db.session.commit()
+    print("Seeded 3 demo notifications for demo@shop.com.")

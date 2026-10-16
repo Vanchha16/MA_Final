@@ -147,6 +147,9 @@ Table notifications {
   title varchar(150) [not null]
   message text [not null]
   type varchar [note: 'order | promo | system']
+  event varchar(20) [note: 'placed | paid | confirmed | shipped | delivered | cancelled | welcome | promo | news']
+  order_id int [ref: > orders.id]
+  promo_code varchar(30)
   is_read boolean [default: false]
   created_at datetime
 }

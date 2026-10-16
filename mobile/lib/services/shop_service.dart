@@ -36,6 +36,9 @@ class ShopService {
 
   static Set<int> _ids(dynamic data) => {for (final id in data['ids'] as List) id as int};
 
+  /// Unread messages, for the bell badge.
+  Future<int> unreadNotifications() async => (await _api.get('${ApiConstants.notifications}/unread-count'))['unread'] as int;
+
   /// Number of items in the cart (sum of quantities).
   Future<int> cartCount() async => (await _api.get(ApiConstants.cart))['count'] as int;
 

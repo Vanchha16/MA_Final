@@ -193,9 +193,14 @@ CREATE TABLE notifications (
   title      VARCHAR(150) NOT NULL,
   message    TEXT         NOT NULL,
   type       ENUM('order','promo','system') NOT NULL DEFAULT 'system',
+  -- placed, paid, confirmed, shipped, delivered, cancelled, welcome, promo, news
+  event      VARCHAR(20)  NULL,
+  order_id   INT UNSIGNED NULL,
+  promo_code VARCHAR(30)  NULL,
   is_read    BOOLEAN      NOT NULL DEFAULT FALSE,
   created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
 
 -- Bonus: product reviews & ratings
