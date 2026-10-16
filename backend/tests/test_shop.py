@@ -141,3 +141,39 @@ def test_coupon_errors(client, user):
     # A code that stops applying (cart got smaller) comes back as coupon_error, not a failure
     data = client.get("/api/cart?coupon=ANIME5", headers=h).get_json()["data"]
     assert data["discount"] == 0 and "Spend $30" in data["coupon_error"]
+
+
+def test_wishlist_batch_remove_and_add_back_keeps_order(client, user):
+    a, b, c = _product(), _product(), _product()
+    h = _auth(client)
+    for p in (a, b, c):
+        client.post(f"/api/wishlist/{p.id}", headers=h)
+    res = client.post("/api/wishlist/batch-remove", json={"product_ids": [c.id, a.id]}, headers=h)
+    assert res.status_code == 200
+    assert res.get_json()["data"]["ids"] == [b.id]
+
+    res = client.post("/api/wishlist/batch-add", json={"product_ids": [c.id, a.id, 999]}, headers=h)
+    assert res.get_json()["data"]["ids"] == [c.id, a.id, b.id]
+
+
+def test_wishlist_batch_needs_ids(client, user):
+    h = _auth(client)
+    for body in ({}, {"product_ids": []}, {"product_ids": ["1"]}):
+        assert client.post("/api/wishlist/batch-remove", json=body, headers=h).status_code == 422
+        assert client.post("/api/wishlist/move-to-cart", json=body, headers=h).status_code == 422
+
+
+def test_move_to_cart_skips_sold_out_and_full_lines(client, user):
+    ok, sold_out, full = _product(stock=5), _product(stock=0), _product(stock=1)
+    h = _auth(client)
+    for p in (ok, sold_out, full):
+        client.post(f"/api/wishlist/{p.id}", headers=h)
+    client.post("/api/cart", json={"product_id": full.id}, headers=h)  # already 1 of 1 in the cart
+
+    data = client.post("/api/wishlist/move-to-cart", json={"product_ids": [ok.id, sold_out.id, full.id]}, headers=h).get_json()["data"]
+    assert data["moved"] == [ok.id]
+    assert data["skipped"] == [sold_out.id, full.id]
+    assert set(data["ids"]) == {sold_out.id, full.id}
+    assert data["cart_count"] == 2
+    lines = client.get("/api/cart", headers=h).get_json()["data"]["items"]
+    assert {line["product"]["id"]: line["quantity"] for line in lines} == {ok.id: 1, full.id: 1}
