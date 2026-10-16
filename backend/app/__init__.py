@@ -17,7 +17,7 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     cors.init_app(app)
 
-    from .routes import auth, catalog, contact, notifications, orders, profile, shop
+    from .routes import admin, auth, catalog, contact, notifications, orders, profile, shop
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(catalog.bp)
@@ -26,7 +26,14 @@ def create_app(config_class=Config):
     app.register_blueprint(orders.bp)
     app.register_blueprint(notifications.bp)
     app.register_blueprint(contact.bp)
+    app.register_blueprint(admin.bp)
     register_error_handlers(app)
+
+    from . import api_docs
+    from .admin_panel import init_admin
+
+    app.register_blueprint(api_docs.bp)
+    init_admin(app)
 
     @app.get("/api/health")
     def health():
@@ -109,9 +116,8 @@ def create_app(config_class=Config):
     @click.option("--id", "message_id", type=int, help="Message to answer (default: the oldest open one).")
     def reply_contact(text, message_id):
         # For the demo video: answers a Contact message; the customer gets it in Notifications.
-        from . import notify
+        from .admin_ops import reply_contact as answer
         from .models import ContactMessage
-        from .utils.clock import utcnow
 
         if message_id:
             msg = db.session.get(ContactMessage, message_id)
@@ -120,9 +126,14 @@ def create_app(config_class=Config):
         if msg is None:
             print("No open message to answer.")
             return
-        msg.reply, msg.status, msg.replied_at = text, "answered", utcnow()
-        notify.support_reply(msg)
-        db.session.commit()
+        answer(msg, text)
         print(f"Answered message {msg.id} ({msg.topic}).")
+
+    @app.cli.command("api-docs")
+    def write_api_docs():
+        """Write docs/API.md from the OpenAPI spec (the same one /api/docs shows)."""
+        from .api_docs import write_markdown
+
+        print(f"Wrote {write_markdown()}")
 
     return app

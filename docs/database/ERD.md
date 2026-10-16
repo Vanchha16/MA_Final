@@ -20,6 +20,10 @@ erDiagram
     PRODUCTS ||--o{ ORDER_ITEMS : "is sold as"
     PRODUCTS ||--o{ REVIEWS : receives
     ORDERS ||--|{ ORDER_ITEMS : contains
+    ORDERS ||--o{ PAYMENTS : "is paid by"
+    ORDERS |o--o{ NOTIFICATIONS : "is about"
+    USERS ||--o{ CONTACT_MESSAGES : sends
+    ORDERS |o--o{ CONTACT_MESSAGES : "is asked about"
 
     USERS {
         int id PK
@@ -109,7 +113,21 @@ erDiagram
         enum status
         enum payment_method
         enum payment_status
+        enum delivery_method "standard | pickup"
+        decimal discount
+        varchar coupon_code
         datetime created_at
+    }
+    PAYMENTS {
+        int id PK
+        int order_id FK
+        enum provider "mock | bakong"
+        text qr
+        char md5 UK
+        decimal amount
+        enum status "pending | paid | expired"
+        datetime expires_at
+        datetime paid_at
     }
     ORDER_ITEMS {
         int id PK
@@ -126,7 +144,20 @@ erDiagram
         varchar title
         text message
         enum type
+        varchar event
+        int order_id FK
+        varchar promo_code
         bool is_read
+    }
+    CONTACT_MESSAGES {
+        int id PK
+        int user_id FK
+        int order_id FK
+        enum topic "order | payment | product | other"
+        text message
+        enum status "open | answered"
+        text reply
+        datetime replied_at
     }
     REVIEWS {
         int id PK
@@ -160,5 +191,8 @@ erDiagram
 | Category → Products | 1 : N | Figures, Plush, TCG Boosters, ... |
 | Series → Products | 1 : N | Anime franchise; optional (e.g. card sleeves have no series) |
 | Product → Product images | 1 : N | One image is marked `is_primary` |
-| User → Notifications | 1 : N | Order updates, promos |
+| User → Notifications | 1 : N | Order updates, promos, support replies; may point to an order |
+| Order → Payments | 1 : N | KHQR attempts; the QR and its md5 are made once and reused while checking |
+| User → Contact messages | 1 : N | Questions from the Contact screen; the shop's reply comes back as a notification |
+| Order → Contact messages | 1 : N | Optional, only for order and payment questions |
 | User/Product → Reviews | N : M | Bonus feature; one review per user per product |
