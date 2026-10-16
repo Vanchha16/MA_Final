@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'fakes/review_fake.dart';
 import 'fakes/shop_fakes.dart';
 
 Future<void> _pump(WidgetTester tester, Widget home, {FakeShopService? shop, bool signedIn = true}) async {
@@ -41,8 +42,8 @@ Future<void> _tap(WidgetTester tester, Finder f) async {
   await tester.pump(const Duration(milliseconds: 400));
 }
 
-Widget _details(FakeCatalogService catalog, int index) =>
-    ProductDetailsScreen(product: catalog.products_[index], catalogService: catalog);
+Widget _details(FakeCatalogService catalog, int index, {FakeReviewService? reviews}) =>
+    ProductDetailsScreen(product: catalog.products_[index], catalogService: catalog, reviewService: reviews ?? FakeReviewService());
 
 void main() {
   testWidgets('shows price, sale, stock, chips, reviews and related products', (tester) async {
@@ -61,8 +62,11 @@ void main() {
     await tester.scrollUntilVisible(find.text('More from One Piece'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.descendant(of: find.byKey(const Key('details_related')), matching: find.byKey(const Key('product_3'))), findsOneWidget);
 
+    // See all opens the Reviews page
     await _tap(tester, find.byKey(const Key('reviews_see_all')));
+    await tester.pump(const Duration(milliseconds: 800));
     expect(find.text('Box arrived perfect.'), findsOneWidget);
+    expect(find.byKey(const Key('reviews_filter_all')), findsOneWidget);
   });
 
   testWidgets('quantity stepper changes the total and adds that many to the cart', (tester) async {

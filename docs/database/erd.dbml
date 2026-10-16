@@ -175,7 +175,9 @@ Table reviews {
   user_id int [not null, ref: > users.id]
   rating tinyint [not null, note: '1-5']
   comment text
+  tags json [note: 'quality | as_pictured | packaging | delivery | value']
   created_at datetime
+  updated_at datetime [note: 'set when edited']
   indexes { (user_id, product_id) [unique] }
 }
 

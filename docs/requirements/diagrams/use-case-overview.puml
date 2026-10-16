@@ -26,6 +26,7 @@ rectangle "Anime World Shop (mobile app + backend)" {
   usecase "Manage wishlist" as UC_Wish
   usecase "Place order and pay\n(cash or KHQR)" as UC_Order
   usecase "Track orders and\nview receipts" as UC_Track
+  usecase "Rate and review\nproducts" as UC_Review
   usecase "Read notifications" as UC_Notif
   usecase "Contact the shop" as UC_Contact
   usecase "Change settings\n(theme, language)" as UC_Settings
@@ -49,6 +50,7 @@ Customer --> UC_Cart
 Customer --> UC_Wish
 Customer --> UC_Order
 Customer --> UC_Track
+Customer --> UC_Review
 Customer --> UC_Notif
 Customer --> UC_Contact
 Customer --> UC_Settings

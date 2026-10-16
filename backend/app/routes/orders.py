@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from .. import notify, payments
 from ..extensions import db
-from ..models import Address, CartItem, Order, OrderItem, User
+from ..models import Address, CartItem, Order, OrderItem, Review, User
 from ..pricing import DELIVERY_METHODS, find_coupon, shipping_for, summarize
 from ..utils.clock import utcnow
 from ..utils.responses import error, success
@@ -235,7 +235,7 @@ def list_orders():
     for order in orders:
         if order.payment_method == "khqr" and order.status == "pending":
             payments.refresh(order)
-    return success([o.to_dict(with_items=True) for o in orders])
+    return success(_with_my_ratings([o.to_dict(with_items=True) for o in orders]))
 
 
 @bp.post("/orders/<int:order_id>/received")
@@ -252,7 +252,7 @@ def mark_received(order_id):
         order.payment_status = "paid"
     notify.order_event(order, "delivered")
     db.session.commit()
-    return success(order.to_dict(with_items=True), "Enjoy your order!")
+    return success(_with_my_ratings([order.to_dict(with_items=True)])[0], "Enjoy your order!")
 
 
 @bp.get("/orders/<int:order_id>")
@@ -261,7 +261,16 @@ def get_order(order_id):
     order = Order.query.filter_by(id=order_id, user_id=_user_id()).first()
     if not order:
         return error("Order not found", 404)
-    return success(order.to_dict(with_items=True))
+    return success(_with_my_ratings([order.to_dict(with_items=True)])[0])
+
+
+def _with_my_ratings(orders):
+    """Adds my_rating (stars the customer gave, or null) to each item of a delivered order."""
+    mine = {r.product_id: r.rating for r in Review.query.filter_by(user_id=_user_id())}
+    for o in orders:
+        for item in o["items"]:
+            item["my_rating"] = mine.get(item["product_id"]) if o["status"] == "delivered" else None
+    return orders
 
 
 # ---------- KHQR payment ----------

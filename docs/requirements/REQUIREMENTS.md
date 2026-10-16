@@ -25,8 +25,8 @@ Anime World Shop is made of three parts that share one database:
 | **Mobile app - admin side** | Shop owner and staff (same app, opened by an admin account) | Flutter |
 | **Backend REST API + web admin panel** | The mobile app; staff on a computer (`/admin`) | Python Flask, MySQL |
 
-In scope: accounts, catalogue, search and filters, cart, wishlist, checkout, KHQR and cash on delivery payment, order tracking, receipts, notifications, contact messages, settings, and the shop management tools.
-Out of scope for version 1.0: delivery-company integration, refunds through the app, multiple shops (marketplace), loyalty point redemption, and product reviews written by customers (the `reviews` table exists; see section 11).
+In scope: accounts, catalogue, search and filters, cart, wishlist, checkout, KHQR and cash on delivery payment, order tracking, receipts, product reviews and ratings, notifications, contact messages, settings, and the shop management tools.
+Out of scope for version 1.0: delivery-company integration, refunds through the app, multiple shops (marketplace) and loyalty point redemption.
 
 ### 1.4 Definitions
 
@@ -143,7 +143,17 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | FR-A04 | A **Contact** screen shows the shop's Telegram, phone, email, address and hours, and lets the customer send a message about an order, payment, product or anything else. | M |
 | FR-A05 | A **Help** screen answers common questions. | S |
 
-### 4.6 Shop administration (FR-AD)
+### 4.6 Reviews and ratings (FR-R)
+
+| ID | Requirement | Priority |
+|---|---|---|
+| FR-R01 | A customer can **rate a product delivered to them** with 1-5 stars, quick tags (Great quality, As pictured, Well packed, Fast delivery, Good value) and an optional comment, from the order details, the "Rate it" notification, Profile > To review or the product page. | C (bonus) |
+| FR-R02 | A customer has one review per product and can **edit or delete** it. | C |
+| FR-R03 | **Product details** show the average rating and review count, and the customer's own review (or the newest). | C |
+| FR-R04 | A **Reviews** page shows the score, a 5-to-1 star chart and all reviews, filterable by star level or "with comments", the customer's own review first. | C |
+| FR-R05 | Every review is marked as a **verified buyer**. | C |
+
+### 4.7 Shop administration (FR-AD)
 
 | ID | Requirement | Priority |
 |---|---|---|
@@ -221,6 +231,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | BR-10 | A blocked customer cannot log in or use an existing token until an admin unblocks them. |
 | BR-11 | A product's sale price must be lower than its normal price; stock is 0 or more. |
 | BR-12 | Each status change and each answer to a message creates a notification for the customer. |
+| BR-13 | Only a customer who received a product (a delivered order containing it) can review it; one review per customer and product, and posting again edits it. A comment has at most 1,000 characters. |
 
 ---
 
@@ -236,7 +247,7 @@ The system stores 16 entities. The nine suggested in the brief are all present:
 | Product Images | `product_images` | `payments` - KHQR payments |
 | Cart | `cart_items` | `notifications` |
 | Orders | `orders` | `contact_messages` |
-| Order Items | `order_items` | `reviews` - prepared for ratings |
+| Order Items | `order_items` | `reviews` - star ratings, tags and comments |
 | Addresses | `addresses` | |
 | Favorites / Wishlist | `favorites` | |
 
@@ -246,7 +257,7 @@ Order items copy the product name and unit price at the time of purchase, so old
 
 ## 9. Screen inventory
 
-The brief asks for at least 20 screens. The app has **41** (31 customer, 10 admin).
+The brief asks for at least 20 screens. The app has **42** (32 customer, 10 admin), plus sheets such as Filter, Rate a product and To review.
 
 | # | Screen | Brief item | # | Screen | Brief item |
 |---|---|---|---|---|---|
@@ -270,7 +281,7 @@ The brief asks for at least 20 screens. The app has **41** (31 customer, 10 admi
 | 18 | Wishlist | Wishlist / Favorite Products | 39 | Admin Customers | (admin) |
 | 19 | Checkout (+ address form) | Checkout | 40 | Admin Customer Details | (admin) |
 | 20 | KHQR Payment | (bonus: online payment) | 41 | Admin Messages | (admin) |
-| 21 | Order Placed | Order Confirmation | | | |
+| 21 | Order Placed | Order Confirmation | 42 | Reviews | (bonus: reviews and ratings) |
 
 "Add to Cart" is a feature on Product List and Product Details (with an animation and an "Added to cart" sheet), so it has no separate screen. Screenshots of each screen are in [`docs/screenshots/`](../screenshots/).
 
@@ -317,7 +328,7 @@ Each item of the brief, the requirements that cover it and where it is implement
 | Bonus: multi-language | FR-A02, NFR-04 | English / Khmer | Done |
 | Bonus: dark mode | FR-A02 | Light / dark / system | Done |
 | Bonus: advanced search and filtering | FR-P05, FR-P06 | Suggestions, multi-brand, price range, sort | Done |
-| Bonus: product reviews and ratings | FR-R01 (below) | `reviews` table ready | *Planned* |
+| Bonus: product reviews and ratings | FR-R01 ... FR-R05 | `review_sheet.dart`, `reviews_screen.dart`, `to_review_sheet.dart` / `/api/products/<id>/reviews`, `/api/reviews/to-review` | Done |
 
 ---
 
@@ -334,6 +345,5 @@ Each item of the brief, the requirements that cover it and where it is implement
 - Product photos are the brands' official images, used for educational purposes only.
 
 **Future work**
-- **FR-R01 (Could):** customers rate and review products they received; product details show the average rating.
 - Use the saved notification choices to filter which notifications are sent (v1.0 stores them but sends all order notifications).
 - Khmer translation of the admin tools; push notifications (Firebase); deployment to a cloud server.

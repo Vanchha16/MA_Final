@@ -7,6 +7,8 @@ from sqlalchemy.orm import selectinload
 from ..extensions import db
 from ..models import Category, Product, Series, absolute_url
 from ..utils.responses import error, success
+from .reviews import current_user_id, delivered_product_ids
+from .reviews import summary as review_summary
 
 bp = Blueprint("catalog", __name__, url_prefix="/api")
 
@@ -187,11 +189,14 @@ def get_product(product_id):
             .all()
         )
 
+    me = current_user_id()
     data = product.to_dict()
-    data["reviews"] = [
-        {"id": r.id, "user": r.user.full_name, "rating": r.rating,
-         "comment": r.comment, "created_at": r.created_at.isoformat()}
-        for r in sorted(product.reviews, key=lambda r: r.created_at, reverse=True)
-    ]
+    newest = sorted(product.reviews, key=lambda r: r.created_at, reverse=True)
+    data["reviews"] = [r.to_dict(me) for r in newest]
+    data["review_summary"] = review_summary(product.id)
+    # for a logged-in customer: their review, and whether they may write one
+    mine = next((r for r in newest if r.user_id == me), None) if me else None
+    data["my_review"] = mine.to_dict(me) if mine else None
+    data["can_review"] = bool(me) and product.id in delivered_product_ids(me)
     data["related"] = [p.to_dict() for p in related]
     return success(data)

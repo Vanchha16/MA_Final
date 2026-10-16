@@ -6,7 +6,6 @@ import 'package:photo_view/photo_view_gallery.dart';
 import 'package:provider/provider.dart';
 import 'package:readmore/readmore.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
@@ -14,6 +13,7 @@ import '../../core/utils/format.dart';
 import '../../models/catalog.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/catalog_service.dart';
+import '../../services/review_service.dart';
 import '../../widgets/added_to_cart_sheet.dart';
 import '../../widgets/cart_button.dart';
 import '../../widgets/circle_back_button.dart';
@@ -21,8 +21,11 @@ import '../../widgets/error_banner.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/product_image.dart';
 import '../../widgets/quantity_stepper.dart';
+import '../../widgets/review_card.dart';
+import '../../widgets/review_sheet.dart';
 import '../shop/shop_actions.dart';
 import 'product_list_screen.dart';
+import 'reviews_screen.dart';
 
 /// Product Details (Figma: Details A - Classic Gallery): swipeable photos
 /// with full-screen zoom, chips, rating, price and stock, description,
@@ -33,8 +36,9 @@ import 'product_list_screen.dart';
 class ProductDetailsScreen extends StatefulWidget {
   final Product product;
   final CatalogService? catalogService;
+  final ReviewService? reviewService;
 
-  const ProductDetailsScreen({super.key, required this.product, this.catalogService});
+  const ProductDetailsScreen({super.key, required this.product, this.catalogService, this.reviewService});
 
   /// Most of one item a customer can put in the cart at once (matches the API).
   static const maxQuantity = 20;
@@ -98,6 +102,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   void _openCart() => ShopActions.openCart(Navigator.of(context));
 
+  Future<void> _openReviews() async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => ReviewsScreen(product: _product, canReview: _detail?.canReview ?? false, service: widget.reviewService)),
+    );
+    if (changed == true && mounted) await _load();
+  }
+
+  Future<void> _rate() async {
+    final outcome = await showReviewSheet(context,
+        productId: _product.id, productName: _product.name, imageUrl: _product.imageUrl, kind: _product.category.kind, existing: _detail?.myReview,
+        service: widget.reviewService);
+    if (outcome != null && mounted) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = _product;
@@ -147,7 +165,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _RatingRow(rating: p.rating, count: p.reviewCount),
+                      child: _RatingRow(rating: p.rating, count: p.reviewCount, onTap: p.reviewCount > 0 ? _openReviews : null),
                     ),
                     const SizedBox(width: 8),
                     _StockChip(product: p),
@@ -185,18 +203,31 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ] else ...[
                   _SectionTitle(
                     'Reviews (${_detail == null ? p.reviewCount : reviews.length})',
-                    action: reviews.length > 1 ? 'See all' : null,
-                    onAction: () => _ReviewsSheet.show(context, reviews),
+                    action: reviews.isNotEmpty ? 'See all' : null,
+                    onAction: _openReviews,
                   ),
                   const SizedBox(height: 10),
                   if (_detail == null)
                     const Center(
                       child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2.5)),
                     )
-                  else if (reviews.isEmpty)
-                    Text('No reviews yet. Be the first after your order arrives!', style: TextStyle(color: scheme.onSurfaceVariant))
-                  else
-                    _ReviewCard(review: reviews.first),
+                  else ...[
+                    if (reviews.isEmpty)
+                      Text('No reviews yet. Be the first after your order arrives!', style: TextStyle(color: scheme.onSurfaceVariant))
+                    else
+                      // their own review if they wrote one, else the newest
+                      ReviewCard(review: _detail!.myReview ?? reviews.first, maxLines: 4, onEdit: _detail!.myReview == null ? null : _rate),
+                    if (_detail!.canReview && _detail!.myReview == null) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        key: const Key('details_rate'),
+                        onPressed: _rate,
+                        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), shape: const StadiumBorder()),
+                        icon: const Icon(Icons.star_rounded, color: AppTheme.amber),
+                        label: const Text('You bought this. Rate it'),
+                      ),
+                    ],
+                  ],
                 ],
               ],
             ),
@@ -495,13 +526,14 @@ class _InfoChip extends StatelessWidget {
 class _RatingRow extends StatelessWidget {
   final double rating;
   final int count;
+  final VoidCallback? onTap;
 
-  const _RatingRow({required this.rating, required this.count});
+  const _RatingRow({required this.rating, required this.count, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Row(
+    final row = Row(
       children: [
         RatingBarIndicator(
           rating: rating,
@@ -521,6 +553,7 @@ class _RatingRow extends StatelessWidget {
         ),
       ],
     );
+    return onTap == null ? row : InkWell(key: const Key('details_rating'), onTap: onTap, borderRadius: BorderRadius.circular(8), child: row);
   }
 }
 
@@ -625,88 +658,6 @@ class _SectionTitle extends StatelessWidget {
       ],
     );
   }
-}
-
-class _ReviewCard extends StatelessWidget {
-  final Review review;
-
-  const _ReviewCard({required this.review});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      decoration: BoxDecoration(
-        color: dark ? scheme.surfaceContainer : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [if (!dark) BoxShadow(color: AppTheme.primaryDark.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppTheme.primaryDark,
-                child: Text(
-                  review.initials,
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(review.user, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    Text(timeago.format(review.createdAt), style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
-                  ],
-                ),
-              ),
-              RatingBarIndicator(
-                rating: review.rating.toDouble(),
-                itemCount: 5,
-                itemSize: 14,
-                unratedColor: scheme.outlineVariant,
-                itemBuilder: (_, _) => const Icon(Icons.star_rounded, color: AppTheme.amber),
-              ),
-            ],
-          ),
-          if ((review.comment ?? '').isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(review.comment!, style: TextStyle(fontSize: 13, height: 1.45, color: scheme.onSurfaceVariant)),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// All reviews in a bottom sheet (a full Reviews screen comes later).
-class _ReviewsSheet {
-  static Future<void> show(BuildContext context, List<Review> reviews) => showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    useSafeArea: true,
-    builder: (_) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.6,
-      maxChildSize: 0.92,
-      builder: (_, controller) => ListView.separated(
-        controller: controller,
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        itemCount: reviews.length + 1,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (_, i) => i == 0
-            ? Text('Reviews (${reviews.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))
-            : _ReviewCard(review: reviews[i - 1]),
-      ),
-    ),
-  );
 }
 
 class _RelatedRow extends StatelessWidget {

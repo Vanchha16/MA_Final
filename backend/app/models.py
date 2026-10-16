@@ -421,7 +421,12 @@ class ContactMessage(TimestampMixin, db.Model):
         }
 
 
+REVIEW_TAGS = ("quality", "as_pictured", "packaging", "delivery", "value")
+
+
 class Review(TimestampMixin, db.Model):
+    """A customer's stars (1-5), optional comment and quick tags for a product they
+    received. One per customer and product; posting again edits it."""
     __tablename__ = "reviews"
     __table_args__ = (db.UniqueConstraint("user_id", "product_id", name="uq_review_user_product"),)
 
@@ -430,8 +435,23 @@ class Review(TimestampMixin, db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     rating = db.Column(db.SmallInteger, nullable=False)
     comment = db.Column(db.Text)
+    tags = db.Column(db.JSON)  # some of REVIEW_TAGS
+    updated_at = db.Column(db.DateTime)  # set when the customer edits it
 
-    user = db.relationship("User")
+    user = db.relationship("User")  # .product comes from Product.reviews
+
+    def to_dict(self, me=None):
+        return {
+            "id": self.id,
+            "product_id": self.product_id,
+            "user": self.user.full_name,
+            "rating": self.rating,
+            "comment": self.comment,
+            "tags": [t for t in (self.tags or []) if t in REVIEW_TAGS],
+            "created_at": self.created_at.isoformat(),
+            "edited": self.updated_at is not None,
+            "is_mine": me is not None and self.user_id == me,
+        }
 
 
 class Coupon(TimestampMixin, db.Model):
