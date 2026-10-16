@@ -7,7 +7,7 @@ Final project (SU25 - Mobile Application). Flutter mobile app + Flask REST API +
 | Layer | Tech |
 |---|---|
 | Mobile | Flutter, Dart, Provider, Dio |
-| Backend | Python Flask, SQLAlchemy, Flask-JWT-Extended, bcrypt |
+| Backend | Python Flask, SQLAlchemy, Flask-JWT-Extended, bcrypt, Flask-Admin (admin panel), Swagger UI (API docs) |
 | Database | MySQL 8.0 |
 
 ## Project structure
@@ -60,6 +60,17 @@ Start the API:
 ```bash
 python run.py                   # http://localhost:5000/api/health
 ```
+
+Once it is running:
+
+| Address | What |
+|---|---|
+| <http://localhost:5000/admin> | Admin panel for the shop owner (log in as `admin@shop.com`): dashboard, products and photos, categories, orders, customers, Contact messages |
+| <http://localhost:5000/api/docs> | Interactive API documentation (Swagger UI). Press **Authorize** and paste a login token to try the logged-in routes |
+| [docs/API.md](docs/API.md) | The same API documentation as one Markdown file, for the report |
+
+After changing an API route, update `backend/app/api_docs.py` and run `flask --app run api-docs`
+(a test fails if a route is missing from the docs or `docs/API.md` is out of date).
 
 ## Run the mobile app
 

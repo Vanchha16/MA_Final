@@ -155,3 +155,32 @@ def import_product_images(dry_run=False):
     with_photos = {slug for slug, p in products.items() if p.images} | set(report.imported)
     report.missing = sorted(set(products) - with_photos, key=lambda s: products[s].id)
     return report
+
+
+def add_uploaded_photo(product, stream):
+    """Saves one uploaded photo (from the admin) the same way as the importer and adds it
+    after the product's other photos. The first photo becomes the main one. Raises
+    UnidentifiedImageError / OSError for files that are not images. Caller commits."""
+    img = _to_webp(stream)
+    os.makedirs(output_dir(), exist_ok=True)
+    name = f"{product.slug}-{hashlib.sha1(img.tobytes()).hexdigest()[:8]}.webp"
+    img.save(os.path.join(output_dir(), name), "WEBP", quality=WEBP_QUALITY, method=6)
+    image = ProductImage(
+        product=product, image_url=f"/uploads/catalog/{name}",
+        is_primary=not product.images, sort_order=max((i.sort_order for i in product.images), default=-1) + 1,
+    )
+    db.session.add(image)
+    return image
+
+
+def remove_photo(image):
+    """Deletes a product photo and its file; the next photo becomes the main one. Caller commits."""
+    product = image.product
+    path = os.path.join(output_dir(), os.path.basename(image.image_url))
+    was_primary = image.is_primary
+    product.images.remove(image)
+    db.session.delete(image)
+    if was_primary and product.images:
+        product.images[0].is_primary = True
+    if image.image_url.startswith("/uploads/catalog/") and os.path.exists(path):
+        os.remove(path)

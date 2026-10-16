@@ -10,7 +10,7 @@ from flask import current_app
 
 from . import notify
 from .extensions import db
-from .models import Payment, Product
+from .models import Payment
 from .utils.clock import utcnow
 
 
@@ -77,12 +77,10 @@ def expire(order, payment):
     """Cancels the unpaid order and puts its stock back."""
     payment.status = "expired"
     if order.status == "pending":
+        from .admin_ops import restock
+
         order.status = "cancelled"
-        for item in order.items:
-            if item.product_id:
-                product = db.session.get(Product, item.product_id)
-                if product:
-                    product.stock += item.quantity
+        restock(order)
         notify.order_event(order, "cancelled")
     db.session.commit()
     return payment
