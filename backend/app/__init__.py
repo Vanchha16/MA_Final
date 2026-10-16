@@ -17,12 +17,13 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     cors.init_app(app)
 
-    from .routes import auth, catalog, profile, shop
+    from .routes import auth, catalog, orders, profile, shop
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(catalog.bp)
     app.register_blueprint(profile.bp)
     app.register_blueprint(shop.bp)
+    app.register_blueprint(orders.bp)
     register_error_handlers(app)
 
     @app.get("/api/health")
@@ -38,8 +39,11 @@ def create_app(config_class=Config):
         """Create all tables from the models (alternative to running schema.sql)."""
         from . import models  # noqa: F401
 
+        from .schema_upgrade import add_missing_columns
+
         db.create_all()
-        print("Database tables created.")
+        added = add_missing_columns()
+        print("Database tables created." + (f" Added columns: {', '.join(added)}" if added else ""))
 
     @app.cli.command("seed")
     def seed():
