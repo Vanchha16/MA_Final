@@ -8,7 +8,7 @@ import '../../providers/shop_provider.dart';
 import '../../services/catalog_service.dart';
 import '../../widgets/cart_button.dart';
 import '../../widgets/product_feed.dart';
-import '../../widgets/round_icon_button.dart';
+import '../../widgets/notification_bell.dart';
 import '../../widgets/shop_search_bar.dart';
 import '../../widgets/sort_header.dart';
 import '../catalog/product_list_screen.dart';
@@ -251,13 +251,7 @@ class _BrandBar extends StatelessWidget {
             ],
           ),
         ),
-        RoundIconButton(
-          icon: Icons.notifications_none_rounded,
-          tooltip: 'Notifications',
-          onPressed: () => ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(const SnackBar(content: Text('You have no new notifications'), behavior: SnackBarBehavior.floating)),
-        ),
+        const NotificationBell(),
         const SizedBox(width: 10),
         CartButton(onPressed: onOpenCart),
       ],

@@ -8,6 +8,7 @@ from datetime import timedelta
 from bakong_khqr import KHQR
 from flask import current_app
 
+from . import notify
 from .extensions import db
 from .models import Payment, Product
 from .utils.clock import utcnow
@@ -67,6 +68,7 @@ def mark_paid(order, payment):
     order.payment_status = "paid"
     if order.status == "pending":
         order.status = "confirmed"
+    notify.order_event(order, "paid")
     db.session.commit()
     return payment
 
@@ -81,6 +83,7 @@ def expire(order, payment):
                 product = db.session.get(Product, item.product_id)
                 if product:
                     product.stock += item.quantity
+        notify.order_event(order, "cancelled")
     db.session.commit()
     return payment
 

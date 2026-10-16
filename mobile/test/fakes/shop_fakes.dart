@@ -108,6 +108,12 @@ class FakeShopService extends ShopService {
   @override
   Future<int> cartCount() async => cart;
 
+  /// Unread messages for the bell badge.
+  int unread = 0;
+
+  @override
+  Future<int> unreadNotifications() async => unread;
+
   /// Products the wishlist can show (defaults to [demoProducts]).
   List<Product> catalog = demoProducts;
   bool failWishlist = false;
