@@ -1166,7 +1166,7 @@ Errors: 401, 403, 404, 422
 
 ### AdminOrder
 
-`Order` + {customer: {id, full_name, email}, next_statuses: list of string}
+`Order` + {customer: {id, full_name, email, phone}, next_statuses: list of string, image_url: string or null}
 
 ### AdminOrderDetail
 

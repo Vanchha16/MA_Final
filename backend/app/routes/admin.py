@@ -399,8 +399,10 @@ def update_customer(user_id):
 
 def _order_dict(o, with_items=False):
     data = o.to_dict(with_items=with_items)
-    data["customer"] = {"id": o.user.id, "full_name": o.user.full_name, "email": o.user.email}
+    data["customer"] = {"id": o.user.id, "full_name": o.user.full_name, "email": o.user.email, "phone": o.shipping_phone}
     data["next_statuses"] = list(next_statuses(o))
+    first = next((i for i in o.items if i.product is not None and i.product.photo_url), None)
+    data["image_url"] = first.product.photo_url if first else None  # for the list's thumbnail
     return data
 
 
@@ -408,7 +410,7 @@ def _order_dict(o, with_items=False):
 @admin_required
 def list_orders():
     """Every customer's orders, newest first. Query: status, q (order number or customer), page, per_page."""
-    query = Order.query.join(User, Order.user_id == User.id).options(selectinload(Order.items), selectinload(Order.user))
+    query = Order.query.join(User, Order.user_id == User.id).options(selectinload(Order.items).selectinload(OrderItem.product).selectinload(Product.images), selectinload(Order.user))
     if status := request.args.get("status"):
         if status not in ("pending", "confirmed", "shipped", "delivered", "cancelled"):
             return error("Validation failed", 422, {"status": "Unknown status"})

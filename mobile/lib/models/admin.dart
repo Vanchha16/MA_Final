@@ -1,3 +1,6 @@
+import 'catalog.dart';
+import 'order.dart';
+
 /// Dashboard numbers (GET /api/admin/stats).
 class AdminStats {
   final double revenue, weekRevenue;
@@ -71,5 +74,119 @@ class ActivityEvent {
         orderId: json['order_id'],
         messageId: json['message_id'],
         productId: json['product_id'],
+      );
+}
+
+/// An order as the shop sees it (GET /api/admin/orders): with the customer
+/// and the statuses it can move to next.
+class AdminOrder {
+  final Order order;
+  final int customerId;
+  final String customerName, customerEmail;
+  final String? phone, imageUrl;
+  final List<String> nextStatuses;
+
+  const AdminOrder({required this.order, this.customerId = 0, this.customerName = '', this.customerEmail = '', this.phone, this.imageUrl, this.nextStatuses = const []});
+
+  factory AdminOrder.fromJson(Map<String, dynamic> json) {
+    final c = json['customer'] as Map<String, dynamic>? ?? const {};
+    return AdminOrder(
+      order: Order.fromJson(json),
+      customerId: c['id'] ?? 0,
+      customerName: c['full_name'] ?? '',
+      customerEmail: c['email'] ?? '',
+      phone: (json['shipping'] as Map<String, dynamic>?)?['phone'] ?? c['phone'],
+      imageUrl: json['image_url'],
+      nextStatuses: [for (final s in json['next_statuses'] as List? ?? []) s as String],
+    );
+  }
+}
+
+class ProductPhoto {
+  final int id;
+  final String url;
+  final bool isPrimary;
+
+  const ProductPhoto({required this.id, required this.url, this.isPrimary = false});
+
+  factory ProductPhoto.fromJson(Map<String, dynamic> json) => ProductPhoto(id: json['id'], url: json['url'], isPrimary: json['is_primary'] ?? false);
+}
+
+/// A product as the shop sees it: hidden ones too, with photo ids.
+class AdminProduct {
+  final Product product;
+  final bool isActive;
+  final List<ProductPhoto> photos;
+
+  const AdminProduct({required this.product, this.isActive = true, this.photos = const []});
+
+  factory AdminProduct.fromJson(Map<String, dynamic> json) => AdminProduct(
+        product: Product.fromJson(json),
+        isActive: json['is_active'] ?? true,
+        photos: [for (final p in json['photos'] as List? ?? []) ProductPhoto.fromJson(p)],
+      );
+}
+
+class AdminCategory {
+  final int id;
+  final String name, slug;
+  final String? description;
+  final int productCount;
+
+  const AdminCategory({required this.id, required this.name, this.slug = '', this.description, this.productCount = 0});
+
+  factory AdminCategory.fromJson(Map<String, dynamic> json) =>
+      AdminCategory(id: json['id'], name: json['name'], slug: json['slug'] ?? '', description: json['description'], productCount: json['product_count'] ?? 0);
+}
+
+class Customer {
+  final int id;
+  final String fullName, email;
+  final String? phone;
+  final bool isActive;
+  final int orderCount;
+  final double totalSpent;
+  final DateTime? createdAt;
+  final List<Address> addresses;
+  final List<Order> orders;
+
+  const Customer({required this.id, required this.fullName, required this.email, this.phone, this.isActive = true, this.orderCount = 0, this.totalSpent = 0, this.createdAt, this.addresses = const [], this.orders = const []});
+
+  String get initials => fullName.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).take(2).map((w) => w[0].toUpperCase()).join();
+
+  factory Customer.fromJson(Map<String, dynamic> json) => Customer(
+        id: json['id'],
+        fullName: json['full_name'],
+        email: json['email'],
+        phone: json['phone'],
+        isActive: json['is_active'] ?? true,
+        orderCount: json['order_count'] ?? 0,
+        totalSpent: (json['total_spent'] as num? ?? 0).toDouble(),
+        createdAt: json['created_at'] == null ? null : DateTime.tryParse(json['created_at']),
+        addresses: [for (final a in json['addresses'] as List? ?? []) Address.fromJson(a)],
+        orders: [for (final o in json['orders'] as List? ?? []) Order.fromJson(o)],
+      );
+}
+
+/// A Contact message (GET /api/admin/contact-messages).
+class AdminMessage {
+  final int id;
+  final String topic, message, status, customerName;
+  final String? reply, orderNumber;
+  final DateTime createdAt;
+
+  const AdminMessage({required this.id, required this.topic, required this.message, required this.status, required this.customerName, required this.createdAt, this.reply, this.orderNumber});
+
+  bool get open => status == 'open';
+
+  factory AdminMessage.fromJson(Map<String, dynamic> json) => AdminMessage(
+        id: json['id'],
+        topic: json['topic'] ?? 'other',
+        message: json['message'],
+        status: json['status'],
+        reply: json['reply'],
+        orderNumber: (json['order'] as Map<String, dynamic>?)?['number'],
+        customerName: (json['customer'] as Map<String, dynamic>?)?['full_name'] ?? '',
+        createdAt: DateTime.parse(json['created_at']),
       );
 }
