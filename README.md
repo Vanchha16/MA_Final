@@ -90,7 +90,9 @@ Two ways to manage the shop on a computer, both signed in with an admin account
 Both have the same dashboard: revenue, 7-day chart, orders to handle with one-click
 Confirm / Ship / Delivered, live activity (Reply, Restock), and low stock with +5.
 The web admin also has pages for orders, products (photos), categories, customers
-(block), messages, reviews and coupons. It refreshes every 20 seconds.
+(block), messages, reviews and coupons. It refreshes every 20 seconds, and has a
+Light / Dark / System switch (bottom of the sidebar, remembered in the browser; dark
+uses the same colours as the app's dark mode).
 
 The built web admin is already in `backend/app/static/web-admin`, so it works as soon
 as the backend runs. To change it (needs Node.js 18+):
