@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  font-variation-settings: 'FILL' 1;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes arrive {
+  from { background-color: rgba(14, 165, 233, 0.18); }
+  to { background-color: transparent; }
+}
+.arrive { animation: arrive 1.6s ease-out; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.35s ease-out both; }
+
+table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.data th { text-align: left; font-size: 11px; letter-spacing: .06em; color: #64748b; font-weight: 700; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; }
+table.data td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+table.data tr.clickable:hover td { background: #f8fbfe; cursor: pointer; }
