@@ -1,3 +1,5 @@
+import os
+
 import click
 from flask import Flask, send_from_directory
 
@@ -40,6 +42,18 @@ def create_app(config_class=Config):
     @app.get("/api/health")
     def health():
         return success({"status": "up"})
+
+    # The React web admin (web-admin/, built into app/static/web-admin). Any path under
+    # /dashboard returns its index.html so the app's own pages (e.g. /dashboard/orders) work on reload.
+    @app.get("/dashboard")
+    @app.get("/dashboard/<path:path>")
+    def web_admin_app(path=""):
+        web_admin = app.config.get("WEB_ADMIN_DIR") or os.path.join(app.static_folder, "web-admin")
+        if path and os.path.isfile(os.path.join(web_admin, path)):
+            return send_from_directory(web_admin, path)
+        if not os.path.isfile(os.path.join(web_admin, "index.html")):
+            return "The web admin is not built yet: run npm run build in web-admin/", 404
+        return send_from_directory(web_admin, "index.html")
 
     @app.get("/uploads/<path:filename>")
     def uploads(filename):

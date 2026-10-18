@@ -15,7 +15,7 @@ from flask_login import LoginManager, current_user, login_user, logout_user
 from markupsafe import Markup, escape
 from PIL import UnidentifiedImageError
 from slugify import slugify
-from wtforms import EmailField, MultipleFileField, PasswordField
+from wtforms import EmailField, HiddenField, MultipleFileField, PasswordField, TextAreaField
 from wtforms.validators import DataRequired, ValidationError
 
 from . import admin_ops
@@ -40,6 +40,30 @@ class LoginForm(SecureForm):
     password = PasswordField("Password", validators=[DataRequired()])
 
 
+class QuickForm(SecureForm):
+    """The one-click buttons (Confirm, Ship, +5, Reply). SecureForm adds the CSRF token."""
+    status = HiddenField()
+    reply = TextAreaField()
+
+
+def quick_token():
+    """CSRF token for the small button forms drawn inside list columns."""
+    return QuickForm().csrf_token.current_token
+
+
+STEP_LABEL = {"confirmed": "Confirm", "shipped": "Ship", "delivered": "Delivered"}
+
+
+def _next_step(order):
+    return next((s for s in admin_ops.next_statuses(order) if s != "cancelled"), None)
+
+
+def _back(default):
+    """Where to go after a quick action: the page it came from, if it is an admin page."""
+    nxt = request.form.get("next") or request.args.get("next") or ""
+    return redirect(nxt if nxt.startswith("/admin") else default)
+
+
 class ShopIndexView(AdminIndexView):
     """Dashboard, plus the sign-in page."""
 
@@ -48,12 +72,61 @@ class ShopIndexView(AdminIndexView):
         if not _is_admin():
             return redirect(url_for(".login", next=request.full_path))
         orders = (
-            Order.query.filter(Order.status.in_(["pending", "confirmed"]))
+            Order.query.filter(Order.status.in_(["pending", "confirmed", "shipped"]))
             .order_by(Order.created_at.desc()).limit(8).all()
         )
-        messages = ContactMessage.query.filter_by(status="open").order_by(ContactMessage.created_at.desc()).limit(5).all()
+        messages = {m.id: m for m in ContactMessage.query.filter_by(status="open")}
         low = Product.query.filter(Product.is_active.is_(True), Product.stock <= 3).order_by(Product.stock).limit(6).all()
-        return self.render("admin/dashboard.html", stats=admin_ops.stats(), orders=orders, messages=messages, low=low)
+        stats = admin_ops.stats()
+        week = [{"day": datetime.fromisoformat(d["date"]).strftime("%a"), "revenue": d["revenue"]} for d in stats["week"]]
+        return self.render("admin/dashboard.html", stats=stats, week=week, orders=orders, messages=messages, low=low,
+                           events=admin_ops.activity(8), next_step=_next_step, step_label=STEP_LABEL,
+                           quick=QuickForm(), greeting=_greeting(), now=datetime.now())
+
+    # ---------- one-click actions (also used by the Orders and Products lists) ----------
+
+    def _quick_form(self):
+        form = QuickForm(request.form)
+        if not _is_admin():
+            return None
+        if not form.validate():
+            flash("That page was open too long. Please try again.", "error")
+            return None
+        return form
+
+    @expose("/quick/order/<int:order_id>", methods=("POST",))
+    def quick_order(self, order_id):
+        form = self._quick_form()
+        order = db.session.get(Order, order_id)
+        if form and order:
+            try:
+                admin_ops.set_order_status(order, form.status.data)
+                flash(f"{order.order_number} marked {order.status}. The customer was told.", "success")
+            except admin_ops.AdminError as e:
+                flash(str(e), "error")
+        return _back(url_for(".index"))
+
+    @expose("/quick/restock/<int:product_id>", methods=("POST",))
+    def quick_restock(self, product_id):
+        form = self._quick_form()
+        product = db.session.get(Product, product_id)
+        if form and product:
+            product.stock = max(product.stock, 0) + 5
+            db.session.commit()
+            flash(f"{product.name} restocked: {product.stock} in stock.", "success")
+        return _back(url_for(".index"))
+
+    @expose("/quick/reply/<int:message_id>", methods=("POST",))
+    def quick_reply(self, message_id):
+        form = self._quick_form()
+        message = db.session.get(ContactMessage, message_id)
+        if form and message:
+            try:
+                admin_ops.reply_contact(message, form.reply.data)
+                flash("Reply sent to the customer's Notifications.", "success")
+            except admin_ops.AdminError as e:
+                flash(str(e), "error")
+        return _back(url_for(".index"))
 
     @expose("/login", methods=("GET", "POST"))
     def login(self):
@@ -91,6 +164,22 @@ class SecureView(ModelView):
         return redirect(url_for("admin.login", next=request.full_path))
 
 
+def _greeting():
+    hour = datetime.now().hour
+    return "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
+
+
+def _button_form(action, label, *, status=None, kind="primary"):
+    """A one-button POST form for a list row (CSRF-protected), returning to this page."""
+    status_input = f'<input type="hidden" name="status" value="{escape(status)}">' if status else ""
+    return Markup(
+        f'<form method="post" action="{escape(action)}" class="d-inline m-0">'
+        f'<input type="hidden" name="csrf_token" value="{escape(quick_token())}">{status_input}'
+        f'<input type="hidden" name="next" value="{escape(request.full_path)}">'
+        f'<button type="submit" class="btn btn-sm btn-{kind} py-0 px-3">{escape(label)}</button></form>'
+    )
+
+
 def _money(view, context, model, name):
     value = getattr(model, name)
     return "" if value is None else f"${float(value):,.2f}"
@@ -104,8 +193,8 @@ STATUS_KIND = {"pending": "warning", "confirmed": "info", "shipped": "primary", 
 
 
 class ProductView(SecureView):
-    column_list = ("photo", "name", "category", "series", "price", "discount_price", "stock", "is_featured", "is_active")
-    column_labels = {"discount_price": "Sale price", "is_featured": "Featured", "is_active": "In shop", "photo": ""}
+    column_list = ("photo", "name", "category", "series", "price", "discount_price", "stock", "restock", "is_featured", "is_active")
+    column_labels = {"discount_price": "Sale price", "is_featured": "Featured", "is_active": "In shop", "photo": "", "restock": ""}
     column_searchable_list = ("name", "brand")
     column_filters = ("category.name", "series.name", "brand", "is_active", "is_featured", "stock")
     column_editable_list = ("price", "discount_price", "stock", "is_featured", "is_active")
@@ -116,6 +205,7 @@ class ProductView(SecureView):
         "photo": lambda v, c, m, n: Markup(f'<img src="{escape(m.photo_url)}" class="thumb" alt="">') if m.photo_url else "",
         "price": _money,
         "discount_price": _money,
+        "restock": lambda v, c, m, n: _button_form(url_for("admin.quick_restock", product_id=m.id), "+5", kind="outline-primary"),
     }
     column_details_list = ("name", "slug", "category", "series", "brand", "description", "price", "discount_price", "stock",
                            "is_featured", "is_active", "photos", "created_at", "updated_at")
@@ -240,10 +330,10 @@ class OrderView(SecureView):
     can_create = False
     can_edit = False
     can_delete = False
-    column_list = ("order_number", "user", "total", "payment_method", "payment_status", "delivery_method", "status", "created_at")
+    column_list = ("order_number", "user", "total", "payment_method", "payment_status", "delivery_method", "status", "created_at", "step")
     column_labels = {"order_number": "Order", "user": "Customer", "payment_method": "Pay by", "payment_status": "Payment",
                      "delivery_method": "Delivery", "created_at": "Placed", "shipping_name": "Name", "shipping_phone": "Phone",
-                     "next": "Can be marked", "lines": "Items"}
+                     "next": "Can be marked", "lines": "Items", "step": ""}
     column_searchable_list = ("order_number", "shipping_name", "shipping_phone")
     column_filters = ("status", "payment_method", "payment_status", "delivery_method", "created_at")
     column_default_sort = ("created_at", True)
@@ -253,6 +343,8 @@ class OrderView(SecureView):
         "total": _money,
         "status": lambda v, c, m, n: _badge(m.status, STATUS_KIND[m.status]),
         "payment_status": lambda v, c, m, n: _badge(m.payment_status, "success" if m.payment_status == "paid" else "light"),
+        "step": lambda v, c, m, n: _button_form(url_for("admin.quick_order", order_id=m.id), STEP_LABEL[step], status=step)
+        if (step := _next_step(m)) else "",
     }
     column_details_list = ("order_number", "user", "status", "next", "payment_method", "payment_status", "delivery_method",
                            "shipping_name", "shipping_phone", "shipping_address", "note", "lines", "subtotal", "shipping_fee",

@@ -13,8 +13,9 @@ Final project (SU25 - Mobile Application). Flutter mobile app + Flask REST API +
 ## Project structure
 
 ```
-backend/     Flask REST API
-mobile/      Flutter app
+backend/     Flask REST API (+ the Flask-Admin panel at /admin)
+mobile/      Flutter app (customer shop + admin tabs for an admin account)
+web-admin/   React web admin (Vite + Tailwind), served by Flask at /dashboard
 docs/        Requirement analysis, diagrams, API docs
   requirements/  REQUIREMENTS (Requirement Analysis) and USE_CASES (Use Case
                  Diagram + specifications), each as .md, .docx and .pdf;
@@ -75,6 +76,34 @@ Once it is running:
 
 After changing an API route, update `backend/app/api_docs.py` and run `flask --app run api-docs`
 (a test fails if a route is missing from the docs or `docs/API.md` is out of date).
+
+## Web admin
+
+Two ways to manage the shop on a computer, both signed in with an admin account
+(`admin@shop.com` / `demo123`):
+
+| | URL | Built with |
+|---|---|---|
+| **Web admin** (main) | http://127.0.0.1:5000/dashboard | React 18, Vite, Tailwind CSS, Recharts, React Router |
+| **Admin panel** | http://127.0.0.1:5000/admin | Flask-Admin (server pages, Chart.js) |
+
+Both have the same dashboard: revenue, 7-day chart, orders to handle with one-click
+Confirm / Ship / Delivered, live activity (Reply, Restock), and low stock with +5.
+The web admin also has pages for orders, products (photos), categories, customers
+(block), messages, reviews and coupons. It refreshes every 20 seconds.
+
+The built web admin is already in `backend/app/static/web-admin`, so it works as soon
+as the backend runs. To change it (needs Node.js 18+):
+
+```bash
+cd web-admin
+npm install
+npm run dev      # http://localhost:5173/dashboard/ (calls the backend on :5000)
+npm test         # Vitest + Testing Library
+npm run build    # writes the new build into backend/app/static/web-admin
+```
+
+Screenshots: `docs/screenshots/web-admin/`.
 
 ## Run the mobile app
 
