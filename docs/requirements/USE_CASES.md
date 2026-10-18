@@ -18,7 +18,7 @@ The Word copies (`.docx`) are made from these Markdown files with `python make_d
 |---|---|---|
 | **User (not signed in)** | Primary | Anyone who opens the app without being logged in. Can only register, log in or reset a password. |
 | **Customer** | Primary | A registered shopper. A specialisation of User: everything a User can do, plus shopping. |
-| **Admin** | Primary | The shop owner or staff. A specialisation of User. Uses the admin tabs of the app or the web panel at `/admin`. |
+| **Admin** | Primary | The shop owner or staff. A specialisation of User. Uses the admin tabs of the app, the React web admin at `/dashboard` or the panel at `/admin`. |
 | **Bakong KHQR** | Secondary (external system) | Cambodia's national QR payment network. Receives KHQR payment requests and reports when they are paid. |
 | **Email service** | Secondary (external system) | Sends the 6-digit password reset codes. |
 

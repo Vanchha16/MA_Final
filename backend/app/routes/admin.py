@@ -1,5 +1,6 @@
 """Admin API: the shop owner manages products, categories, customers, orders and
 Contact messages. Every route needs a login token of an active admin account."""
+from datetime import datetime
 from functools import wraps
 
 from flask import Blueprint, request
@@ -11,7 +12,7 @@ from sqlalchemy.orm import selectinload
 
 from ..admin_ops import AdminError, activity, delete_category, next_statuses, reply_contact, set_customer_active, set_order_status, stats
 from ..extensions import db
-from ..models import Category, ContactMessage, Order, OrderItem, Product, ProductImage, Series, User
+from ..models import Category, ContactMessage, Coupon, Order, OrderItem, Product, ProductImage, Review, Series, User
 from ..product_images import add_uploaded_photo, remove_photo
 from ..utils.responses import error, success
 from ..utils.validators import STOCK_MAX, Fields, json_body
@@ -472,3 +473,146 @@ def reply_to_message(message_id):
     except AdminError as e:
         return error("Validation failed", 422, {"reply": str(e)})
     return success(message.to_dict(), "Reply sent")
+
+
+# ---------------------------------------------------------------------------
+# Coupons (promo codes) and reviews - used by the web admin
+# ---------------------------------------------------------------------------
+
+def _coupon_dict(c):
+    return {
+        "id": c.id,
+        "code": c.code,
+        "description": c.description,
+        "discount_type": c.discount_type,
+        "value": float(c.value),
+        "min_subtotal": float(c.min_subtotal or 0),
+        "max_discount": float(c.max_discount) if c.max_discount is not None else None,
+        "expires_at": c.expires_at.isoformat() if c.expires_at else None,
+        "is_active": c.is_active,
+        "used": Order.query.filter(Order.coupon_code == c.code).count(),
+    }
+
+
+def _apply_coupon(coupon, data, creating):
+    """Checks and copies the sent fields. On create, code, description, discount_type and value are required."""
+    f = Fields(data)
+    if creating or f.has("code"):
+        code = f.text("code", required=True, max_len=30, label="Code")
+        if code is not None:
+            code = code.upper()
+            if not code.replace("-", "").isalnum():
+                f.errors["code"] = "Use letters and numbers only, e.g. ANIME5"
+            elif (other := Coupon.query.filter_by(code=code).first()) is not None and other.id != coupon.id:
+                f.errors["code"] = "There is already a coupon with this code"
+            else:
+                coupon.code = code
+    if creating or f.has("description"):
+        description = f.text("description", required=True, max_len=150, label="Description")
+        if description:
+            coupon.description = description
+    if creating or f.has("discount_type"):
+        kind = f.choice("discount_type", ("percent", "fixed"), required=True, message="Choose percent or fixed")
+        if kind:
+            coupon.discount_type = kind
+    if creating or f.has("value"):
+        value = f.money("value", required=True, label="Value")
+        if value is not None:
+            coupon.value = value
+    if f.has("min_subtotal"):
+        raw = data["min_subtotal"]
+        coupon.min_subtotal = 0 if raw in (None, "", 0, "0") else (f.money("min_subtotal", label="Minimum spend") or coupon.min_subtotal)
+    if f.has("max_discount"):
+        coupon.max_discount = None if data["max_discount"] in (None, "") else f.money("max_discount", label="Maximum discount")
+    if f.has("expires_at"):
+        raw = data["expires_at"]
+        if raw in (None, ""):
+            coupon.expires_at = None
+        else:
+            try:
+                coupon.expires_at = datetime.fromisoformat(str(raw).replace("Z", ""))
+            except ValueError:
+                f.errors["expires_at"] = "Use a date like 2026-12-31"
+    if f.has("is_active"):
+        active = f.boolean("is_active")
+        if active is not None:
+            coupon.is_active = active
+    if coupon.discount_type == "percent" and coupon.value is not None and float(coupon.value) > 100:
+        f.errors.setdefault("value", "A percent coupon can be at most 100")
+    return f.errors
+
+
+@bp.get("/coupons")
+@admin_required
+def list_coupons():
+    return success([_coupon_dict(c) for c in Coupon.query.order_by(Coupon.is_active.desc(), Coupon.code)])
+
+
+@bp.post("/coupons")
+@admin_required
+def create_coupon():
+    coupon = Coupon(min_subtotal=0, is_active=True)
+    errors = _apply_coupon(coupon, _body(), creating=True)
+    if errors:
+        db.session.rollback()
+        return error("Validation failed", 422, errors)
+    db.session.add(coupon)
+    db.session.commit()
+    return success(_coupon_dict(coupon), "Coupon added", 201)
+
+
+@bp.put("/coupons/<int:coupon_id>")
+@admin_required
+def update_coupon(coupon_id):
+    coupon = db.session.get(Coupon, coupon_id)
+    if coupon is None:
+        return error("Coupon not found", 404)
+    errors = _apply_coupon(coupon, _body(), creating=False)
+    if errors:
+        db.session.rollback()
+        return error("Validation failed", 422, errors)
+    db.session.commit()
+    return success(_coupon_dict(coupon), "Coupon saved")
+
+
+@bp.delete("/coupons/<int:coupon_id>")
+@admin_required
+def delete_coupon(coupon_id):
+    coupon = db.session.get(Coupon, coupon_id)
+    if coupon is None:
+        return error("Coupon not found", 404)
+    db.session.delete(coupon)
+    db.session.commit()
+    return success(None, "Coupon deleted")
+
+
+@bp.get("/reviews")
+@admin_required
+def list_reviews():
+    """All reviews, newest first. Query: rating=1-5, q (product or customer), page, per_page."""
+    query = Review.query.join(Product).join(User, User.id == Review.user_id)
+    if (rating := request.args.get("rating", type=int)) is not None:
+        query = query.filter(Review.rating == rating)
+    if q := request.args.get("q", "").strip()[:100]:
+        like = f"%{q}%"
+        query = query.filter(or_(Product.name.ilike(like), User.full_name.ilike(like)))
+
+    def item(r):
+        data = r.to_dict()
+        data["product"] = {"id": r.product.id, "name": r.product.name, "image_url": r.product.photo_url}
+        data["customer"] = {"id": r.user_id, "full_name": r.user.full_name, "email": r.user.email}
+        return data
+
+    return success(_page(query.order_by(Review.created_at.desc(), Review.id.desc()), item))
+
+
+@bp.delete("/reviews/<int:review_id>")
+@admin_required
+def delete_review(review_id):
+    """Removes a review (spam or rude words). The product's rating updates at once."""
+    review = db.session.get(Review, review_id)
+    if review is None:
+        return error("Review not found", 404)
+    db.session.delete(review)
+    db.session.commit()
+    return success(None, "Review deleted")

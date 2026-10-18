@@ -1,21 +1,62 @@
 {% extends 'admin/master.html' %}
 
+{# Same layout as the React web admin (picked from the previews, A): numbers, 7-day revenue,
+   orders to handle with one-click steps, live activity with actions, low stock with +5. #}
+{% block head_tail %}
+  {{ super() }}
+  <style {{ admin_csp_nonce_attribute }}>
+    .dash-title { font-size: 1.55rem; font-weight: 800; margin: 0; color: var(--ink); }
+    .card.kpi { display: flex; flex-direction: row; gap: .9rem; align-items: center; padding: 1.1rem; text-align: left; }
+    .kpi .icon { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex: none; }
+    .kpi .num { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
+    .kpi .sub { color: var(--success); font-size: .75rem; font-weight: 700; }
+    .card-title-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+    .card-title-row h5 { flex: 1; font-weight: 700; margin: 0; font-size: 1.02rem; color: var(--ink); }
+    .event { display: flex; gap: .75rem; align-items: center; padding: .6rem 0; border-bottom: 1px solid #F1F5F9; }
+    .event:last-child { border-bottom: 0; }
+    .event .icon { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; }
+    .event .text { flex: 1; min-width: 0; }
+    .event .text b { font-size: .86rem; }
+    .event .text div { color: var(--muted); font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .reply-box { display: none; padding: .5rem 0 .7rem 48px; }
+    .reply-box.open { display: block; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; animation: pulse 1.4s infinite; }
+    @keyframes pulse { 50% { opacity: .35; } }
+    .table-handle td { vertical-align: middle; font-size: .86rem; }
+    .chip { display: inline-block; border-radius: 999px; padding: .15rem .6rem; font-size: .74rem; font-weight: 700; }
+    .t-green { background: #DCFCE7; color: #15803D; } .t-amber { background: #FEF3C7; color: #B45309; }
+    .t-red { background: #FEE2E2; color: #B91C1C; } .t-cyan { background: #CFFAFE; color: #0E7490; } .t-blue { background: #E0F2FE; color: #0284C7; }
+  </style>
+{% endblock %}
+
 {% block body %}
+{% set tint = {'paid': ('fa-money', 't-green'), 'order': ('fa-shopping-bag', 't-blue'), 'message': ('fa-comments', 't-cyan'),
+               'review': ('fa-star', 't-amber'), 'sold_out': ('fa-cube', 't-red')} %}
+{% set status_tint = {'pending': 't-amber', 'confirmed': 't-cyan', 'shipped': 't-blue', 'delivered': 't-green', 'cancelled': ''} %}
+
+<div class="d-flex align-items-center mb-3" style="gap: 1rem;">
+  <div class="flex-grow-1">
+    <h1 class="dash-title">{{ greeting }}, {{ current_user.full_name.split(' ')[0] }}</h1>
+    <div class="muted small">{{ now.strftime('%A %d %B') }} · this page refreshes every 30 seconds</div>
+  </div>
+  <form action="{{ url_for('admin_orders.index_view') }}" method="get" class="d-none d-md-block">
+    <input name="search" class="form-control" style="width: 300px; border-radius: 999px;" placeholder="Find an order or customer" maxlength="100">
+  </form>
+  <a class="btn btn-primary" href="{{ url_for('admin_products.create_view') }}"><i class="fa fa-plus"></i> Add product</a>
+</div>
+
 <div class="row">
-  {% for label, value, icon, color, link in [
-      ('Revenue (paid)', '$%.2f' % stats.revenue, 'fa-money', '#16A34A', url_for('admin_orders.index_view')),
-      ('Orders to handle', stats.orders_to_handle, 'fa-inbox', '#F59E0B', url_for('admin_orders.index_view')),
-      ('Products in shop', stats.products, 'fa-cube', '#0284C7', url_for('admin_products.index_view')),
-      ('Low stock (3 or less)', stats.low_stock, 'fa-exclamation-triangle', '#DC2626', url_for('admin_products.index_view')),
-      ('Customers', stats.customers, 'fa-users', '#7C3AED', url_for('admin_customers.index_view')),
-      ('Open messages', stats.open_messages, 'fa-comments', '#06B6D4', url_for('admin_messages.index_view')),
+  {% for label, value, icon, cls, sub, link in [
+      ('Revenue (paid)', '$%s' % '{:,.0f}'.format(stats.revenue), 'fa-money', 't-green', ('+$%d today' % week[-1].revenue) if week[-1].revenue else '', url_for('admin_orders.index_view')),
+      ('Orders to handle', stats.orders_to_handle, 'fa-inbox', 't-amber', '', url_for('admin_orders.index_view')),
+      ('Low stock (3 or less)', stats.low_stock, 'fa-cube', 't-red', '', url_for('admin_products.index_view')),
+      ('Open messages', stats.open_messages, 'fa-comments', 't-cyan', '', url_for('admin_messages.index_view')),
   ] %}
-  <div class="col-sm-6 col-lg-4 col-xl-2 mb-3">
+  <div class="col-sm-6 col-xl-3 mb-3">
     <a href="{{ link }}" class="text-reset text-decoration-none">
-      <div class="card stat p-3 h-100">
-        <div class="icon mb-2" style="background: {{ color }}22; color: {{ color }};"><i class="fa {{ icon }}"></i></div>
-        <div class="num">{{ value }}</div>
-        <div class="label">{{ label }}</div>
+      <div class="card kpi h-100">
+        <div class="icon {{ cls }}"><i class="fa {{ icon }}"></i></div>
+        <div><div class="num">{{ value }}</div><div class="muted small">{{ label }}</div>{% if sub %}<div class="sub">{{ sub }}</div>{% endif %}</div>
       </div>
     </a>
   </div>
@@ -23,47 +64,124 @@
 </div>
 
 <div class="row">
-  <div class="col-lg-7 mb-3">
-    <div class="card p-3 h-100">
-      <h5 class="font-weight-bold">Orders to handle</h5>
+  <div class="col-xl-7 mb-3">
+    <div class="card p-3 mb-3">
+      <div class="card-title-row"><h5>Revenue · last 7 days</h5><span class="chip t-blue">${{ '{:,.2f}'.format(stats.week_revenue) }} this week</span></div>
+      <div style="height: 190px;"><canvas id="revenue"></canvas></div>
+    </div>
+    <div class="card p-3">
+      <div class="card-title-row"><h5>Orders to handle</h5><a href="{{ url_for('admin_orders.index_view') }}" class="small font-weight-bold">All orders</a></div>
       {% if orders %}
-      <table class="table table-sm mb-0">
-        <thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Pay by</th><th>Status</th></tr></thead>
+      <table class="table table-sm table-handle mb-0">
+        <thead><tr><th>Order</th><th>Customer</th><th></th><th>Total</th><th>Payment</th><th>Status</th><th></th></tr></thead>
         <tbody>
         {% for o in orders %}
+          {% set step = next_step(o) %}
+          {% set photo = (o.items | selectattr('product') | map(attribute='product') | selectattr('photo_url') | first) %}
           <tr>
-            <td><a href="{{ url_for('admin_orders.details_view', id=o.id) }}">{{ o.order_number }}</a></td>
+            <td><a href="{{ url_for('admin_orders.details_view', id=o.id) }}" class="font-weight-bold">{{ o.order_number }}</a></td>
             <td>{{ o.user.full_name }}</td>
-            <td>${{ '%.2f' % o.total }}</td>
-            <td>{{ o.payment_method|upper }}{% if o.payment_status == 'paid' %} <span class="badge badge-success">paid</span>{% endif %}</td>
-            <td><span class="badge badge-{{ 'warning' if o.status == 'pending' else 'info' }}">{{ o.status }}</span></td>
+            <td>{% if photo %}<img src="{{ photo.photo_url }}" class="thumb" style="width:32px;height:32px" alt="">{% endif %}</td>
+            <td class="font-weight-bold">${{ '%.2f' % o.total }}</td>
+            <td class="muted">{{ 'KHQR' if o.payment_method == 'khqr' else 'Cash' }}{% if o.payment_status == 'paid' %} paid{% endif %}</td>
+            <td><span class="chip {{ status_tint[o.status] }}">{{ o.status|capitalize }}</span></td>
+            <td class="text-right">
+              {% if step %}
+              <form method="post" action="{{ url_for('.quick_order', order_id=o.id) }}" class="m-0">
+                {{ quick.csrf_token }}<input type="hidden" name="status" value="{{ step }}">
+                <button class="btn btn-sm btn-primary py-0 px-3">{{ step_label[step] }}</button>
+              </form>
+              {% else %}<span class="chip t-amber">Waiting for KHQR</span>{% endif %}
+            </td>
           </tr>
         {% endfor %}
         </tbody>
       </table>
-      {% else %}<p class="muted mb-0">Nothing waiting. All orders are on their way.</p>{% endif %}
+      {% else %}<p class="muted mb-0">Nothing to handle right now.</p>{% endif %}
     </div>
   </div>
-  <div class="col-lg-5 mb-3">
+
+  <div class="col-xl-5 mb-3">
     <div class="card p-3 mb-3">
-      <h5 class="font-weight-bold">Open messages</h5>
-      {% for m in messages %}
-        <div class="py-2 border-top">
-          <a href="{{ url_for('admin_messages.edit_view', id=m.id) }}">{{ m.topic|capitalize }}{% if m.order %} · {{ m.order.order_number }}{% endif %}</a>
-          <div class="muted small">{{ m.message|truncate(90) }}</div>
+      <div class="card-title-row"><h5>Live activity</h5><span class="chip t-green"><span class="live-dot"></span> Live</span></div>
+      {% for e in events %}
+        {% set icon, cls = tint.get(e.kind, ('fa-bell', 't-blue')) %}
+        <div class="event">
+          <div class="icon {{ cls }}"><i class="fa {{ icon }}"></i></div>
+          <div class="text"><b>{{ e.title }}</b><div>{{ e.message }}</div></div>
+          {% if e.action in ('confirm', 'ship') %}
+            <form method="post" action="{{ url_for('.quick_order', order_id=e.order_id) }}" class="m-0">
+              {{ quick.csrf_token }}<input type="hidden" name="status" value="{{ 'confirmed' if e.action == 'confirm' else 'shipped' }}">
+              <button class="btn btn-sm btn-primary py-0 px-3">{{ 'Confirm' if e.action == 'confirm' else 'Ship it' }}</button>
+            </form>
+          {% elif e.action == 'restock' %}
+            <form method="post" action="{{ url_for('.quick_restock', product_id=e.product_id) }}" class="m-0">
+              {{ quick.csrf_token }}<button class="btn btn-sm btn-primary py-0 px-3">Restock</button>
+            </form>
+          {% elif e.action == 'reply' and e.message_id in messages %}
+            <button type="button" class="btn btn-sm btn-primary py-0 px-3" data-reply="{{ e.message_id }}">Reply</button>
+          {% elif e.kind == 'message' %}<span class="chip t-green">Answered</span>{% endif %}
         </div>
-      {% else %}<p class="muted mb-0">No questions waiting for a reply.</p>{% endfor %}
+        {% if e.action == 'reply' and e.message_id in messages %}
+          <form method="post" action="{{ url_for('.quick_reply', message_id=e.message_id) }}" class="reply-box" id="reply-{{ e.message_id }}">
+            {{ quick.csrf_token }}
+            <div class="muted small mb-1">{{ messages[e.message_id].message }}</div>
+            <textarea name="reply" class="form-control mb-2" rows="3" maxlength="2000" required placeholder="Your answer goes to their Notifications"></textarea>
+            <button class="btn btn-sm btn-primary"><i class="fa fa-paper-plane"></i> Send reply</button>
+          </form>
+        {% endif %}
+      {% else %}<p class="muted mb-0">Nothing has happened yet.</p>{% endfor %}
     </div>
     <div class="card p-3">
-      <h5 class="font-weight-bold">Low stock</h5>
+      <div class="card-title-row"><h5>Low stock</h5><a href="{{ url_for('admin_products.index_view') }}" class="small font-weight-bold">All products</a></div>
       {% for p in low %}
-        <div class="d-flex align-items-center py-1 border-top">
-          {% if p.photo_url %}<img src="{{ p.photo_url }}" class="thumb mr-2" alt="">{% endif %}
-          <a class="flex-grow-1" href="{{ url_for('admin_products.edit_view', id=p.id) }}">{{ p.name }}</a>
-          <span class="badge badge-{{ 'danger' if p.stock == 0 else 'warning' }}">{{ p.stock }} left</span>
+        <div class="d-flex align-items-center py-2 border-top" style="gap: .6rem;">
+          {% if p.photo_url %}<img src="{{ p.photo_url }}" class="thumb" alt="">{% endif %}
+          <a class="flex-grow-1 text-reset font-weight-bold small" href="{{ url_for('admin_products.edit_view', id=p.id) }}">{{ p.name }}</a>
+          <span class="chip {{ 't-red' if p.stock == 0 else 't-amber' }}">{{ 'Sold out' if p.stock == 0 else '%d left' % p.stock }}</span>
+          <form method="post" action="{{ url_for('.quick_restock', product_id=p.id) }}" class="m-0">
+            {{ quick.csrf_token }}<button class="btn btn-sm btn-outline-primary py-0 px-3">+5</button>
+          </form>
         </div>
-      {% else %}<p class="muted mb-0">Everything is well stocked.</p>{% endfor %}
+      {% else %}<p class="muted mb-0">Every product has more than 3 in stock.</p>{% endfor %}
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" {{ admin_csp_nonce_attribute }}></script>
+  <script {{ admin_csp_nonce_attribute }}>
+    (function () {
+      var week = {{ week | tojson }};
+      var canvas = document.getElementById('revenue');
+      if (window.Chart && canvas) {
+        new Chart(canvas, {
+          type: 'bar',
+          data: {
+            labels: week.map(function (d) { return d.day; }),
+            datasets: [{ data: week.map(function (d) { return d.revenue; }), borderRadius: 8, maxBarThickness: 36,
+                         backgroundColor: week.map(function (_, i) { return i === week.length - 1 ? '#0284C7' : 'rgba(2,132,199,.35)'; }) }]
+          },
+          options: { maintainAspectRatio: false, animation: false, plugins: { legend: { display: false },
+                     tooltip: { callbacks: { label: function (c) { return '$' + c.parsed.y.toFixed(2); } } } },
+                     scales: { y: { display: false, beginAtZero: true }, x: { grid: { display: false }, border: { display: false } } } }
+        });
+      }
+      // Reply opens the box under the message
+      document.querySelectorAll('[data-reply]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var box = document.getElementById('reply-' + b.dataset.reply);
+          box.classList.toggle('open');
+          if (box.classList.contains('open')) box.querySelector('textarea').focus();
+        });
+      });
+      // Fresh numbers every 30 s, unless the owner is typing a reply
+      setInterval(function () {
+        var typing = document.activeElement && ['TEXTAREA', 'INPUT'].indexOf(document.activeElement.tagName) >= 0;
+        if (!typing) window.location.reload();
+      }, 30000);
+    })();
+  </script>
 {% endblock %}
