@@ -74,7 +74,7 @@ export default function OrderDrawer({ orderId, onClose, onChanged }) {
             </div>
             <section>
               <h3 className="mb-2 text-[11px] font-bold tracking-wider text-muted">CUSTOMER</h3>
-              <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3.5">
+              <div className="flex items-center gap-3 rounded-2xl bg-soft p-3.5">
                 <div className="grid h-10 w-10 place-items-center rounded-full bg-violet-100 font-bold text-violet-700">{order.customer.full_name[0]}</div>
                 <div className="flex-1">
                   <div className="font-bold">{order.customer.full_name}</div>
@@ -106,7 +106,7 @@ export default function OrderDrawer({ orderId, onClose, onChanged }) {
                 ))}
               </div>
             </section>
-            <section className="rounded-2xl bg-slate-50 p-3.5">
+            <section className="rounded-2xl bg-soft p-3.5">
               {[
                 ['Subtotal', money(order.subtotal)],
                 order.discount > 0 ? [`Promo ${order.coupon_code || ''}`, `-${money(order.discount)}`] : null,

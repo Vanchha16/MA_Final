@@ -46,7 +46,7 @@ export default function ReplyDrawer({ message, onClose, onSent }) {
             <Chip className="bg-cyan-100 text-cyan-700">{TOPIC[message.topic] || 'Message'}</Chip>
             {message.order && <Chip>{message.order.number}</Chip>}
           </div>
-          <div className="rounded-2xl bg-slate-100 p-3.5 text-[14px] leading-relaxed">
+          <div className="rounded-2xl bg-soft p-3.5 text-[14px] leading-relaxed">
             {message.message}
             <div className="mt-1.5 text-[11.5px] text-muted">{timeAgo(message.created_at)} ago</div>
           </div>
