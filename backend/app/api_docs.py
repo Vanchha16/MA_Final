@@ -167,9 +167,16 @@ SCHEMAS = {
                                                next_statuses=arr({**S, "description": "Statuses this order can move to"}),
                                                image_url=nullable({**S, "description": "First item's photo"}))]},
     "AdminOrderDetail": {"allOf": [ref("OrderDetail"), ref("AdminOrder")]},
+    "AdminCoupon": obj(id=I, code={**S, "example": "ANIME5"}, description=S, discount_type={"type": "string", "enum": ["percent", "fixed"]},
+                       value=N, min_subtotal=N, max_discount=nullable(N), expires_at=nullable(DT), is_active=B,
+                       used={**I, "description": "Orders that used it"}),
+    "CouponInput": obj(code=S, description=S, discount_type={"type": "string", "enum": ["percent", "fixed"]}, value=N,
+                       min_subtotal=N, max_discount=nullable(N), expires_at=nullable(DT), is_active=B),
+    "AdminReview": {"allOf": [ref("Review"), obj(product=obj(id=I, name=S, image_url=nullable(S)),
+                                                 customer=obj(id=I, full_name=S, email=S))]},
     "Stats": obj(week=arr(obj(date={"type": "string", "format": "date"}, revenue=N)), week_revenue=N, products=I, low_stock={**I, "description": "In the shop with 3 or fewer left"}, categories=I, customers=I,
                  orders=I, orders_to_handle={**I, "description": "Pending or confirmed"}, revenue=N, open_messages=I),
-    "ActivityEvent": obj(id={**S, "example": "paid-12"}, kind={"type": "string", "enum": ["paid", "order", "message", "sold_out"]},
+    "ActivityEvent": obj(id={**S, "example": "paid-12"}, kind={"type": "string", "enum": ["paid", "order", "message", "review", "sold_out"]},
                          at=DT, title=S, message=S, image_url=nullable(S),
                          action=nullable({"type": "string", "enum": ["confirm", "ship", "reply", "restock"],
                                           "description": "What the shop can do now; null once handled"}),
@@ -365,7 +372,7 @@ PATHS = {
 
     # Admin
     "/api/admin/stats": {"get": op(ADMIN, "Dashboard numbers, with paid revenue for each of the last 7 days", ok(ref("Stats")), errors=(403,))},
-    "/api/admin/activity": {"get": op(ADMIN, "Live activity: payments, new orders, messages, sold-out products", ok(arr(ref("ActivityEvent"))),
+    "/api/admin/activity": {"get": op(ADMIN, "Live activity: payments, new orders, messages, reviews, sold-out products", ok(arr(ref("ActivityEvent"))),
                                       errors=(403,), params=[query("limit", I, "How many (default 20, max 50)")],
                                       description="Newest first. Each event says which action still applies (confirm, ship, reply, restock).")},
     "/api/admin/products": {
@@ -424,6 +431,21 @@ PATHS = {
                                                                   params=[path("message_id")], errors=(403, 404, 422),
                                                                   description="The customer gets the reply in Notifications.",
                                                                   request_body=body(obj(["reply"], reply=S), {"reply": "Your figure ships tomorrow!"}))},
+    "/api/admin/coupons": {
+        "get": op(ADMIN, "All promo codes, active first", ok(arr(ref("AdminCoupon"))), errors=(403,)),
+        "post": op(ADMIN, "Add a promo code", ok(ref("AdminCoupon"), "Added", "201", "Coupon added"), errors=(403, 422),
+                   description="Code: letters and numbers (stored upper case). A percent coupon is at most 100.",
+                   request_body=body(ref("CouponInput"), {"code": "ANIME5", "description": "$5 off any order", "discount_type": "fixed", "value": 5})),
+    },
+    "/api/admin/coupons/{coupon_id}": {
+        "put": op(ADMIN, "Change a promo code (send only what changes)", ok(ref("AdminCoupon"), message="Coupon saved"),
+                  params=[path("coupon_id")], errors=(403, 404, 422), request_body=body(ref("CouponInput"), {"is_active": False})),
+        "delete": op(ADMIN, "Delete a promo code", ok({"nullable": True}, message="Coupon deleted"), params=[path("coupon_id")], errors=(403, 404)),
+    },
+    "/api/admin/reviews": {"get": op(ADMIN, "All reviews, newest first", ok(page_of(ref("AdminReview"))), errors=(403,),
+                                     params=[query("rating", I, "Only this many stars"), query("q", S, "Product or customer name"), *PAGE_PARAMS])},
+    "/api/admin/reviews/{review_id}": {"delete": op(ADMIN, "Remove a review (spam, rude words)", ok({"nullable": True}, message="Review deleted"),
+                                                    params=[path("review_id")], errors=(403, 404))},
 }
 
 TAGS = [

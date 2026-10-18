@@ -824,7 +824,7 @@ Shop owner only: an admin account's token
 | Method | Path | What it does | Login |
 |---|---|---|---|
 | `GET` | `/api/admin/stats` | Dashboard numbers, with paid revenue for each of the last 7 days | admin |
-| `GET` | `/api/admin/activity` | Live activity: payments, new orders, messages, sold-out products | admin |
+| `GET` | `/api/admin/activity` | Live activity: payments, new orders, messages, reviews, sold-out products | admin |
 | `GET` | `/api/admin/products` | All products, hidden ones too | admin |
 | `POST` | `/api/admin/products` | Add a product | admin |
 | `GET` | `/api/admin/products/{product_id}` | One product | admin |
@@ -844,6 +844,12 @@ Shop owner only: an admin account's token
 | `PUT` | `/api/admin/orders/{order_id}/status` | Move an order on | admin |
 | `GET` | `/api/admin/contact-messages` | Contact messages, newest first | admin |
 | `POST` | `/api/admin/contact-messages/{message_id}/reply` | Answer a message | admin |
+| `GET` | `/api/admin/coupons` | All promo codes, active first | admin |
+| `POST` | `/api/admin/coupons` | Add a promo code | admin |
+| `PUT` | `/api/admin/coupons/{coupon_id}` | Change a promo code (send only what changes) | admin |
+| `DELETE` | `/api/admin/coupons/{coupon_id}` | Delete a promo code | admin |
+| `GET` | `/api/admin/reviews` | All reviews, newest first | admin |
+| `DELETE` | `/api/admin/reviews/{review_id}` | Remove a review (spam, rude words) | admin |
 
 #### `GET /api/admin/stats`
 
@@ -855,7 +861,7 @@ Errors: 401, 403
 
 #### `GET /api/admin/activity`
 
-Live activity: payments, new orders, messages, sold-out products.
+Live activity: payments, new orders, messages, reviews, sold-out products.
 
 Newest first. Each event says which action still applies (confirm, ship, reply, restock).
 
@@ -1120,6 +1126,83 @@ Response 200: `data` = `ContactMessage`
 
 Errors: 401, 403, 404, 422
 
+#### `GET /api/admin/coupons`
+
+All promo codes, active first.
+
+Response 200: `data` = list of `AdminCoupon`
+
+Errors: 401, 403
+
+#### `POST /api/admin/coupons`
+
+Add a promo code.
+
+Code: letters and numbers (stored upper case). A percent coupon is at most 100.
+
+Body (application/json): `CouponInput`
+
+```json
+{
+  "code": "ANIME5",
+  "description": "$5 off any order",
+  "discount_type": "fixed",
+  "value": 5
+}
+```
+
+Response 201: `data` = `AdminCoupon`
+
+Errors: 401, 403, 422
+
+#### `PUT /api/admin/coupons/{coupon_id}`
+
+Change a promo code (send only what changes).
+
+Parameters: `coupon_id` (path, required).
+
+Body (application/json): `CouponInput`
+
+```json
+{
+  "is_active": false
+}
+```
+
+Response 200: `data` = `AdminCoupon`
+
+Errors: 401, 403, 404, 422
+
+#### `DELETE /api/admin/coupons/{coupon_id}`
+
+Delete a promo code.
+
+Parameters: `coupon_id` (path, required).
+
+Response 200: `data` = any or null
+
+Errors: 401, 403, 404
+
+#### `GET /api/admin/reviews`
+
+All reviews, newest first.
+
+Parameters: `rating` (query) - Only this many stars, `q` (query) - Product or customer name, `page` (query) - Page number, from 1, `per_page` (query) - Rows per page (max 100 for admin lists, 50 for products).
+
+Response 200: `data` = {items: list of `AdminReview`, page: integer, per_page: integer, total: integer, total_pages: integer}
+
+Errors: 401, 403
+
+#### `DELETE /api/admin/reviews/{review_id}`
+
+Remove a review (spam, rude words).
+
+Parameters: `review_id` (path, required).
+
+Response 200: `data` = any or null
+
+Errors: 401, 403, 404
+
 ## Data shapes
 
 ### Envelope
@@ -1242,10 +1325,22 @@ Errors: 401, 403, 404, 422
 
 `OrderDetail` + `AdminOrder`
 
+### AdminCoupon
+
+{id: integer, code: string, description: string, discount_type: `percent` \| `fixed`, value: number, min_subtotal: number, max_discount: number or null, expires_at: string or null, is_active: boolean, used: integer}
+
+### CouponInput
+
+{code: string, description: string, discount_type: `percent` \| `fixed`, value: number, min_subtotal: number, max_discount: number or null, expires_at: string or null, is_active: boolean}
+
+### AdminReview
+
+`Review` + {product: {id, name, image_url}, customer: {id, full_name, email}}
+
 ### Stats
 
 {week: list of {date, revenue}, week_revenue: number, products: integer, low_stock: integer, categories: integer, customers: integer, orders: integer, orders_to_handle: integer, revenue: number, open_messages: integer}
 
 ### ActivityEvent
 
-{id: string, kind: `paid` \| `order` \| `message` \| `sold_out`, at: string, title: string, message: string, image_url: string or null, action: `confirm` \| `ship` \| `reply` \| `restock`, status: string or null, order_id: integer or null, order_number: string or null, message_id: integer or null, product_id: integer or null}
+{id: string, kind: `paid` \| `order` \| `message` \| `review` \| `sold_out`, at: string, title: string, message: string, image_url: string or null, action: `confirm` \| `ship` \| `reply` \| `restock`, status: string or null, order_id: integer or null, order_number: string or null, message_id: integer or null, product_id: integer or null}

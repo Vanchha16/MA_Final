@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from . import notify
 from .extensions import db
-from .models import Category, ContactMessage, Order, OrderItem, Product, User
+from .models import Category, ContactMessage, Order, OrderItem, Product, Review, User
 from .utils.clock import utcnow
 
 
@@ -157,6 +157,10 @@ def activity(limit=20):
         events.append({"id": f"message-{m.id}", "kind": "message", "at": m.created_at, "title": "New message",
                        "message": f'"{m.message[:90]}"', "message_id": m.id, "status": m.status,
                        "action": "reply" if m.status == "open" else None, "image_url": None})
+    for r in Review.query.order_by(Review.created_at.desc()).limit(10):
+        events.append({"id": f"review-{r.id}", "kind": "review", "at": r.created_at, "title": "New review",
+                       "message": f"{r.user.full_name} gave {r.product.name} {r.rating} star{'s' if r.rating != 1 else ''}",
+                       "product_id": r.product_id, "rating": r.rating, "action": None, "image_url": r.product.photo_url})
     for p in Product.query.filter(Product.is_active.is_(True), Product.stock <= 0).options(selectinload(Product.images)).limit(10):
         events.append({"id": f"stock-{p.id}", "kind": "sold_out", "at": p.updated_at, "title": "Sold out",
                        "message": f"{p.name} has 0 left", "product_id": p.id, "action": "restock", "image_url": p.photo_url})
