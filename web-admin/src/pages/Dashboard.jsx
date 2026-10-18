@@ -9,6 +9,7 @@ import { Button, Card, Chip, Empty, ErrorBox, Icon, Kpi, PageTitle, Photo, Searc
 import { useAuth } from '../auth';
 import { STEP_DONE, STEP_LABEL, greeting, money, moneyShort, nextStep, paymentText, timeAgo } from '../lib/format';
 import { useStats } from '../stats';
+import { useTheme } from '../theme';
 
 const KIND = {
   paid: ['payments', 'bg-green-100 text-green-700'],
@@ -21,6 +22,8 @@ const ACTION_LABEL = { confirm: 'Confirm', ship: 'Ship it', reply: 'Reply', rest
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { resolved } = useTheme();
+  const dark = resolved === 'dark';
   const { stats, error: statsError, refresh, tick } = useStats();
   const toast = useToast();
   const navigate = useNavigate();
@@ -140,10 +143,10 @@ export default function Dashboard() {
             <div className="h-[180px]" data-testid="revenue-chart">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={week} margin={{ top: 22, right: 4, left: 4, bottom: 0 }}>
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11.5, fill: '#64748B' }} />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11.5, fill: dark ? '#94A3B8' : '#64748B' }} />
                   <Bar dataKey="revenue" radius={[9, 9, 4, 4]} maxBarSize={36} animationDuration={700}>
-                    {week.map((_, i) => <Cell key={i} fill="#0284C7" fillOpacity={i === week.length - 1 ? 1 : 0.35} />)}
-                    <LabelList dataKey="revenue" position="top" formatter={(v) => `$${Math.round(v)}`} style={{ fontSize: 11, fontWeight: 700, fill: '#0F172A' }} />
+                    {week.map((_, i) => <Cell key={i} fill={dark ? '#38BDF8' : '#0284C7'} fillOpacity={i === week.length - 1 ? 1 : dark ? 0.3 : 0.35} />)}
+                    <LabelList dataKey="revenue" position="top" formatter={(v) => `$${Math.round(v)}`} style={{ fontSize: 11, fontWeight: 700, fill: dark ? '#E2E8F0' : '#0F172A' }} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -198,7 +201,7 @@ export default function Dashboard() {
                 {events.map((e) => {
                   const [icon, tint] = KIND[e.kind] || KIND.order;
                   return (
-                    <div key={e.id} className={`flex items-center gap-3 border-b border-slate-100 py-[11px] last:border-0 ${fresh.has(e.id) ? 'arrive -mx-2.5 rounded-xl px-2.5' : ''}`} data-testid={`event-${e.id}`}>
+                    <div key={e.id} className={`flex items-center gap-3 border-b border-line/60 py-[11px] last:border-0 ${fresh.has(e.id) ? 'arrive -mx-2.5 rounded-xl px-2.5' : ''}`} data-testid={`event-${e.id}`}>
                       <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${tint}`}><Icon name={icon} size={18} /></div>
                       <div className="min-w-0 flex-1">
                         <div className="text-[13.5px] font-bold">{e.title}</div>

@@ -65,7 +65,7 @@ export default function Reviews() {
                   <td><Stars n={r.rating} /></td>
                   <td className="max-w-[340px]">
                     <div className="line-clamp-2">{r.comment || <span className="text-muted">Stars only</span>}</div>
-                    {r.tags.length > 0 && <div className="mt-1 flex flex-wrap gap-1">{r.tags.map((t) => <Chip key={t} className="bg-slate-100 text-slate-600">{TAGS[t] || t}</Chip>)}</div>}
+                    {r.tags.length > 0 && <div className="mt-1 flex flex-wrap gap-1">{r.tags.map((t) => <Chip key={t} className="bg-soft text-muted">{TAGS[t] || t}</Chip>)}</div>}
                   </td>
                   <td className="whitespace-nowrap text-muted">{timeAgo(r.created_at)}{r.edited ? ' · edited' : ''}</td>
                   <td className="text-right"><Button small variant="dangerOutline" icon="delete" onClick={() => setDeleting(r)} data-testid={`review-delete-${r.id}`}>Delete</Button></td>

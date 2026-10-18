@@ -17,7 +17,7 @@ export function ToastProvider({ children }) {
       {children}
       <div className="pointer-events-none fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 flex-col items-center gap-2" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} role="status" className="flex animate-[toast-in_.25s_ease-out] items-center gap-2.5 rounded-[14px] bg-slate-800 px-4 py-3 text-[13.5px] font-semibold text-white shadow-xl">
+          <div key={t.id} role="status" className="flex animate-[toast-in_.25s_ease-out] items-center gap-2.5 rounded-[14px] bg-slate-800 px-4 py-3 text-[13.5px] font-semibold text-white shadow-xl dark:bg-slate-700 dark:ring-1 dark:ring-white/10">
             <Icon name={t.error ? 'error' : t.icon} className={t.error ? 'text-red-300' : 'text-sky-400'} />
             {t.text}
           </div>
