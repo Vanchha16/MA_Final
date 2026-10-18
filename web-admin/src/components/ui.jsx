@@ -9,7 +9,7 @@ export const Icon = ({ name, className = '', size = 20, title }) => (
 );
 
 export const Card = ({ className = '', children, ...rest }) => (
-  <div className={`bg-white rounded-card shadow-card ${className}`} {...rest}>{children}</div>
+  <div className={`bg-card rounded-card shadow-card ${className}`} {...rest}>{children}</div>
 );
 
 export const Chip = ({ className = 'bg-brand-tint text-brand', children }) => (
@@ -26,11 +26,11 @@ export const Spinner = ({ className = '' }) => (
 );
 
 const VARIANTS = {
-  primary: 'bg-brand text-white hover:bg-brand-dark',
-  ghost: 'bg-brand-tint text-brand hover:bg-sky-200',
+  primary: 'bg-brand text-brand-on hover:bg-brand-dark',
+  ghost: 'bg-brand-tint text-brand hover:bg-brand-tint/70',
   danger: 'bg-red-600 text-white hover:bg-red-700',
-  outline: 'border border-line text-ink bg-white hover:bg-slate-50',
-  dangerOutline: 'border border-red-300 text-red-600 bg-white hover:bg-red-50',
+  outline: 'border border-line text-ink bg-card hover:bg-soft',
+  dangerOutline: 'border border-red-300 text-red-600 bg-card hover:bg-red-50',
   success: 'bg-green-600 text-white hover:bg-green-700',
 };
 
@@ -89,7 +89,7 @@ export const PageTitle = ({ title, sub, children }) => (
 );
 
 export const SearchBox = ({ value, onChange, placeholder, className = 'w-[340px]' }) => (
-  <label className={`flex items-center gap-2 rounded-full bg-white px-4 py-2.5 shadow-card ${className}`}>
+  <label className={`flex items-center gap-2 rounded-full bg-card px-4 py-2.5 shadow-card ${className}`}>
     <Icon name="search" className="text-muted" />
     <input
       value={value}
@@ -110,7 +110,7 @@ export const FilterChips = ({ items, value, onChange }) => (
         type="button"
         onClick={() => onChange(key)}
         className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
-          value === key ? 'bg-brand text-white' : 'border border-line bg-white text-ink hover:bg-slate-50'
+          value === key ? 'bg-brand text-brand-on' : 'border border-line bg-card text-ink hover:bg-soft'
         }`}
       >
         {label}{count !== undefined && count !== null ? `  ${count}` : ''}
@@ -132,7 +132,7 @@ export function Drawer({ open, onClose, title, children, footer, width = 440 }) 
       <aside
         role="dialog"
         aria-label={title}
-        className={`absolute right-0 top-0 flex h-full flex-col bg-white shadow-drawer transition-transform duration-300 ease-out ${open ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`absolute right-0 top-0 flex h-full flex-col bg-card shadow-drawer transition-transform duration-300 ease-out ${open ? 'translate-x-0' : 'translate-x-full'}`}
         style={{ width }}
       >
         <div className="flex items-center gap-3 px-6 pb-3 pt-6">
@@ -174,7 +174,7 @@ export function Field({ label, error, textarea = false, className = '', ...rest 
       <span className="mb-1 block text-[12.5px] font-semibold text-muted">{label}</span>
       <Tag
         {...rest}
-        className={`w-full rounded-[14px] border bg-white px-3.5 py-2.5 text-[14px] outline-none transition-colors focus:border-brand ${
+        className={`w-full rounded-[14px] border bg-card px-3.5 py-2.5 text-[14px] outline-none transition-colors focus:border-brand ${
           error ? 'border-red-400' : 'border-line'
         } ${textarea ? 'min-h-[110px] resize-y' : ''}`}
       />

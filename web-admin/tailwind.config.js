@@ -1,19 +1,23 @@
 /** Anime World Shop colours (same as the app): sky blue brand, solid buttons. */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
       colors: {
-        brand: { DEFAULT: '#0284C7', dark: '#0369A1', light: '#0EA5E9', tint: '#E0F2FE' },
-        ink: '#0F172A',
-        muted: '#64748B',
-        line: '#E2E8F0',
-        page: '#F4F8FC',
+        // CSS variables (index.css) so the dark theme swaps them all at once
+        brand: { DEFAULT: 'rgb(var(--brand) / <alpha-value>)', dark: 'rgb(var(--brand-dark) / <alpha-value>)', light: '#0EA5E9', tint: 'rgb(var(--brand-tint) / <alpha-value>)', on: 'rgb(var(--brand-on) / <alpha-value>)' },
+        ink: 'rgb(var(--ink) / <alpha-value>)',
+        muted: 'rgb(var(--muted) / <alpha-value>)',
+        line: 'rgb(var(--line) / <alpha-value>)',
+        page: 'rgb(var(--page) / <alpha-value>)',
+        card: 'rgb(var(--card) / <alpha-value>)',
+        soft: 'rgb(var(--soft) / <alpha-value>)',
         coral: '#F43F5E',
         aqua: '#06B6D4',
       },
       fontFamily: { sans: ['Roboto', 'Arial', 'sans-serif'] },
-      boxShadow: { card: '0 6px 18px rgba(2,132,199,.07)', drawer: '-10px 0 30px rgba(15,23,42,.15)' },
+      boxShadow: { card: 'var(--shadow-card)', drawer: '-10px 0 30px rgba(2,6,23,.25)' },
       borderRadius: { card: '18px' },
     },
   },

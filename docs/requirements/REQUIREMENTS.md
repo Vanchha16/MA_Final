@@ -163,7 +163,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | FR-AD04 | The admin can **add, rename and delete categories**. | M |
 | FR-AD05 | The admin can **view customers** with their order count, total spent, addresses and orders, and **block or unblock** a customer. | M |
 | FR-AD06 | The admin can **read and answer contact messages**; the answer reaches the customer as a notification. | S |
-| FR-AD07 | The shop can be managed on a computer in a **React web admin** at `/dashboard`: the same dashboard as the app (revenue, 7-day chart, orders to handle with one-click steps, live activity with Reply / Restock, low stock with +5, refreshing every 20 seconds) and pages for orders, products with photos, categories, customers, messages, reviews and coupons. | C |
+| FR-AD07 | The shop can be managed on a computer in a **React web admin** at `/dashboard`: the same dashboard as the app (revenue, 7-day chart, orders to handle with one-click steps, live activity with Reply / Restock, low stock with +5, refreshing every 20 seconds) and pages for orders, products with photos, categories, customers, messages, reviews and coupons, with a Light / Dark / System theme switch. | C |
 | FR-AD08 | A server-rendered **admin panel** at `/admin` (Flask-Admin) offers the same dashboard and one-click actions, as a fallback that needs no JavaScript build. | C |
 | FR-AD09 | The admin can **manage promo codes** (add, edit, switch off, delete) and **remove reviews** (spam, rude words). | C |
 

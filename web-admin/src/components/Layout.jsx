@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { useStats } from '../stats';
+import { ThemeSwitch } from '../theme';
 import { Icon } from './ui';
 
 const LOGO = '/static/admin/logo.png';
@@ -21,7 +22,7 @@ export default function Layout() {
   ];
   return (
     <div className="flex min-h-screen">
-      <aside className="fixed inset-y-0 left-0 flex w-[240px] flex-col bg-white px-4 py-[22px] shadow-[2px_0_14px_rgba(15,23,42,.04)]">
+      <aside className="fixed inset-y-0 left-0 flex w-[240px] flex-col border-r border-line/60 bg-card px-4 py-[22px]">
         <div className="mx-1.5 mb-6 flex items-center gap-2.5">
           <img src={LOGO} alt="" className="h-[38px] w-[38px]" />
           <div>
@@ -37,7 +38,7 @@ export default function Layout() {
               end={to === '/'}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-xl px-3.5 py-[11px] text-[14px] transition-colors ${
-                  isActive ? 'bg-brand-tint font-bold text-brand' : 'font-medium text-slate-700 hover:bg-slate-50'
+                  isActive ? 'bg-brand-tint font-bold text-brand' : 'font-medium text-ink/80 hover:bg-soft'
                 }`
               }
             >
@@ -47,7 +48,8 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto flex items-center gap-2.5 rounded-card bg-white p-3.5 shadow-card">
+        <ThemeSwitch className="mb-3 mt-auto" />
+        <div className="flex items-center gap-2.5 rounded-card bg-card p-3.5 shadow-card">
           <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-tint font-extrabold text-brand">{user?.full_name?.[0] || 'A'}</div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-bold">{user?.full_name}</div>

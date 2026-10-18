@@ -102,8 +102,8 @@ export default function Customers() {
               <div className="mt-2 flex gap-2">{detail.is_active ? <Chip className="bg-green-100 text-green-700">Active</Chip> : <Chip className="bg-red-100 text-red-700">Blocked</Chip>}</div>
             </div>
             <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="rounded-2xl bg-slate-50 p-3"><div className="text-xl font-extrabold">{detail.order_count}</div><div className="text-muted">orders</div></div>
-              <div className="rounded-2xl bg-slate-50 p-3"><div className="text-xl font-extrabold">{money(detail.total_spent)}</div><div className="text-muted">spent</div></div>
+              <div className="rounded-2xl bg-soft p-3"><div className="text-xl font-extrabold">{detail.order_count}</div><div className="text-muted">orders</div></div>
+              <div className="rounded-2xl bg-soft p-3"><div className="text-xl font-extrabold">{money(detail.total_spent)}</div><div className="text-muted">spent</div></div>
             </div>
             {detail.addresses?.length > 0 && (
               <section>
