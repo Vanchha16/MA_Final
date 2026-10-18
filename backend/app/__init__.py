@@ -1,7 +1,7 @@
 import os
 
 import click
-from flask import Flask, send_from_directory
+from flask import Flask, redirect, send_from_directory
 
 from .config import Config
 from .errors import register_error_handlers
@@ -45,6 +45,11 @@ def create_app(config_class=Config):
 
     # The React web admin (web-admin/, built into app/static/web-admin). Any path under
     # /dashboard returns its index.html so the app's own pages (e.g. /dashboard/orders) work on reload.
+    @app.get("/")
+    def home():
+        # Opening the server address in a browser goes to the web admin
+        return redirect("/dashboard")
+
     @app.get("/dashboard")
     @app.get("/dashboard/<path:path>")
     def web_admin_app(path=""):

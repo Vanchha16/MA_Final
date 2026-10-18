@@ -66,3 +66,8 @@ def test_dashboard_serves_the_built_web_admin(app, client, tmp_path):
     assert client.get("/dashboard").data == b"<div id=root></div>"
     assert client.get("/dashboard/orders/12").data == b"<div id=root></div>"  # the app's own pages
     assert client.get("/dashboard/assets/app.js").data == b"console.log(1)"
+
+
+def test_the_server_address_opens_the_web_admin(client):
+    res = client.get("/")
+    assert res.status_code == 302 and res.headers["Location"] == "/dashboard"
