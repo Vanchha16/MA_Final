@@ -159,8 +159,9 @@ def seed_data():
 
     pw = bcrypt.generate_password_hash("demo123").decode()
     admin = User(full_name="Admin", email="admin@shop.com", password_hash=pw, role="admin")
+    staff = User(full_name="Shop Staff", email="staff@shop.com", password_hash=pw, role="staff")
     demo = User(full_name="Demo Customer", email="demo@shop.com", password_hash=pw, phone="012345678")
-    db.session.add_all([admin, demo])
+    db.session.add_all([admin, staff, demo])
     db.session.flush()
 
     first_products = Product.query.order_by(Product.id).limit(4).all()
@@ -168,7 +169,7 @@ def seed_data():
         db.session.add(Review(product=product, user=demo, rating=rating, comment="Great quality, fast delivery!"))
 
     db.session.commit()
-    print(f"Seeded {len(CATEGORIES)} categories, {len(SERIES)} series, {len(PRODUCTS)} products, 2 users.")
+    print(f"Seeded {len(CATEGORIES)} categories, {len(SERIES)} series, {len(PRODUCTS)} products, 3 users.")
     seed_demo_orders()
 
 

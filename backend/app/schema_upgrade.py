@@ -12,13 +12,14 @@ from .models import Notification, Order, Payment, Review, User
 NEW_COLUMNS = {
     Order.__table__: ("discount", "coupon_code", "delivery_method"),
     Notification.__table__: ("event", "order_id", "promo_code"),
-    User.__table__: ("notify_orders", "notify_offers", "notify_news", "token_version"),
+    User.__table__: ("notify_orders", "notify_offers", "notify_news", "token_version", "last_login_at"),
     Review.__table__: ("tags", "updated_at"),
     Payment.__table__: ("tran_id", "deeplink"),
 }
 
 # MySQL ENUM columns that got new values later (SQLite stores them as text)
 WIDER_ENUMS = {
+    User.__table__: ("role",),
     Order.__table__: ("payment_method",),
     Payment.__table__: ("provider",),
 }
@@ -50,7 +51,9 @@ def add_missing_columns():
                 if set(getattr(have[name]["type"], "enums", ())) >= set(column.type.enums):
                     continue
                 ddl = column.type.compile(dialect=db.engine.dialect)
-                db.session.execute(text(f"ALTER TABLE {table.name} MODIFY COLUMN {name} {ddl} NOT NULL"))
+                default = column.default.arg if column.default is not None and column.default.is_scalar else None
+                ddl += f" NOT NULL DEFAULT '{default}'" if isinstance(default, str) else " NOT NULL"
+                db.session.execute(text(f"ALTER TABLE {table.name} MODIFY COLUMN {name} {ddl}"))
                 added.append(f"{table.name}.{name} (new values)")
     db.session.commit()
     return added

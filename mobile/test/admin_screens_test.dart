@@ -6,6 +6,7 @@ import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/screens/admin/admin_more_screen.dart';
 import 'package:ecommerce_app/screens/admin/admin_orders_screen.dart';
 import 'package:ecommerce_app/screens/admin/admin_products_screen.dart';
+import 'package:ecommerce_app/screens/admin/admin_staff_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,14 +15,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fakes/admin_fake.dart';
 
-Future<FakeAdminService> _pump(WidgetTester tester, Widget Function(FakeAdminService) build) async {
+Future<FakeAdminService> _pump(WidgetTester tester, Widget Function(FakeAdminService) build, {String role = 'admin'}) async {
   SharedPreferences.setMockInitialValues({});
   tester.view.physicalSize = const Size(412, 1500) * 2;
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
   final s = FakeAdminService();
   await tester.pumpWidget(ChangeNotifierProvider(
-    create: (_) => AuthProvider()..updateUser(User(id: 1, fullName: 'Admin', email: 'admin@shop.com', role: 'admin')),
+    create: (_) => AuthProvider()..updateUser(role == 'admin' ? User(id: 1, fullName: 'Admin', email: 'admin@shop.com', role: 'admin') : User(id: 4, fullName: 'Shop Staff', email: 'staff@shop.com', role: 'staff')),
     child: MaterialApp(theme: AppTheme.light, home: MediaQuery(data: const MediaQueryData(size: Size(412, 1500), disableAnimations: true), child: Scaffold(body: build(s)))),
   ));
   await tester.pumpAndSettle();
@@ -189,5 +190,79 @@ void main() {
     await tester.tap(find.byKey(const Key('admin_more_messages')));
     await tester.pumpAndSettle();
     expect(find.byType(AdminMessagesScreen), findsOneWidget);
+  });
+
+  testWidgets('More: the owner sees Staff; a staff account does not, and cannot block customers', (tester) async {
+    await _pump(tester, (s) => AdminMoreScreen(service: s, onShop: () {}));
+    expect(find.byKey(const Key('admin_more_staff')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('admin_more_staff')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdminStaffScreen), findsOneWidget);
+  });
+
+  testWidgets('Staff role: no Staff row, and Customers has no Block button', (tester) async {
+    await _pump(tester, (s) => AdminMoreScreen(service: s, onShop: () {}), role: 'staff');
+    expect(find.byKey(const Key('admin_more_staff')), findsNothing);
+    expect(find.textContaining('/dashboard'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('admin_more_customers')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('admin_customer_2')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('admin_customer_block')), findsNothing);
+  });
+
+  testWidgets('Staff: add a staff member, then promote, reset the password and disable', (tester) async {
+    final s = await _pump(tester, (s) => AdminStaffScreen(service: s));
+    expect(find.text('You'), findsOneWidget);
+    await _chip(tester, 'admin_staff_filter_1');
+    expect(find.byKey(const Key('admin_staff_4')), findsNothing);
+    await _chip(tester, 'admin_staff_filter_0');
+
+    await tester.tap(find.byKey(const Key('admin_staff_new')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('admin_staff_name')), 'Sokha Chan');
+    await tester.enterText(find.byKey(const Key('admin_staff_email')), 'sokha@shop.com');
+    await tester.enterText(find.byKey(const Key('admin_staff_password')), 'short');
+    await tester.tap(find.byKey(const Key('admin_staff_save')));
+    await tester.pumpAndSettle();
+    expect(find.text('Password must be at least 8 characters'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('admin_staff_password')), 'welcome123');
+    await tester.tap(find.byKey(const Key('admin_staff_save')));
+    await tester.pumpAndSettle();
+    expect(find.text('Sokha Chan'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('admin_staff_4')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('admin_staff_role_admin')));
+    await tester.tap(find.byKey(const Key('admin_staff_reset')));
+    await tester.pump();
+    await tester.enterText(find.byKey(const Key('admin_staff_password')), 'newpass123');
+    await tester.tap(find.byKey(const Key('admin_staff_save')));
+    await tester.pumpAndSettle();
+    expect(s.staffChanges.last.$1, 4);
+    expect(s.staffChanges.last.$2, {'full_name': 'Shop Staff', 'phone': '012345678', 'role': 'admin', 'password': 'newpass123'});
+
+    await tester.tap(find.byKey(const Key('admin_staff_4')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('admin_staff_disable')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('admin_staff_disable_confirm')));
+    await tester.pumpAndSettle();
+    expect(s.staffChanges.last.$1, 4);
+    expect(s.staffChanges.last.$2, {'is_active': false});
+    expect(find.byKey(const Key('admin_staff_enable')), findsOneWidget);
+  });
+
+  testWidgets('Staff: your own page has no Disable and the role is locked', (tester) async {
+    final s = await _pump(tester, (s) => AdminStaffScreen(service: s));
+    await tester.tap(find.byKey(const Key('admin_staff_1')));
+    await tester.pumpAndSettle();
+    expect(find.text("You can't change your own role."), findsOneWidget);
+    expect(find.byKey(const Key('admin_staff_disable')), findsNothing);
+    await tester.tap(find.byKey(const Key('admin_staff_role_staff')));
+    await tester.tap(find.byKey(const Key('admin_staff_save')));
+    await tester.pumpAndSettle();
+    expect(s.staffChanges.last.$1, 1);
+    expect(s.staffChanges.last.$2, {'full_name': 'Admin', 'phone': null});
   });
 }

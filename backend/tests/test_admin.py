@@ -43,7 +43,7 @@ def _order(user, product, status="pending", payment="cod", paid="unpaid", qty=2)
 def test_customers_and_guests_cannot_use_the_admin_api(client, user, admin):
     assert client.get("/api/admin/stats").status_code == 401
     res = client.get("/api/admin/stats", headers=_h(client, "demo@shop.com", "demo123"))
-    assert res.status_code == 403 and res.get_json()["message"] == "Admins only"
+    assert res.status_code == 403 and res.get_json()["message"] == "Shop staff only"
     assert client.get("/api/admin/stats", headers=_h(client)).status_code == 200
 
 

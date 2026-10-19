@@ -26,8 +26,11 @@ class User(UserMixin, TimestampMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(20))
     avatar_url = db.Column(db.String(255))
-    role = db.Column(db.Enum("customer", "admin", name="user_role"), nullable=False, default="customer")
+    # admin = the shop owner (everything); staff = runs the shop but cannot manage staff,
+    # promo codes or block customers
+    role = db.Column(db.Enum("customer", "staff", "admin", name="user_role"), nullable=False, default="customer")
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    last_login_at = db.Column(db.DateTime)
     # Goes up when the password changes; older login tokens stop working
     token_version = db.Column(db.Integer, nullable=False, default=0)
     updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)

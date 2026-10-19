@@ -70,6 +70,8 @@ def login():
     if not user.is_active:
         return error("This account has been disabled", 403)
 
+    user.last_login_at = utcnow()
+    db.session.commit()
     return success({"token": token_for(user), "user": user.to_dict()}, "Logged in successfully")
 
 

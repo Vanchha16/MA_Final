@@ -18,7 +18,8 @@ The Word copies (`.docx`) are made from these Markdown files with `python make_d
 |---|---|---|
 | **User (not signed in)** | Primary | Anyone who opens the app without being logged in. Can only register, log in or reset a password. |
 | **Customer** | Primary | A registered shopper. A specialisation of User: everything a User can do, plus shopping. |
-| **Admin** | Primary | The shop owner or staff. A specialisation of User. Uses the admin tabs of the app, the React web admin at `/dashboard` or the panel at `/admin`. |
+| **Staff** | Primary | Shop staff. A specialisation of User. Uses the admin tabs of the app or the React web admin at `/dashboard` for the day-to-day work (orders, products, categories, messages, reviews, viewing customers). |
+| **Admin** | Primary | The shop owner. A specialisation of Staff: everything staff do, plus managing staff accounts, promo codes and blocking customers. Also uses the panel at `/admin`. |
 | **Bakong KHQR** | Secondary (external system) | Cambodia's national QR payment network. Receives KHQR payment requests and reports when they are paid. |
 | **ABA PayWay** | Secondary (external system) | ABA Bank's payment gateway. Creates a payment (KHQR + ABA Mobile link), answers status checks and posts the result back. |
 | **Email service** | Secondary (external system) | Sends the 6-digit password reset codes. |
@@ -86,6 +87,7 @@ The Word copies (`.docx`) are made from these Markdown files with `python make_d
 | UC-A5 | Manage categories | Admin | FR-AD04 | Admin Categories |
 | UC-A6 | View and block / unblock customers | Admin | FR-AD05 | Admin Customers, Customer Details |
 | UC-A7 | Reply to a message | Admin | FR-AD06 | Admin Messages |
+| UC-A8 | Manage staff accounts | Admin | FR-AD10, FR-AD11 | Admin Staff, Add / Edit Staff Member |
 
 ---
 
@@ -389,3 +391,24 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 4. The message moves to the Answered list.
 
 **Postcondition** The customer sees the answer in Notifications and on the Contact screen.
+
+### UC-A8 Manage staff accounts
+
+| | |
+|---|---|
+| **Actor** | Admin (shop owner) |
+| **Precondition** | Logged in with an admin account. Staff accounts do not see Staff. |
+
+**Main flow**
+1. The admin opens Staff (More > Staff in the app, or Staff in the web admin menu). Admins are listed first, then staff, with role, status and last login (`GET /api/admin/staff`).
+2. The admin taps **Add staff**, enters name, email, optional phone, role (Staff or Admin) and a starting password, and saves (`POST /api/admin/staff`).
+3. The system checks the fields and that the email is not registered, creates the account and lists it.
+4. The admin gives the new person their email and password; they log in and get the admin area with only the staff tools.
+5. Later the admin opens a person to change their name, phone or role, or taps **Reset password** to give them a new one (`PUT /api/admin/staff/<id>`). A new role or password signs them out on every device.
+
+**Alternative flows**
+- A1 (step 3): A field is wrong or the email is taken. `422`; the form shows what to fix.
+- A2 (step 5): The admin taps **Disable** and confirms. The account is signed out at once and cannot log in until the admin taps **Enable**.
+- A3 (step 5): The admin tries to change their own role or disable themselves, or to demote / disable the last active admin. `409`; nothing changes (the app already hides these buttons on your own account).
+
+**Postcondition** The shop team matches who is allowed to work on the shop.
