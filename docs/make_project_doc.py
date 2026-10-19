@@ -77,6 +77,8 @@ subtitle: "E-Commerce Mobile Application - Complete Project Documentation"
 **Date:** {today}\\
 **Source code:** <{REPO}>
 
+**Lecturer:** Ly Lay
+
 **Team members**
 
 | No. | Name |
@@ -86,8 +88,6 @@ subtitle: "E-Commerce Mobile Application - Complete Project Documentation"
 | 3 | Khounn Eangleng |
 | 4 | Sour Sombo |
 | 5 | Rem Sophannary |
-
-**Lecturer:** Ly Lay
 {PAGE_BREAK}
 ## Contents
 
