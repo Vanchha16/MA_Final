@@ -87,7 +87,7 @@ subtitle: "E-Commerce Mobile Application - Complete Project Documentation"
 | 4 | Sour Sombo |
 | 5 | Rem Sophannary |
 
-**Lecturer:** ______________________
+**Lecturer:** Ly Lay
 {PAGE_BREAK}
 ## Contents
 
