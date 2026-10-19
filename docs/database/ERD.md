@@ -6,6 +6,18 @@ image [`erd.png`](erd.png) or [`erd.pdf`](erd.pdf). The same diagram is below
 
 ![ERD](erd.png)
 
+## Conceptual ER diagram (Chen notation)
+
+The shop's data at idea level: entities (teal rectangles), relationships (dark-blue diamonds,
+read as verbs, e.g. Customer *Places* Order), main attributes (red ovals) and the cardinality on
+each line (one, zero or one, one or more, zero or more). Many-to-many relationships become their
+own tables in the database: *Contains* -> `order_items`, *Holds* -> `cart_items`,
+*Saves* -> `favorites`, *Reviews* -> `reviews`.
+Files: [`conceptual-erd.png`](conceptual-erd.png), [`conceptual-erd.pdf`](conceptual-erd.pdf),
+[`conceptual-erd.svg`](conceptual-erd.svg) (redraw: `python docs/database/make_conceptual_erd.py`).
+
+![Conceptual ER diagram](conceptual-erd.png)
+
 ## Detailed ER diagram (every column and foreign key)
 
 Drawn from the real MySQL database in the style of Navicat's ER view: each table with every
