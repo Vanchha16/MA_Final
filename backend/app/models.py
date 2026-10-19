@@ -488,3 +488,9 @@ class Coupon(TimestampMixin, db.Model):
         else:
             off = float(self.value)
         return round(min(off, subtotal), 2)
+
+
+# WAMP's MySQL makes MyISAM tables by default, and MyISAM silently drops every
+# foreign key. InnoDB keeps them (and the relationships show in the ERD tools).
+for _table in db.metadata.tables.values():
+    _table.dialect_kwargs["mysql_engine"] = "InnoDB"

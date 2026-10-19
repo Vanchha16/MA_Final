@@ -69,11 +69,13 @@ def create_app(config_class=Config):
         """Create all tables from the models (alternative to running schema.sql)."""
         from . import models  # noqa: F401
 
-        from .schema_upgrade import add_missing_columns
+        from .schema_upgrade import add_missing_columns, use_innodb_and_foreign_keys
 
         db.create_all()
         added = add_missing_columns()
         print("Database tables created." + (f" Added columns: {', '.join(added)}" if added else ""))
+        if fixed := use_innodb_and_foreign_keys():
+            print("Relationships (InnoDB + foreign keys):\n  " + "\n  ".join(fixed))
 
     @app.cli.command("seed")
     def seed():

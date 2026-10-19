@@ -41,6 +41,10 @@ mysql -u root -p -e "CREATE DATABASE ecommerce_db CHARACTER SET utf8mb4"
 flask --app run init-db
 ```
 
+All tables are InnoDB so the foreign keys (the relationships in the ERD) are kept. WAMP's MySQL makes
+MyISAM tables by default, which silently drops every foreign key; if an older database shows no
+relationships, run `flask --app run init-db` once: it converts the tables to InnoDB and adds the missing keys.
+
 Load sample data (8 categories, 10 anime series, 35 products, demo users):
 
 ```bash
