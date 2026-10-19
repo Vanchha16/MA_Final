@@ -303,9 +303,9 @@ class _Card extends StatelessWidget {
 class _IconTile extends StatelessWidget {
   final IconData icon;
   final Color color;
-  final double size;
+  static const size = 44.0;
 
-  const _IconTile(this.icon, {required this.color, this.size = 44});
+  const _IconTile(this.icon, {required this.color});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -452,16 +452,16 @@ class _PaymentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final (icon, color, detail) = switch (method) {
-      PaymentMethod.khqr => (Icons.qr_code_2_rounded, AppTheme.danger, 'Scan with ABA, ACLEDA, Wing or any bank app'),
-      PaymentMethod.aba => (Icons.account_balance_rounded, AppTheme.abaNavy, 'Pay in ABA Mobile, or scan its KHQR'),
-      PaymentMethod.cod => (Icons.payments_rounded, AppTheme.success, pickup ? 'Pay at the shop when you pick it up' : 'Pay the rider when your order arrives'),
+    final detail = switch (method) {
+      PaymentMethod.khqr => 'Scan with ABA, ACLEDA, Wing or any bank app',
+      PaymentMethod.aba => 'Pay in ABA Mobile, or scan its KHQR',
+      PaymentMethod.cod => pickup ? 'Pay at the shop when you pick it up' : 'Pay the rider when your order arrives',
     };
     return _Card(
       selected: selected,
       onTap: onTap,
       child: Row(children: [
-        _IconTile(icon, color: color, size: 40),
+        _PaymentLogo(method),
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -472,6 +472,33 @@ class _PaymentCard extends StatelessWidget {
         const SizedBox(width: 8),
         _Radio(selected),
       ]),
+    );
+  }
+}
+
+/// The payment choice's logo (picked option A): the Bakong mark on Bakong red for
+/// KHQR, ABA's round logo for ABA PayWay, a cash icon for cash on delivery.
+class _PaymentLogo extends StatelessWidget {
+  final PaymentMethod method;
+
+  const _PaymentLogo(this.method);
+
+  static const _size = 44.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final (Color background, Widget child) = switch (method) {
+      PaymentMethod.khqr => (AppTheme.bakongRed, Image.asset('assets/payment/bakong.png', key: const Key('pay_logo_khqr'), width: 35, semanticLabel: 'Bakong KHQR')),
+      PaymentMethod.aba => (Colors.transparent, Image.asset('assets/payment/aba.png', key: const Key('pay_logo_aba'), width: _size, height: _size, semanticLabel: 'ABA Bank')),
+      PaymentMethod.cod => (AppTheme.success.withValues(alpha: 0.13), const Icon(Icons.payments_rounded, color: AppTheme.success, size: 24)),
+    };
+    return Container(
+      width: _size,
+      height: _size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(13)),
+      clipBehavior: Clip.antiAlias,
+      child: child,
     );
   }
 }
