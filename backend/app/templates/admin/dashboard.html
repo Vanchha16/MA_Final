@@ -83,7 +83,7 @@
             <td>{{ o.user.full_name }}</td>
             <td>{% if photo %}<img src="{{ photo.photo_url }}" class="thumb" style="width:32px;height:32px" alt="">{% endif %}</td>
             <td class="font-weight-bold">${{ '%.2f' % o.total }}</td>
-            <td class="muted">{{ 'KHQR' if o.payment_method == 'khqr' else 'Cash' }}{% if o.payment_status == 'paid' %} paid{% endif %}</td>
+            <td class="muted">{{ pay_names.get(o.payment_method, 'Cash') }}{% if o.payment_status == 'paid' %} paid{% endif %}</td>
             <td><span class="chip {{ status_tint[o.status] }}">{{ o.status|capitalize }}</span></td>
             <td class="text-right">
               {% if step %}
@@ -91,7 +91,7 @@
                 {{ quick.csrf_token }}<input type="hidden" name="status" value="{{ step }}">
                 <button class="btn btn-sm btn-primary py-0 px-3">{{ step_label[step] }}</button>
               </form>
-              {% else %}<span class="chip t-amber">Waiting for KHQR</span>{% endif %}
+              {% else %}<span class="chip t-amber">Waiting for {{ pay_names.get(o.payment_method, 'KHQR') }}</span>{% endif %}
             </td>
           </tr>
         {% endfor %}

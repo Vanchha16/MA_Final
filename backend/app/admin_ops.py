@@ -25,9 +25,12 @@ ORDER_STEPS = {
 }
 
 
+PAY_NAMES = {"khqr": "KHQR", "aba": "ABA PayWay"}
+
+
 def next_statuses(order):
-    """Statuses the shop can move this order to. An unpaid KHQR order waits for its payment."""
-    if order.status == "pending" and order.payment_method == "khqr" and order.payment_status != "paid":
+    """Statuses the shop can move this order to. An unpaid online order waits for its payment."""
+    if order.status == "pending" and order.payment_method != "cod" and order.payment_status != "paid":
         return ("cancelled",)
     return ORDER_STEPS[order.status]
 
@@ -147,8 +150,8 @@ def activity(limit=20):
         paid = next((p for p in o.payments if p.status == "paid"), None)
         if paid is not None:
             events.append({**base, "id": f"paid-{o.id}", "kind": "paid", "at": paid.paid_at, "title": "Payment received",
-                           "message": f"{name} paid {total} by KHQR", "action": "ship" if o.status == "confirmed" else None})
-        pay = "cash" if o.payment_method == "cod" else "KHQR"
+                           "message": f"{name} paid {total} by {PAY_NAMES.get(o.payment_method, 'KHQR')}", "action": "ship" if o.status == "confirmed" else None})
+        pay = "cash" if o.payment_method == "cod" else PAY_NAMES.get(o.payment_method, "KHQR")
         events.append({**base, "id": f"order-{o.id}", "kind": "order", "at": o.created_at, "title": f"New order {o.order_number}",
                        "message": f"{name} · {total} · {pay}",
                        "action": "confirm" if o.status == "pending" and o.payment_method == "cod" else

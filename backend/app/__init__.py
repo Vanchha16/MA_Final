@@ -128,7 +128,7 @@ def create_app(config_class=Config):
                 order.status = "shipped"
                 notify.order_event(order, "ready" if order.delivery_method == "pickup" else "shipped")
             else:
-                continue  # unpaid KHQR orders wait for the payment
+                continue  # unpaid online orders wait for the payment
             moved += 1
         db.session.commit()
         print(f"Moved {moved} order(s) one step on.")

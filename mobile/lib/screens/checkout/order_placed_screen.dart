@@ -27,7 +27,7 @@ class OrderPlacedScreen extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    final khqr = order.paymentMethod == PaymentMethod.khqr;
+    final khqr = order.paymentMethod.online;
     final pickup = order.deliveryMethod == DeliveryMethod.pickup;
 
     Widget check = Container(
@@ -103,7 +103,7 @@ class OrderPlacedScreen extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 khqr
-                    ? 'One more step: pay with KHQR to confirm it.'
+                    ? 'One more step: pay with ${order.paymentMethod.shortName} to confirm it.'
                     : 'Thank you! We are getting it ready.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: scheme.onSurfaceVariant),
@@ -169,7 +169,11 @@ class OrderPlacedScreen extends StatelessWidget {
                         'Tomorrow, 9:00 - 18:00',
                       ),
                     row(
-                      khqr ? Icons.qr_code_2_rounded : Icons.payments_outlined,
+                      switch (order.paymentMethod) {
+                        PaymentMethod.khqr => Icons.qr_code_2_rounded,
+                        PaymentMethod.aba => Icons.account_balance_rounded,
+                        PaymentMethod.cod => Icons.payments_outlined,
+                      },
                       'Payment',
                       order.paymentMethod.label,
                     ),
@@ -235,8 +239,8 @@ class OrderPlacedScreen extends StatelessWidget {
               if (khqr) ...[
                 PillButton(
                   key: const Key('placed_pay'),
-                  label: 'Pay ${formatPrice(order.total)} with KHQR',
-                  leadingIcon: Icons.qr_code_2_rounded,
+                  label: 'Pay ${formatPrice(order.total)} with ${order.paymentMethod.shortName}',
+                  leadingIcon: order.paymentMethod == PaymentMethod.aba ? Icons.account_balance_rounded : Icons.qr_code_2_rounded,
                   onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => KhqrPaymentScreen(order: order))),
                 ),
                 const SizedBox(height: 12),

@@ -6,7 +6,7 @@ Safe to run any number of times (MySQL or SQLite).
 from sqlalchemy import inspect, text
 
 from .extensions import db
-from .models import Notification, Order, Review, User
+from .models import Notification, Order, Payment, Review, User
 
 # table -> columns added after the first release
 NEW_COLUMNS = {
@@ -14,6 +14,13 @@ NEW_COLUMNS = {
     Notification.__table__: ("event", "order_id", "promo_code"),
     User.__table__: ("notify_orders", "notify_offers", "notify_news", "token_version"),
     Review.__table__: ("tags", "updated_at"),
+    Payment.__table__: ("tran_id", "deeplink"),
+}
+
+# MySQL ENUM columns that got new values later (SQLite stores them as text)
+WIDER_ENUMS = {
+    Order.__table__: ("payment_method",),
+    Payment.__table__: ("provider",),
 }
 
 
@@ -35,5 +42,15 @@ def add_missing_columns():
                 sql += f" NOT NULL DEFAULT '{default}'" if isinstance(default, str) else f" NOT NULL DEFAULT {default}"
             db.session.execute(text(sql))
             added.append(f"{table.name}.{name}")
+    if db.engine.dialect.name == "mysql":
+        for table, names in WIDER_ENUMS.items():
+            have = {c["name"]: c for c in inspector.get_columns(table.name)}
+            for name in names:
+                column = table.c[name]
+                if set(getattr(have[name]["type"], "enums", ())) >= set(column.type.enums):
+                    continue
+                ddl = column.type.compile(dialect=db.engine.dialect)
+                db.session.execute(text(f"ALTER TABLE {table.name} MODIFY COLUMN {name} {ddl} NOT NULL"))
+                added.append(f"{table.name}.{name} (new values)")
     db.session.commit()
     return added

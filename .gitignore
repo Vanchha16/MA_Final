@@ -16,3 +16,7 @@ Thumbs.db
 docs/figma/*.mp4
 # Full-size ChatGPT banner originals (the app uses the small WebP copies)
 docs/banners/source/
+
+# Payment credentials and downloaded skill packages (never commit)
+credential_info.txt
+*.skill

@@ -130,7 +130,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       context.read<ShopProvider>().setCartCount(0);
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => order.paymentMethod == PaymentMethod.khqr ? KhqrPaymentScreen(order: order, fromCheckout: true, service: widget.paymentService) : OrderPlacedScreen(order: order),
+          builder: (_) => order.paymentMethod.online ? KhqrPaymentScreen(order: order, fromCheckout: true, service: widget.paymentService) : OrderPlacedScreen(order: order),
         ),
         result: true,
       );
@@ -452,20 +452,21 @@ class _PaymentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final khqr = method == PaymentMethod.khqr;
+    final (icon, color, detail) = switch (method) {
+      PaymentMethod.khqr => (Icons.qr_code_2_rounded, AppTheme.danger, 'Scan with ABA, ACLEDA, Wing or any bank app'),
+      PaymentMethod.aba => (Icons.account_balance_rounded, AppTheme.abaNavy, 'Pay in ABA Mobile, or scan its KHQR'),
+      PaymentMethod.cod => (Icons.payments_rounded, AppTheme.success, pickup ? 'Pay at the shop when you pick it up' : 'Pay the rider when your order arrives'),
+    };
     return _Card(
       selected: selected,
       onTap: onTap,
       child: Row(children: [
-        _IconTile(khqr ? Icons.qr_code_2_rounded : Icons.payments_rounded, color: khqr ? AppTheme.danger : AppTheme.success, size: 40),
+        _IconTile(icon, color: color, size: 40),
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(method.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            Text(
-              khqr ? 'Scan with ABA, ACLEDA, Wing or any bank app' : (pickup ? 'Pay at the shop when you pick it up' : 'Pay the rider when your order arrives'),
-              style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
-            ),
+            Text(detail, style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant)),
           ]),
         ),
         const SizedBox(width: 8),

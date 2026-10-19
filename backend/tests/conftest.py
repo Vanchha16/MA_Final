@@ -14,6 +14,8 @@ class TestConfig(Config):
     RATELIMIT_ENABLED = False  # test_validation.py turns the limits on where it tests them
     BAKONG_TOKEN = ""  # never the real token from .env
     BAKONG_ACCOUNT_ID = "test_shop@devb"
+    PAYWAY_MERCHANT_ID = "ec000000"
+    PAYWAY_API_KEY = "test-key"
 
 
 @pytest.fixture()
@@ -28,11 +30,16 @@ def app():
 
 @pytest.fixture(autouse=True)
 def bank(monkeypatch):
-    """Stands in for the Bakong API: a payment is paid once its md5 is in the set."""
-    from app import payments
+    """Stands in for Bakong and ABA PayWay: a payment is paid once its md5 is in the set,
+    and a PayWay purchase gets a made-up QR without calling ABA."""
+    from app import payments, payway
 
     paid = set()
-    monkeypatch.setattr(payments, "_paid_on_bakong", lambda payment: payment.md5 in paid)
+    monkeypatch.setattr(payments, "_is_paid", lambda payment: payment.md5 in paid)
+    monkeypatch.setattr(payway, "purchase", lambda order, tran_id, callback: {
+        "qr": f"00020101021230510016abaakhppxxx@abaa{tran_id}6304ABCD",
+        "deeplink": f"abamobilebank://ababank.com?type=payway&qrcode={tran_id}",
+    })
     return paid
 
 

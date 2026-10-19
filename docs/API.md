@@ -23,6 +23,7 @@ Base URL: `http://localhost:5000` (Android emulator: `http://10.0.2.2:5000`). Lo
 | 409 | Not possible right now, e.g. sold out or a wrong order step |
 | 422 | Some fields are wrong; `errors` says which |
 | 429 | Too many tries; wait and try again |
+| 502 | The payment provider refused or could not be reached |
 | 500 | Unexpected server error |
 
 ## Endpoints
@@ -544,7 +545,7 @@ Errors: 401
 
 My orders, newest first, with their items.
 
-Unpaid KHQR orders past their 15 minutes are cancelled first (stock goes back).
+Unpaid KHQR / ABA PayWay orders past their 15 minutes are cancelled first (stock goes back).
 
 Response 200: `data` = list of `OrderDetail`
 
@@ -556,7 +557,7 @@ Place an order from the cart.
 
 Lowers stock and empties the cart. Store pickup is free and needs no address. 409 if an item sold out meanwhile.
 
-Body (application/json): {address_id: integer, delivery_method: `standard` \| `pickup`, payment_method: `khqr` \| `cod`, coupon: string, note: string}
+Body (application/json): {address_id: integer, delivery_method: `standard` \| `pickup`, payment_method: `khqr` \| `aba` \| `cod`, coupon: string, note: string}
 
 ```json
 {
@@ -594,20 +595,22 @@ Response 200: `data` = `OrderDetail`
 
 Errors: 401, 404, 409
 
-### KHQR payment
+### Online payment
 
-Bakong KHQR online payment
+Online payment: Bakong KHQR and ABA PayWay
 
 | Method | Path | What it does | Login |
 |---|---|---|---|
-| `POST` | `/api/orders/{order_id}/khqr` | Make (once) the order's KHQR code | yes |
+| `POST` | `/api/orders/{order_id}/khqr` | Make (once) the order's Bakong KHQR code | yes |
+| `POST` | `/api/orders/{order_id}/payway` | Make (once) the order's ABA PayWay payment | yes |
 | `GET` | `/api/orders/{order_id}/payment` | Payment status (polled by the app) | yes |
+| `POST` | `/api/payments/payway/callback` | ABA PayWay pushback (called by PayWay, not the app) | - |
 
 #### `POST /api/orders/{order_id}/khqr`
 
-Make (once) the order's KHQR code.
+Make (once) the order's Bakong KHQR code.
 
-Calling it again returns the same code. It is valid for 15 minutes.
+For payment_method khqr. Calling it again returns the same code. It is valid for 15 minutes.
 
 Parameters: `order_id` (path, required).
 
@@ -615,17 +618,39 @@ Response 200: `data` = `PaymentState`
 
 Errors: 401, 404, 409
 
+#### `POST /api/orders/{order_id}/payway`
+
+Make (once) the order's ABA PayWay payment.
+
+For payment_method aba. Returns PayWay's KHQR and the ABA Mobile deeplink; calling it again returns the same ones. Valid for 15 minutes.
+
+Parameters: `order_id` (path, required).
+
+Response 200: `data` = `PaymentState`
+
+Errors: 401, 404, 409, 502
+
 #### `GET /api/orders/{order_id}/payment`
 
 Payment status (polled by the app).
 
-Checks Bakong once: pending, paid or expired. Expired cancels the order.
+Asks Bakong or PayWay once: pending, paid or expired. Expired cancels the order.
 
 Parameters: `order_id` (path, required).
 
 Response 200: `data` = `PaymentState`
 
 Errors: 401, 404
+
+#### `POST /api/payments/payway/callback`
+
+ABA PayWay pushback (called by PayWay, not the app).
+
+Only a hint: the payment counts once PayWay's own check-transaction says APPROVED.
+
+Body (application/x-www-form-urlencoded): {tran_id: string, status: string}
+
+Response 200: Plain text OK
 
 ### Profile
 
@@ -1254,7 +1279,7 @@ Errors: 401, 403, 404
 
 ### Order
 
-{id: integer, order_number: string, status: `pending` \| `confirmed` \| `shipped` \| `delivered` \| `cancelled`, payment_method: `cod` \| `khqr`, payment_status: `unpaid` \| `paid` \| `failed` \| `refunded`, subtotal: number, shipping_fee: number, discount: number, coupon_code: string or null, total: number, delivery_method: `standard` \| `pickup`, item_count: integer, created_at: string}
+{id: integer, order_number: string, status: `pending` \| `confirmed` \| `shipped` \| `delivered` \| `cancelled`, payment_method: `cod` \| `khqr` \| `aba`, payment_status: `unpaid` \| `paid` \| `failed` \| `refunded`, subtotal: number, shipping_fee: number, discount: number, coupon_code: string or null, total: number, delivery_method: `standard` \| `pickup`, item_count: integer, created_at: string}
 
 ### OrderDetail
 
@@ -1262,7 +1287,7 @@ Errors: 401, 403, 404
 
 ### Payment
 
-{qr: string, amount: number, currency: string, status: `pending` \| `paid` \| `expired`, expires_at: string, paid_at: string or null}
+{provider: `bakong` \| `payway`, qr: string, deeplink: string or null, amount: number, currency: string, status: `pending` \| `paid` \| `expired`, expires_at: string, paid_at: string or null}
 
 ### PaymentState
 
