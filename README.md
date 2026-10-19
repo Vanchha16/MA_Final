@@ -10,6 +10,14 @@ Final project (SU25 - Mobile Application). Flutter mobile app + Flask REST API +
 | Backend | Python Flask, SQLAlchemy, Flask-JWT-Extended, bcrypt, Flask-Admin (admin panel), Swagger UI (API docs) |
 | Database | MySQL 8.0 |
 
+## Team
+
+1. Loum Vanchha
+2. Hong Dalin
+3. Khounn Eangleng
+4. Sour Sombo
+5. Rem Sophannary
+
 ## Project structure
 
 ```
