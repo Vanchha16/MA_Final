@@ -187,3 +187,5 @@ the team drive, put it in `backend/uploads/`, then run `flask --app run import-i
 See [docs/product-photos.md](docs/product-photos.md) for the folder list and the source of every photo.
 
 Product images belong to their respective owners and are used for educational purposes only.
+The payment logos in `mobile/assets/payment/` are the official Bakong (KHQR) mark from the National Bank of
+Cambodia's KHQR asset pack (bakong.nbc.gov.kh) and ABA Bank's logo (ababank.com), used only to label those payment methods.

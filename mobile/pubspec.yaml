@@ -93,6 +93,8 @@ flutter:
   assets:
     - assets/logo_centered.png
     - assets/banner/
+    # Official logos: Bakong (bakong.nbc.gov.kh) and ABA (ababank.com), for the payment choices
+    - assets/payment/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
