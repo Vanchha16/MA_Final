@@ -176,9 +176,9 @@ Example: `/api/products?category_id=6&series_id=1&max_price=50&sort=price_asc`
 
 ## Product photos
 
-Photos are not in git (`backend/uploads/` is ignored). Get the shared `uploads/products` folder from
-the team drive, put it in `backend/uploads/`, then run `flask --app run import-images`.
-See [docs/product-photos.md](docs/product-photos.md) for the folder list and the source of every photo.
+Photos are not on `main` (`backend/uploads/` is ignored). Get the `backend/uploads` folder from the
+`store-info` branch (or the team drive), put it in `backend/uploads/`, then run `flask --app run import-images`.
+The `store-info` branch also has `docs/product-photos.md` with the folder list and the source of every photo.
 
 Product images belong to their respective owners and are used for educational purposes only.
 The payment logos in `mobile/assets/payment/` are the official Bakong (KHQR) mark from the National Bank of

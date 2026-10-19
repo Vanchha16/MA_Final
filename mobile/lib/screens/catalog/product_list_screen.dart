@@ -10,8 +10,8 @@ import '../../widgets/product_feed.dart';
 import '../../widgets/sort_header.dart';
 import '../home/widgets/filter_sheet.dart';
 
-/// Products of one category, series, search or "All products" (BUILD_PROMPT
-/// screen 11, Figma: 10 Product List): grid or list view, sort, filters on
+/// Products of one category, series, search or "All products" (screen 11,
+/// Figma: 10 Product List): grid or list view, sort, filters on
 /// top of the starting query shown as removable chips, and paging.
 class ProductListScreen extends StatefulWidget {
   final String title;
