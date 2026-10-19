@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -79,12 +78,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     // Clear the auth screens (and any guest shell underneath) and open the app
     final admin = context.read<AuthProvider>().user?.isAdmin ?? false;
     Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => admin ? const AdminShell() : const MainShell()), (_) => false);
-  }
-
-  void _fillDemo() {
-    _email.text = 'demo@shop.com';
-    _password.text = 'demo123';
-    _clearServerErrors();
   }
 
   @override
@@ -212,15 +205,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 ),
                               ],
                             ),
-                            // Only in debug builds: one-tap demo account for testing and the demo video
-                            if (kDebugMode)
-                              Center(
-                                child: TextButton.icon(
-                                  onPressed: _fillDemo,
-                                  icon: const Icon(Icons.bolt_outlined, size: 18),
-                                  label: const Text('Use demo account'),
-                                ),
-                              ),
                           ],
                         ),
                       ),

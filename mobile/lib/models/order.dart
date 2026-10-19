@@ -255,9 +255,6 @@ class KhqrPayment {
   final DateTime expiresAt;
   final DateTime? paidAt;
 
-  /// Demo mode: the app may simulate the payment.
-  final bool demo;
-
   const KhqrPayment({
     required this.qr,
     required this.amount,
@@ -265,7 +262,6 @@ class KhqrPayment {
     required this.status,
     required this.expiresAt,
     this.paidAt,
-    this.demo = false,
   });
 
   factory KhqrPayment.fromJson(Map<String, dynamic> json) => KhqrPayment(
@@ -275,6 +271,5 @@ class KhqrPayment {
         status: KhqrStatus.values.byName(json['status']),
         expiresAt: DateTime.parse(json['expires_at']),
         paidAt: json['paid_at'] == null ? null : DateTime.parse(json['paid_at']),
-        demo: json['demo'] ?? false,
       );
 }
