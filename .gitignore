@@ -4,6 +4,7 @@ backend/.env
 backend/uploads/
 # Kept on the store-info branch only
 backend/tests/
+web-admin/src/test/
 __pycache__/
 *.pyc
 
