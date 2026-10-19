@@ -8,6 +8,8 @@ subtitle: "E-Commerce Mobile Application - Complete Project Documentation"
 **Date:** 19 October 2026\
 **Source code:** <https://github.com/Vanchha16/MA_Final>
 
+**Lecturer:** Ly Lay
+
 **Team members**
 
 | No. | Name |
@@ -17,8 +19,6 @@ subtitle: "E-Commerce Mobile Application - Complete Project Documentation"
 | 3 | Khounn Eangleng |
 | 4 | Sour Sombo |
 | 5 | Rem Sophannary |
-
-**Lecturer:** Ly Lay
 
 ```{=openxml}
 <w:p><w:r><w:br w:type="page"/></w:r></w:p>
