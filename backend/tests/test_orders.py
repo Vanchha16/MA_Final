@@ -117,16 +117,20 @@ def _khqr_order(client, h, stock=5):
     return p, order
 
 
-def test_khqr_is_made_once_and_simulated_payment_confirms(client, user):
+def test_khqr_is_made_once_and_bakong_payment_confirms(client, user, bank):
+    from app.models import Payment
+
     h = _auth(client)
     _, order = _khqr_order(client, h)
     first = client.post(f"/api/orders/{order['id']}/khqr", headers=h).get_json()["data"]["payment"]
     again = client.post(f"/api/orders/{order['id']}/khqr", headers=h).get_json()["data"]["payment"]
     assert first["qr"] == again["qr"] and first["qr"].startswith("0002")
-    assert first["amount"] == 60 and first["status"] == "pending" and first["demo"] is True
+    assert first["amount"] == 60 and first["status"] == "pending" and "demo" not in first
+    assert Payment.query.one().provider == "bakong"
 
     assert client.get(f"/api/orders/{order['id']}/payment", headers=h).get_json()["data"]["payment"]["status"] == "pending"
-    data = client.post(f"/api/orders/{order['id']}/payment/simulate", headers=h).get_json()["data"]
+    bank.add(Payment.query.one().md5)  # the customer pays in their bank app
+    data = client.get(f"/api/orders/{order['id']}/payment", headers=h).get_json()["data"]
     assert data["payment"]["status"] == "paid" and data["payment"]["paid_at"]
     assert data["order"]["status"] == "confirmed" and data["order"]["payment_status"] == "paid"
 
@@ -145,11 +149,10 @@ def test_khqr_expiry_cancels_the_order_and_restocks(client, user):
     data = client.get(f"/api/orders/{order['id']}/payment", headers=h).get_json()["data"]
     assert data["payment"]["status"] == "expired" and data["order"]["status"] == "cancelled"
     assert db.session.get(Product, p.id).stock == 5
-    assert client.post(f"/api/orders/{order['id']}/payment/simulate", headers=h).status_code == 409
     assert client.post(f"/api/orders/{order['id']}/khqr", headers=h).status_code == 409
 
 
-def test_khqr_rules(client, user, app):
+def test_khqr_rules(client, user):
     h = _auth(client)
     p = _product()
     client.post("/api/cart", json={"product_id": p.id}, headers=h)
@@ -159,11 +162,36 @@ def test_khqr_rules(client, user, app):
 
     _, order = _khqr_order(client, h)
     client.post(f"/api/orders/{order['id']}/khqr", headers=h)
-    app.config["PAYMENT_PROVIDER"] = "bakong"
-    try:
-        assert client.post(f"/api/orders/{order['id']}/payment/simulate", headers=h).status_code == 403
-    finally:
-        app.config["PAYMENT_PROVIDER"] = "mock"
+    assert client.post(f"/api/orders/{order['id']}/payment/simulate", headers=h).status_code in (404, 405)
+
+
+def test_paid_just_before_the_deadline_still_counts(client, user, bank):
+    from app.models import Payment
+
+    h = _auth(client)
+    _, order = _khqr_order(client, h)
+    client.post(f"/api/orders/{order['id']}/khqr", headers=h)
+    payment = Payment.query.one()
+    payment.expires_at = payment.expires_at.replace(year=2000)
+    bank.add(payment.md5)
+    db.session.commit()
+    data = client.get(f"/api/orders/{order['id']}/payment", headers=h).get_json()["data"]
+    assert data["payment"]["status"] == "paid" and data["order"]["status"] == "confirmed"
+
+
+def test_old_demo_payments_are_checked_on_bakong_too(client, user, bank):
+    """A QR made in the old demo mode still paid the real account, so it is checked like any other."""
+    from app.models import Payment
+
+    h = _auth(client)
+    _, order = _khqr_order(client, h)
+    client.post(f"/api/orders/{order['id']}/khqr", headers=h)
+    payment = Payment.query.one()
+    payment.provider = "mock"
+    bank.add(payment.md5)
+    db.session.commit()
+    data = client.get(f"/api/orders/{order['id']}/payment", headers=h).get_json()["data"]
+    assert data["payment"]["status"] == "paid"
 
 
 def test_khqr_for_an_order_already_paid_is_refused(client, user):

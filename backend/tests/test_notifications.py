@@ -25,11 +25,14 @@ def test_register_sends_a_welcome_code(client):
     assert data["items"][0]["event"] == "welcome" and data["items"][0]["promo_code"] == "WELCOME10"
 
 
-def test_order_steps_send_messages_and_read_delete(client, user):
+def test_order_steps_send_messages_and_read_delete(client, user, bank):
+    from app.models import Payment
+
     h = _auth(client)
     order = _order(client, h, "khqr")
     client.post(f"/api/orders/{order['id']}/khqr", headers=h)
-    client.post(f"/api/orders/{order['id']}/payment/simulate", headers=h)
+    bank.add(Payment.query.one().md5)
+    client.get(f"/api/orders/{order['id']}/payment", headers=h)
     o = db.session.get(Order, order["id"])
     o.status = "shipped"
     db.session.commit()

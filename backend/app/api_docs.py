@@ -141,8 +141,7 @@ SCHEMAS = {
                  delivery_method={"type": "string", "enum": ["standard", "pickup"]}, item_count=I, created_at=DT),
     "OrderDetail": {"allOf": [ref("Order"), obj(shipping=obj(name=S, phone=S, address=S), note=nullable(S), items=arr(ref("OrderItem")))]},
     "Payment": obj(qr={**S, "description": "KHQR string to show as a QR code"}, amount=N, currency=S,
-                   status={"type": "string", "enum": ["pending", "paid", "expired"]}, expires_at=DT, paid_at=nullable(DT),
-                   demo={**B, "description": "True in mock mode: the app can simulate the payment"}),
+                   status={"type": "string", "enum": ["pending", "paid", "expired"]}, expires_at=DT, paid_at=nullable(DT)),
     "PaymentState": obj(payment=ref("Payment"), order=ref("OrderDetail")),
     "Notification": obj(id=I, title=S, message=S, type={"type": "string", "enum": ["order", "promo", "system"]},
                         event={"type": "string", "enum": ["placed", "paid", "confirmed", "shipped", "delivered", "cancelled",
@@ -334,9 +333,6 @@ PATHS = {
                                                errors=(404, 409), description="Calling it again returns the same code. It is valid for 15 minutes.")},
     "/api/orders/{order_id}/payment": {"get": op(PAY, "Payment status (polled by the app)", ok(ref("PaymentState")), params=[path("order_id")],
                                                  errors=(404,), description="Checks Bakong once: pending, paid or expired. Expired cancels the order.")},
-    "/api/orders/{order_id}/payment/simulate": {"post": op(PAY, "Demo mode: pretend the bank app paid", ok(ref("PaymentState")),
-                                                           params=[path("order_id")], errors=(403, 404, 409),
-                                                           description="Only when PAYMENT_PROVIDER=mock.")},
 
     # Profile
     "/api/profile": {"put": op(PROFILE, "Change name and phone", ok(ref("User"), message="Profile updated"), errors=(422,),

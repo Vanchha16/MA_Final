@@ -1,6 +1,6 @@
 import uuid
 
-from flask import Blueprint, current_app, request
+from flask import Blueprint, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
@@ -323,18 +323,3 @@ def payment_status(order_id):
         return error("No KHQR payment for this order", 404)
     return _payment_response(order, payments.refresh(order, payment))
 
-
-@bp.post("/orders/<int:order_id>/payment/simulate")
-@jwt_required()
-def simulate_payment(order_id):
-    """Demo mode only: pretend the customer paid from their bank app."""
-    order = _own_order(order_id)
-    payment = payments.active_payment(order) if order else None
-    if not payment:
-        return error("No KHQR payment for this order", 404)
-    if payment.provider != "mock" or current_app.config["PAYMENT_PROVIDER"] != "mock":
-        return error("Payments can only be simulated in demo mode", 403)
-    payment = payments.refresh(order, payment)
-    if payment.status == "expired":
-        return error("This KHQR code has expired", 409)
-    return _payment_response(order, payments.mark_paid(order, payment))

@@ -12,6 +12,8 @@ class TestConfig(Config):
     MAIL_MODE = "console"
     RESET_RESEND_SECONDS = 0  # tests may request several codes in a row
     RATELIMIT_ENABLED = False  # test_validation.py turns the limits on where it tests them
+    BAKONG_TOKEN = ""  # never the real token from .env
+    BAKONG_ACCOUNT_ID = "test_shop@devb"
 
 
 @pytest.fixture()
@@ -22,6 +24,16 @@ def app():
         yield app
         db.session.remove()
         db.drop_all()
+
+
+@pytest.fixture(autouse=True)
+def bank(monkeypatch):
+    """Stands in for the Bakong API: a payment is paid once its md5 is in the set."""
+    from app import payments
+
+    paid = set()
+    monkeypatch.setattr(payments, "_paid_on_bakong", lambda payment: payment.md5 in paid)
+    return paid
 
 
 @pytest.fixture()
