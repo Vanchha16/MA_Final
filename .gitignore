@@ -5,6 +5,9 @@ backend/uploads/
 # Kept on the store-info branch only
 backend/tests/
 web-admin/src/test/
+docs/BUILD_PROMPT.md
+docs/FIGMA_PROMPT.md
+docs/product-photos.md
 __pycache__/
 *.pyc
 
