@@ -4,6 +4,7 @@ db.create_all() only creates missing tables, so `flask init-db` calls this too.
 Safe to run any number of times (MySQL or SQLite).
 """
 from sqlalchemy import inspect, text
+from sqlalchemy.schema import AddConstraint
 
 from .extensions import db
 from .models import Notification, Order, Payment, Review, User
@@ -57,3 +58,39 @@ def add_missing_columns():
                 added.append(f"{table.name}.{name} (new values)")
     db.session.commit()
     return added
+
+
+def use_innodb_and_foreign_keys():
+    """MySQL only: turns MyISAM tables (WAMP's default engine) into InnoDB and adds
+    the foreign keys the models define but the database is missing. A key is
+    skipped, and reported, while rows still point to something that is gone."""
+    if db.engine.dialect.name != "mysql":
+        return []
+    done = []
+    schema = db.session.execute(text("SELECT DATABASE()")).scalar()
+    engines = dict(db.session.execute(text(
+        "SELECT TABLE_NAME, ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = :s"), {"s": schema}).all())
+    for table in db.metadata.sorted_tables:
+        if engines.get(table.name, "InnoDB").lower() != "innodb":
+            db.session.execute(text(f"ALTER TABLE {table.name} ENGINE=InnoDB"))
+            done.append(f"{table.name} -> InnoDB")
+    have = {tuple(r) for r in db.session.execute(text(
+        "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE "
+        "WHERE TABLE_SCHEMA = :s AND REFERENCED_TABLE_NAME IS NOT NULL"), {"s": schema})}
+    for table in db.metadata.sorted_tables:
+        for fk in table.foreign_key_constraints:
+            column, target = fk.columns[0], fk.elements[0].column
+            if (table.name, column.name) in have:
+                continue
+            orphans = db.session.execute(text(
+                f"SELECT COUNT(*) FROM {table.name} c LEFT JOIN {target.table.name} p ON c.{column.name} = p.{target.name} "
+                f"WHERE c.{column.name} IS NOT NULL AND p.{target.name} IS NULL")).scalar()
+            if orphans:
+                done.append(f"skipped {table.name}.{column.name}: {orphans} row(s) point to a missing {target.table.name}")
+                continue
+            if fk.name is None:
+                fk.name = f"fk_{table.name}_{column.name}"
+            db.session.execute(AddConstraint(fk))
+            done.append(f"{table.name}.{column.name} -> {target.table.name}.{target.name}")
+    db.session.commit()
+    return done
