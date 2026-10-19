@@ -14,7 +14,6 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Emu, Inches, Pt, RGBColor
 
-SRC = Path(sys.argv[1])
 BRAND = RGBColor(0x02, 0x84, 0xC7)
 MAX_W, MAX_H = Inches(6.5), Inches(7.9)
 
@@ -109,7 +108,9 @@ def polish(path):
     doc.save(path)
 
 
-for md in ("REQUIREMENTS.md", "USE_CASES.md"):
+if __name__ == "__main__":
+  SRC = Path(sys.argv[1])
+  for md in ("REQUIREMENTS.md", "USE_CASES.md"):
     out = SRC / md.replace(".md", ".docx")
     pypandoc.convert_file(
         str(SRC / md), "docx", outputfile=str(out),
