@@ -35,8 +35,10 @@ erDiagram
         varchar password_hash
         varchar phone
         varchar avatar_url
-        enum role "customer | admin"
+        enum role "customer | staff | admin"
         bool is_active
+        int token_version
+        datetime last_login_at
         datetime created_at
     }
     PASSWORD_RESETS {

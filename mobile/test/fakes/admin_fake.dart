@@ -170,6 +170,32 @@ class FakeAdminService extends AdminService {
     return customers_[i] = Customer(id: c.id, fullName: c.fullName, email: c.email, isActive: active, orderCount: c.orderCount, totalSpent: c.totalSpent);
   }
 
+  List<StaffMember> staff_ = [
+    const StaffMember(id: 1, fullName: 'Admin', email: 'admin@shop.com', role: 'admin'),
+    const StaffMember(id: 4, fullName: 'Shop Staff', email: 'staff@shop.com', phone: '012345678'),
+  ];
+  final staffChanges = <(int, Map<String, dynamic>)>[];
+
+  @override
+  Future<List<StaffMember>> staff() async => [...staff_];
+
+  @override
+  Future<StaffMember> addStaff({required String fullName, required String email, required String password, String? phone, String role = 'staff'}) async {
+    if (password.length < 8) throw ApiException('Validation failed', statusCode: 422, errors: {'password': 'Password must be at least 8 characters'});
+    final s = StaffMember(id: 10 + staff_.length, fullName: fullName, email: email, phone: phone, role: role);
+    staff_ = [...staff_, s];
+    return s;
+  }
+
+  @override
+  Future<StaffMember> updateStaff(int id, Map<String, dynamic> changes) async {
+    staffChanges.add((id, changes));
+    final i = staff_.indexWhere((s) => s.id == id);
+    final s = staff_[i];
+    return staff_[i] = StaffMember(id: id, fullName: changes['full_name'] ?? s.fullName, email: s.email, phone: changes.containsKey('phone') ? changes['phone'] : s.phone,
+        role: changes['role'] ?? s.role, isActive: changes['is_active'] ?? s.isActive);
+  }
+
   @override
   Future<List<AdminMessage>> messages() async => [...messages_];
 

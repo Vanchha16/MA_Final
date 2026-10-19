@@ -8,12 +8,14 @@ title Anime World Shop - Use Case Overview
 
 actor "User\n(not signed in)" as User
 actor Customer
-actor Admin
+actor Staff
+actor "Admin\n(owner)" as Admin
 actor "Bakong KHQR\n(payment system)" as Bakong <<system>>
 actor "Email service" as Mail <<system>>
 
 Customer -up-|> User
-Admin -up-|> User
+Staff -up-|> User
+Admin -up-|> Staff
 
 rectangle "Anime World Shop (mobile app + backend)" {
   usecase "Register" as UC_Reg
@@ -37,6 +39,7 @@ rectangle "Anime World Shop (mobile app + backend)" {
   usecase "Manage categories" as UC_MCats
   usecase "Manage customers" as UC_MCust
   usecase "Answer messages" as UC_MMsg
+  usecase "Manage staff accounts" as UC_MStaff
 }
 
 User --> UC_Reg
@@ -56,10 +59,11 @@ Customer --> UC_Contact
 Customer --> UC_Settings
 UC_Order --> Bakong
 
-Admin --> UC_Dash
-Admin --> UC_MOrders
-Admin --> UC_MProducts
-Admin --> UC_MCats
-Admin --> UC_MCust
-Admin --> UC_MMsg
+Staff --> UC_Dash
+Staff --> UC_MOrders
+Staff --> UC_MProducts
+Staff --> UC_MCats
+Staff --> UC_MCust
+Staff --> UC_MMsg
+Admin --> UC_MStaff
 @enduml

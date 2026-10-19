@@ -47,7 +47,9 @@ Load sample data (8 categories, 10 anime series, 35 products, demo users):
 flask --app run seed
 ```
 
-Demo logins: `demo@shop.com` / `demo123` (customer), `admin@shop.com` / `demo123` (admin).
+Demo logins: `demo@shop.com` / `demo123` (customer), `admin@shop.com` / `demo123` (admin, the shop owner),
+`staff@shop.com` / `demo123` (staff: runs orders and products, but cannot manage staff, promo codes or block customers).
+The owner adds and manages staff accounts in **More > Staff** (app) or **Staff** (web admin).
 
 Run the backend tests:
 
@@ -84,8 +86,8 @@ After changing an API route, update `backend/app/api_docs.py` and run `flask --a
 
 ## Web admin
 
-Two ways to manage the shop on a computer, both signed in with an admin account
-(`admin@shop.com` / `demo123`):
+Two ways to manage the shop on a computer, signed in with an admin account
+(`admin@shop.com` / `demo123`). Staff accounts can use the web admin too, without Staff and Coupons:
 
 | | URL | Built with |
 |---|---|---|
@@ -95,7 +97,7 @@ Two ways to manage the shop on a computer, both signed in with an admin account
 Both have the same dashboard: revenue, 7-day chart, orders to handle with one-click
 Confirm / Ship / Delivered, live activity (Reply, Restock), and low stock with +5.
 The web admin also has pages for orders, products (photos), categories, customers
-(block), messages, reviews and coupons. It refreshes every 20 seconds, and has a
+(block), messages, reviews, coupons and staff. It refreshes every 20 seconds, and has a
 Light / Dark / System switch (bottom of the sidebar, remembered in the browser; dark
 uses the same colours as the app's dark mode).
 

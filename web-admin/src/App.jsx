@@ -13,9 +13,10 @@ import Orders from './pages/Orders';
 import ProductForm from './pages/ProductForm';
 import Products from './pages/Products';
 import Reviews from './pages/Reviews';
+import Staff from './pages/Staff';
 
 export default function App() {
-  const { user, ready } = useAuth();
+  const { user, isAdmin, ready } = useAuth();
   if (!ready) return <div className="grid min-h-screen place-items-center text-brand"><Spinner /></div>;
   if (!user) return <Login />;
   return (
@@ -32,7 +33,8 @@ export default function App() {
           <Route path="customers" element={<Customers />} />
           <Route path="messages" element={<Messages />} />
           <Route path="reviews" element={<Reviews />} />
-          <Route path="coupons" element={<Coupons />} />
+          {isAdmin && <Route path="coupons" element={<Coupons />} />}
+          {isAdmin && <Route path="staff" element={<Staff />} />}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

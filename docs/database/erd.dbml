@@ -7,8 +7,10 @@ Table users {
   password_hash varchar(255) [not null]
   phone varchar(20)
   avatar_url varchar(255)
-  role varchar [not null, default: 'customer', note: 'customer | admin']
+  role varchar [not null, default: 'customer', note: 'customer | staff | admin']
   is_active boolean [not null, default: true]
+  token_version int [not null, default: 0, note: '+1 signs the account out everywhere']
+  last_login_at datetime
   notify_orders boolean [default: true]
   notify_offers boolean [default: true]
   notify_news boolean [default: true]

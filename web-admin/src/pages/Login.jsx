@@ -32,7 +32,7 @@ export default function Login() {
         <div className="mb-6 flex flex-col items-center text-center">
           <img src="/static/admin/logo.png" alt="" className="mb-3 h-16 w-16" />
           <h1 className="text-[22px] font-extrabold">Anime World Admin</h1>
-          <p className="text-[13.5px] text-muted">Sign in with a shop admin account</p>
+          <p className="text-[13.5px] text-muted">Sign in with a shop staff or admin account</p>
         </div>
         {(error || notice) && (
           <div role="alert" className="mb-4 flex items-center gap-2 rounded-[14px] bg-red-50 px-3.5 py-3 text-[13px] font-semibold text-red-700">

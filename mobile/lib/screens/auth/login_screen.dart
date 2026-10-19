@@ -76,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   void _goHome() {
     if (!mounted) return;
     // Clear the auth screens (and any guest shell underneath) and open the app
-    final admin = context.read<AuthProvider>().user?.isAdmin ?? false;
+    final admin = context.read<AuthProvider>().user?.isStaff ?? false;
     Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => admin ? const AdminShell() : const MainShell()), (_) => false);
   }
 
