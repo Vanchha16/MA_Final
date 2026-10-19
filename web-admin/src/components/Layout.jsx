@@ -8,7 +8,7 @@ const LOGO = '/static/admin/logo.png';
 
 /** Sidebar layout (picked from the web admin previews, A). */
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const { stats } = useStats();
   const nav = [
     ['/', 'space_dashboard', 'Dashboard'],
@@ -18,7 +18,7 @@ export default function Layout() {
     ['/customers', 'group', 'Customers'],
     ['/messages', 'forum', 'Messages', stats?.open_messages],
     ['/reviews', 'star', 'Reviews'],
-    ['/coupons', 'sell', 'Coupons'],
+    ...(isAdmin ? [['/coupons', 'sell', 'Coupons'], ['/staff', 'badge', 'Staff']] : []),
   ];
   return (
     <div className="flex min-h-screen">
@@ -53,7 +53,7 @@ export default function Layout() {
           <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-tint font-extrabold text-brand">{user?.full_name?.[0] || 'A'}</div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-bold">{user?.full_name}</div>
-            <div className="truncate text-[11.5px] text-muted">{user?.email}</div>
+            <div className="truncate text-[11.5px] text-muted">{isAdmin ? user?.email : `Staff · ${user?.email}`}</div>
           </div>
           <button type="button" onClick={() => logout()} title="Log out" className="text-red-600 hover:text-red-700" aria-label="Log out">
             <Icon name="logout" />

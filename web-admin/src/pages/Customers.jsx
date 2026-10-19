@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
+import { useAuth } from '../auth';
 import { useToast } from '../components/toast';
 import { Button, Card, Chip, ConfirmDialog, Drawer, Empty, ErrorBox, FilterChips, PageTitle, SearchBox, Spinner, StatusChip } from '../components/ui';
 import { dateTime, money } from '../lib/format';
@@ -8,6 +9,7 @@ const FILTERS = [['all', 'All', () => true], ['active', 'Active', (c) => c.is_ac
 
 export default function Customers() {
   const toast = useToast();
+  const { isAdmin } = useAuth();
   const [items, setItems] = useState(null);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -54,7 +56,7 @@ export default function Customers() {
 
   return (
     <>
-      <PageTitle title="Customers" sub="Blocking signs a customer out at once.">
+      <PageTitle title="Customers" sub={isAdmin ? 'Blocking signs a customer out at once.' : 'Only an admin can block a customer.'}>
         <SearchBox value={q} onChange={setQ} placeholder="Name, email or phone" />
       </PageTitle>
       <FilterChips items={FILTERS.map(([k, l, t]) => [k, l, items ? items.filter(t).length : null])} value={filter} onChange={setFilter} />
@@ -89,7 +91,7 @@ export default function Customers() {
         onClose={() => setOpenId(null)}
         width={480}
         title="Customer"
-        footer={detail && (detail.is_active
+        footer={detail && isAdmin && (detail.is_active
           ? <Button variant="danger" className="w-full" icon="block" onClick={() => setAskBlock(true)} data-testid="customer-block">Block customer</Button>
           : <Button className="w-full" icon="check_circle" loading={busy} onClick={() => setActive(true)} data-testid="customer-unblock">Unblock customer</Button>)}
       >

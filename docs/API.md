@@ -18,7 +18,7 @@ Base URL: `http://localhost:5000` (Android emulator: `http://10.0.2.2:5000`). Lo
 | 200 / 201 | Done (201 = created) |
 | 400 | Bad request, e.g. an expired code |
 | 401 | No token, or the token is wrong or expired |
-| 403 | Not allowed (blocked account, or not an admin) |
+| 403 | Not allowed (blocked account, not shop staff, or a staff account on an owner-only route) |
 | 404 | Not found, or not yours |
 | 409 | Not possible right now, e.g. sold out or a wrong order step |
 | 422 | Some fields are wrong; `errors` says which |
@@ -831,7 +831,7 @@ Errors: 401, 404, 422, 429
 
 ### Admin
 
-Shop owner only: an admin account's token
+The shop team: a staff or admin account's token. Routes marked (admin only) need the owner's admin account
 
 | Method | Path | What it does | Login |
 |---|---|---|---|
@@ -850,16 +850,19 @@ Shop owner only: an admin account's token
 | `DELETE` | `/api/admin/categories/{category_id}` | Delete an empty category | admin |
 | `GET` | `/api/admin/customers` | Customers | admin |
 | `GET` | `/api/admin/customers/{user_id}` | A customer with addresses and orders | admin |
-| `PUT` | `/api/admin/customers/{user_id}` | Block or unblock a customer | admin |
+| `PUT` | `/api/admin/customers/{user_id}` | Block or unblock a customer (admin only) | admin |
+| `GET` | `/api/admin/staff` | Staff and admin accounts (admin only) | admin |
+| `POST` | `/api/admin/staff` | Add a staff account (admin only) | admin |
+| `PUT` | `/api/admin/staff/{user_id}` | Change, disable or reset a staff account (admin only) | admin |
 | `GET` | `/api/admin/orders` | All orders, newest first | admin |
 | `GET` | `/api/admin/orders/{order_id}` | One order with items and customer | admin |
 | `PUT` | `/api/admin/orders/{order_id}/status` | Move an order on | admin |
 | `GET` | `/api/admin/contact-messages` | Contact messages, newest first | admin |
 | `POST` | `/api/admin/contact-messages/{message_id}/reply` | Answer a message | admin |
-| `GET` | `/api/admin/coupons` | All promo codes, active first | admin |
-| `POST` | `/api/admin/coupons` | Add a promo code | admin |
-| `PUT` | `/api/admin/coupons/{coupon_id}` | Change a promo code (send only what changes) | admin |
-| `DELETE` | `/api/admin/coupons/{coupon_id}` | Delete a promo code | admin |
+| `GET` | `/api/admin/coupons` | All promo codes, active first (admin only) | admin |
+| `POST` | `/api/admin/coupons` | Add a promo code (admin only) | admin |
+| `PUT` | `/api/admin/coupons/{coupon_id}` | Change a promo code (admin only; send only what changes) | admin |
+| `DELETE` | `/api/admin/coupons/{coupon_id}` | Delete a promo code (admin only) | admin |
 | `GET` | `/api/admin/reviews` | All reviews, newest first | admin |
 | `DELETE` | `/api/admin/reviews/{review_id}` | Remove a review (spam, rude words) | admin |
 
@@ -1050,7 +1053,7 @@ Errors: 401, 403, 404
 
 #### `PUT /api/admin/customers/{user_id}`
 
-Block or unblock a customer.
+Block or unblock a customer (admin only).
 
 A blocked customer cannot log in, and their current token stops working (403).
 
@@ -1067,6 +1070,59 @@ Body (application/json): {is_active: boolean}
 Response 200: `data` = `Customer`
 
 Errors: 401, 403, 404, 422
+
+#### `GET /api/admin/staff`
+
+Staff and admin accounts (admin only).
+
+Admins first, then by name.
+
+Parameters: `q` (query) - Name, email or phone, `active` (query) - 1 = active, 0 = disabled.
+
+Response 200: `data` = list of `Staff`
+
+Errors: 401, 403
+
+#### `POST /api/admin/staff`
+
+Add a staff account (admin only).
+
+role is staff (default) or admin. Give them the password; they can change it in Profile.
+
+Body (application/json): {full_name: string, email: string, password: string, phone: string or null, role: `staff` \| `admin`}
+
+```json
+{
+  "full_name": "Sokha Chan",
+  "email": "sokha@shop.com",
+  "password": "welcome123",
+  "role": "staff"
+}
+```
+
+Response 201: `data` = `Staff`
+
+Errors: 401, 403, 422
+
+#### `PUT /api/admin/staff/{user_id}`
+
+Change, disable or reset a staff account (admin only).
+
+Send only what changes. A new role, a new password or disabling signs them out everywhere. 409 when you try to change your own role, disable yourself, or leave the shop without an active admin.
+
+Parameters: `user_id` (path, required).
+
+Body (application/json): `StaffInput`
+
+```json
+{
+  "is_active": false
+}
+```
+
+Response 200: `data` = `Staff`
+
+Errors: 401, 403, 404, 409, 422
 
 #### `GET /api/admin/orders`
 
@@ -1140,7 +1196,7 @@ Errors: 401, 403, 404, 422
 
 #### `GET /api/admin/coupons`
 
-All promo codes, active first.
+All promo codes, active first (admin only).
 
 Response 200: `data` = list of `AdminCoupon`
 
@@ -1148,7 +1204,7 @@ Errors: 401, 403
 
 #### `POST /api/admin/coupons`
 
-Add a promo code.
+Add a promo code (admin only).
 
 Code: letters and numbers (stored upper case). A percent coupon is at most 100.
 
@@ -1169,7 +1225,7 @@ Errors: 401, 403, 422
 
 #### `PUT /api/admin/coupons/{coupon_id}`
 
-Change a promo code (send only what changes).
+Change a promo code (admin only; send only what changes).
 
 Parameters: `coupon_id` (path, required).
 
@@ -1187,7 +1243,7 @@ Errors: 401, 403, 404, 422
 
 #### `DELETE /api/admin/coupons/{coupon_id}`
 
-Delete a promo code.
+Delete a promo code (admin only).
 
 Parameters: `coupon_id` (path, required).
 
@@ -1227,7 +1283,7 @@ Errors: 401, 403, 404
 
 ### User
 
-{id: integer, full_name: string, email: string, phone: string or null, avatar_url: string or null, role: `customer` \| `admin`, created_at: string}
+{id: integer, full_name: string, email: string, phone: string or null, avatar_url: string or null, role: `customer` \| `staff` \| `admin`, created_at: string}
 
 ### Category
 
@@ -1324,6 +1380,14 @@ Errors: 401, 403, 404
 ### Customer
 
 `User` + {is_active: boolean, order_count: integer, total_spent: number}
+
+### Staff
+
+`User` + {is_active: boolean, last_login_at: string or null}
+
+### StaffInput
+
+{full_name: string, phone: string or null, role: `staff` \| `admin`, is_active: boolean, password: string}
 
 ### CustomerDetail
 

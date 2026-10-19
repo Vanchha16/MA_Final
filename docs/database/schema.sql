@@ -16,8 +16,11 @@ CREATE TABLE users (
   password_hash VARCHAR(255)  NOT NULL,
   phone         VARCHAR(20)   NULL,
   avatar_url    VARCHAR(255)  NULL,
-  role          ENUM('customer','admin') NOT NULL DEFAULT 'customer',
+  -- admin = shop owner (everything); staff = runs the shop, no staff / promo codes / blocking
+  role          ENUM('customer','staff','admin') NOT NULL DEFAULT 'customer',
   is_active     BOOLEAN       NOT NULL DEFAULT TRUE,
+  token_version INT           NOT NULL DEFAULT 0,   -- +1 signs the account out everywhere
+  last_login_at DATETIME      NULL,
     -- Settings > Notify me about
   notify_orders  BOOLEAN NOT NULL DEFAULT TRUE,
   notify_offers  BOOLEAN NOT NULL DEFAULT TRUE,

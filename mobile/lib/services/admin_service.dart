@@ -6,7 +6,8 @@ import '../core/network/api_client.dart';
 import '../models/admin.dart';
 import '../models/catalog.dart';
 
-/// The shop owner's calls (/api/admin). Every one needs an admin login.
+/// The shop team's calls (/api/admin). Every one needs a staff or admin login;
+/// staff, promo codes and blocking customers need the owner's admin login.
 /// Lists ask for up to 100 rows, plenty for this shop.
 class AdminService {
   final _api = ApiClient.instance;
@@ -75,6 +76,16 @@ class AdminService {
 
   /// Blocking signs the customer out everywhere.
   Future<Customer> setCustomerActive(int id, bool active) async => Customer.fromJson(await _api.put('$_base/customers/$id', data: {'is_active': active}));
+
+  // ---------- Staff (owner only) ----------
+
+  Future<List<StaffMember>> staff() async => [for (final s in await _api.get('$_base/staff') as List) StaffMember.fromJson(s)];
+
+  Future<StaffMember> addStaff({required String fullName, required String email, required String password, String? phone, String role = 'staff'}) async =>
+      StaffMember.fromJson(await _api.post('$_base/staff', data: {'full_name': fullName, 'email': email, 'password': password, 'phone': phone, 'role': role}));
+
+  /// Send only what changes. A new role, a new password or disabling signs them out.
+  Future<StaffMember> updateStaff(int id, Map<String, dynamic> changes) async => StaffMember.fromJson(await _api.put('$_base/staff/$id', data: changes));
 
   // ---------- Contact messages ----------
 

@@ -80,6 +80,27 @@ def set_customer_active(user, active):
     return user
 
 
+def update_staff(user, me, changes):
+    """Applies the owner's changes to a staff or admin account. Nobody can change their
+    own role or disable themselves, and the shop always keeps one active admin. A new
+    role, a new password or disabling signs that person out everywhere. Commits."""
+    role, active = changes.get("role", user.role), changes.get("is_active", user.is_active)
+    if user.id == me.id and role != user.role:
+        raise AdminError("You can't change your own role")
+    if user.id == me.id and not active:
+        raise AdminError("You can't disable your own account")
+    if (user.role == "admin" and user.is_active and (role != "admin" or not active)
+            and User.query.filter_by(role="admin", is_active=True).count() <= 1):
+        raise AdminError("The shop needs at least one active admin")
+    sign_out = role != user.role or "password_hash" in changes or (user.is_active and not active)
+    for name, value in changes.items():
+        setattr(user, name, value)
+    if sign_out:
+        user.token_version += 1
+    db.session.commit()
+    return user
+
+
 def delete_category(category):
     """Only an empty category can go; move or hide its products first. Commits."""
     if category.products:

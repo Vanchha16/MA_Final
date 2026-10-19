@@ -57,7 +57,7 @@ vi.mock('../api', () => ({
   tokenStore: { get: () => 't', set: vi.fn() },
 }));
 
-vi.mock('../auth', () => ({ useAuth: () => ({ user: { full_name: 'Admin', email: 'admin@shop.com', role: 'admin' }, logout: vi.fn() }) }));
+vi.mock('../auth', () => ({ useAuth: () => ({ user: { full_name: 'Admin', email: 'admin@shop.com', role: 'admin' }, isAdmin: true, logout: vi.fn() }) }));
 
 const { default: Dashboard } = await import('../pages/Dashboard');
 const { default: Layout } = await import('../components/Layout');
