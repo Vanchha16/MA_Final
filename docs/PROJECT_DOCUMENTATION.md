@@ -10,13 +10,13 @@ subtitle: "E-Commerce Mobile Application - Complete Project Documentation"
 
 **Team members**
 
-| No. | Name | Student ID | Role |
-|---|---|---|---|
-| 1 | Loum Vanchha | | |
-| 2 | Hong Dalin | | |
-| 3 | Khounn Eangleng | | |
-| 4 | Sour Sombo | | |
-| 5 | Rem Sophannary | | |
+| No. | Name |
+|---|---|
+| 1 | Loum Vanchha |
+| 2 | Hong Dalin |
+| 3 | Khounn Eangleng |
+| 4 | Sour Sombo |
+| 5 | Rem Sophannary |
 
 **Lecturer:** ______________________
 
