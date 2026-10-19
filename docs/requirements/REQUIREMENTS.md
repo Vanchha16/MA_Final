@@ -296,7 +296,7 @@ The brief asks for at least 20 screens. The app has **44** (32 customer, 12 admi
 | | | | 43 | Admin Staff | (admin only) |
 | | | | 44 | Add / Edit Staff Member | (admin only) |
 
-"Add to Cart" is a feature on Product List and Product Details (with an animation and an "Added to cart" sheet), so it has no separate screen. Screenshots of each screen are in [`docs/screenshots/`](../screenshots/).
+"Add to Cart" is a feature on Product List and Product Details (with an animation and an "Added to cart" sheet), so it has no separate screen. Screenshots of each screen are in `docs/screenshots/` on the `store-info` branch of the repository.
 
 ---
 
