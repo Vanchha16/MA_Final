@@ -1,7 +1,12 @@
----
-title: "Anime World Shop"
-subtitle: "E-Commerce Mobile Application - Complete Project Documentation"
----
+![SETEC Institute](images/setec-logo.png){width=3.6in}\
+
+::: {custom-style="Title"}
+Anime World Shop
+:::
+
+::: {custom-style="Subtitle"}
+E-Commerce Mobile Application - Complete Project Documentation
+:::
 
 **Course:** Mobile Application (Year 4, SU25) - Final Project\
 **Institute:** SETEC Institute\
