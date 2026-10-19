@@ -67,10 +67,15 @@ def without_section(md, start, end=None):
 
 today = date.today().strftime("%d %B %Y")
 
-cover = f"""---
-title: "Anime World Shop"
-subtitle: "E-Commerce Mobile Application - Complete Project Documentation"
----
+cover = f"""![SETEC Institute](images/setec-logo.png){{width=3.6in}}\\
+
+::: {{custom-style="Title"}}
+Anime World Shop
+:::
+
+::: {{custom-style="Subtitle"}}
+E-Commerce Mobile Application - Complete Project Documentation
+:::
 
 **Course:** Mobile Application (Year 4, SU25) - Final Project\\
 **Institute:** SETEC Institute\\
@@ -293,4 +298,15 @@ pypandoc.convert_file(str(src), "docx", outputfile=str(out),
                       extra_args=[f"--resource-path={DOCS}{';' if sys.platform == 'win32' else ':'}{DOCS / 'requirements'}",
                                   "--from=markdown+pipe_tables+raw_attribute-tex_math_dollars-auto_identifiers-raw_html"])
 polish(out)
+
+# Centre the SETEC logo at the top of the cover
+from docx import Document  # noqa: E402
+from docx.enum.text import WD_ALIGN_PARAGRAPH  # noqa: E402
+from docx.shared import Pt  # noqa: E402
+
+doc = Document(out)
+logo = next(p for p in doc.paragraphs if p._p.xpath(".//pic:pic"))
+logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+logo.paragraph_format.space_after = Pt(18)
+doc.save(out)
 print("wrote", src.name, "and", out.name)
