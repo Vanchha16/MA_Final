@@ -106,7 +106,7 @@ npm run dev      # http://localhost:5173/dashboard/ (calls the backend on :5000)
 npm run build    # writes the new build into backend/app/static/web-admin
 ```
 
-Screenshots: `docs/screenshots/web-admin/`.
+Screenshots: `docs/screenshots/web-admin/` on the `store-info` branch.
 
 ## Run the mobile app
 
