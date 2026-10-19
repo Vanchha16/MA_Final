@@ -72,7 +72,7 @@ def err(*codes):
     return {str(c): {"$ref": f"#/components/responses/{ERROR_NAMES[c]}"} for c in codes}
 
 
-ERROR_NAMES = {400: "BadRequest", 401: "Unauthorized", 403: "Forbidden", 404: "NotFound", 409: "Conflict", 422: "ValidationError", 429: "TooManyRequests"}
+ERROR_NAMES = {400: "BadRequest", 401: "Unauthorized", 403: "Forbidden", 404: "NotFound", 409: "Conflict", 422: "ValidationError", 429: "TooManyRequests", 502: "BadGateway"}
 LOGIN = [{"bearerAuth": []}]
 PAGE_PARAMS = [query("page", I, "Page number, from 1"), query("per_page", I, "Rows per page (max 100 for admin lists, 50 for products)")]
 
@@ -135,12 +135,14 @@ SCHEMAS = {
                      my_rating=nullable({**I, "description": "Stars the customer gave this product (delivered orders), else null"})),
     "Order": obj(id=I, order_number={**S, "example": "AWS-20261016-00042"},
                  status={"type": "string", "enum": ["pending", "confirmed", "shipped", "delivered", "cancelled"]},
-                 payment_method={"type": "string", "enum": ["cod", "khqr"]},
+                 payment_method={"type": "string", "enum": ["cod", "khqr", "aba"]},
                  payment_status={"type": "string", "enum": ["unpaid", "paid", "failed", "refunded"]},
                  subtotal=N, shipping_fee=N, discount=N, coupon_code=nullable(S), total=N,
                  delivery_method={"type": "string", "enum": ["standard", "pickup"]}, item_count=I, created_at=DT),
     "OrderDetail": {"allOf": [ref("Order"), obj(shipping=obj(name=S, phone=S, address=S), note=nullable(S), items=arr(ref("OrderItem")))]},
-    "Payment": obj(qr={**S, "description": "KHQR string to show as a QR code"}, amount=N, currency=S,
+    "Payment": obj(provider={"type": "string", "enum": ["bakong", "payway"]},
+                   qr={**S, "description": "KHQR string to show as a QR code"},
+                   deeplink=nullable({**S, "description": "ABA PayWay only: opens ABA Mobile with the payment filled in"}), amount=N, currency=S,
                    status={"type": "string", "enum": ["pending", "paid", "expired"]}, expires_at=DT, paid_at=nullable(DT)),
     "PaymentState": obj(payment=ref("Payment"), order=ref("OrderDetail")),
     "Notification": obj(id=I, title=S, message=S, type={"type": "string", "enum": ["order", "promo", "system"]},
@@ -193,6 +195,7 @@ RESPONSES = {
         ("Conflict", "Not possible right now, e.g. sold out or a wrong order step", {"success": False, "message": "This item is sold out", "errors": None}),
         ("ValidationError", "Some fields are wrong; `errors` says which", {"success": False, "message": "Validation failed", "errors": {"email": "Email is not valid"}}),
         ("TooManyRequests", "Too many tries; wait and try again", {"success": False, "message": "Please wait 42s before requesting a new code", "errors": {"retry_after": 42}}),
+        ("BadGateway", "The payment provider refused or could not be reached", {"success": False, "message": "ABA PayWay is not available right now. Please try again in a minute.", "errors": None}),
     ]
 }
 
@@ -201,7 +204,7 @@ RESPONSES = {
 # ---------------------------------------------------------------------------
 
 AUTH, CATALOG, REVIEWS, WISHLIST, CART, ADDRESSES, ORDERS, PAY, PROFILE, NOTES, CONTACT, ADMIN = (
-    "Auth", "Catalog", "Reviews", "Wishlist", "Cart", "Addresses", "Orders", "KHQR payment", "Profile", "Notifications", "Contact", "Admin")
+    "Auth", "Catalog", "Reviews", "Wishlist", "Cart", "Addresses", "Orders", "Online payment", "Profile", "Notifications", "Contact", "Admin")
 TOKEN = obj(token={**S, "description": "Send as `Authorization: Bearer <token>`"}, user=ref("User"))
 IDS = body(obj(["product_ids"], product_ids=arr(I)), {"product_ids": [3, 7]})
 CART_COUPON = query("coupon", S, "Promo code to preview, e.g. WELCOME10")
@@ -316,11 +319,11 @@ PATHS = {
                                 params=[CART_COUPON, query("delivery", {"type": "string", "enum": ["standard", "pickup"]})])},
     "/api/orders": {
         "get": op(ORDERS, "My orders, newest first, with their items", ok(arr(ref("OrderDetail"))),
-                  description="Unpaid KHQR orders past their 15 minutes are cancelled first (stock goes back)."),
+                  description="Unpaid KHQR / ABA PayWay orders past their 15 minutes are cancelled first (stock goes back)."),
         "post": op(ORDERS, "Place an order from the cart", ok(ref("OrderDetail"), "Placed", "201", "Order placed"), errors=(409, 422),
                    description="Lowers stock and empties the cart. Store pickup is free and needs no address. 409 if an item sold out meanwhile.",
                    request_body=body(obj(["payment_method"], address_id=I, delivery_method={"type": "string", "enum": ["standard", "pickup"]},
-                                         payment_method={"type": "string", "enum": ["khqr", "cod"]}, coupon=S, note=S),
+                                         payment_method={"type": "string", "enum": ["khqr", "aba", "cod"]}, coupon=S, note=S),
                                      {"address_id": 1, "delivery_method": "standard", "payment_method": "khqr", "coupon": "WELCOME10", "note": ""})),
     },
     "/api/orders/{order_id}": {"get": op(ORDERS, "One of my orders", ok(ref("OrderDetail")), params=[path("order_id")], errors=(404,))},
@@ -328,11 +331,19 @@ PATHS = {
                                                    params=[path("order_id")], errors=(404, 409),
                                                    description="Only for shipped orders. Cash orders count as paid.")},
 
-    # KHQR
-    "/api/orders/{order_id}/khqr": {"post": op(PAY, "Make (once) the order's KHQR code", ok(ref("PaymentState")), params=[path("order_id")],
-                                               errors=(404, 409), description="Calling it again returns the same code. It is valid for 15 minutes.")},
+    # Online payment
+    "/api/orders/{order_id}/khqr": {"post": op(PAY, "Make (once) the order's Bakong KHQR code", ok(ref("PaymentState")), params=[path("order_id")],
+                                               errors=(404, 409), description="For payment_method khqr. Calling it again returns the same code. It is valid for 15 minutes.")},
+    "/api/orders/{order_id}/payway": {"post": op(PAY, "Make (once) the order's ABA PayWay payment", ok(ref("PaymentState")), params=[path("order_id")],
+                                                 errors=(404, 409, 502),
+                                                 description="For payment_method aba. Returns PayWay's KHQR and the ABA Mobile deeplink; "
+                                                             "calling it again returns the same ones. Valid for 15 minutes.")},
     "/api/orders/{order_id}/payment": {"get": op(PAY, "Payment status (polled by the app)", ok(ref("PaymentState")), params=[path("order_id")],
-                                                 errors=(404,), description="Checks Bakong once: pending, paid or expired. Expired cancels the order.")},
+                                                 errors=(404,), description="Asks Bakong or PayWay once: pending, paid or expired. Expired cancels the order.")},
+    "/api/payments/payway/callback": {"post": op(
+        PAY, "ABA PayWay pushback (called by PayWay, not the app)", {"200": {"description": "Plain text OK"}}, auth=False,
+        request_body={"required": True, "content": {"application/x-www-form-urlencoded": {"schema": obj(tran_id=S, status=S)}}},
+        description="Only a hint: the payment counts once PayWay's own check-transaction says APPROVED.")},
 
     # Profile
     "/api/profile": {"put": op(PROFILE, "Change name and phone", ok(ref("User"), message="Profile updated"), errors=(422,),
@@ -452,7 +463,7 @@ TAGS = [
     (CART, "Shopping cart and promo codes"),
     (ADDRESSES, "Delivery addresses"),
     (ORDERS, "Checkout, placing orders, order history"),
-    (PAY, "Bakong KHQR online payment"),
+    (PAY, "Online payment: Bakong KHQR and ABA PayWay"),
     (PROFILE, "Profile, password, photo, notification choices"),
     (NOTES, "In-app notifications"),
     (CONTACT, "Questions to the shop"),
@@ -602,6 +613,9 @@ def markdown():
                 out.append("")
             good = [(c, r) for c, r in o["responses"].items() if c.startswith("2")]
             for code, r in good:
+                if "content" not in r:  # e.g. the PayWay pushback answers plain text
+                    out.append(f"Response {code}: {r['description']}")
+                    continue
                 data = r["content"]["application/json"]["schema"]["allOf"][1]["properties"]["data"]
                 out.append(f"Response {code}: `data` = {_schema_text(data, schemas)}")
             errors = [c for c in o["responses"] if not c.startswith("2")]

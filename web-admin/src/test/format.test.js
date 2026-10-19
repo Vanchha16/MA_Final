@@ -18,4 +18,5 @@ test('the next step skips Cancel, and payment text', () => {
   expect(nextStep({ next_statuses: ['cancelled'] })).toBeNull();
   expect(paymentText({ payment_method: 'khqr', payment_status: 'paid' })).toBe('KHQR paid');
   expect(paymentText({ payment_method: 'cod', payment_status: 'unpaid' })).toBe('Cash');
+  expect(paymentText({ payment_method: 'aba', payment_status: 'paid' })).toBe('ABA PayWay paid');
 });

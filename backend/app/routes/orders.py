@@ -1,13 +1,14 @@
 import uuid
 
-from flask import Blueprint, request
+from flask import Blueprint, current_app, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from .. import notify, payments
 from ..extensions import db
-from ..models import Address, CartItem, Order, OrderItem, Product, Review, User
+from ..models import Address, CartItem, Order, OrderItem, Payment, Product, Review, User
+from ..payway import PaywayError
 from ..pricing import DELIVERY_METHODS, find_coupon, shipping_for, summarize
 from ..utils.clock import utcnow
 from ..utils.responses import error, success
@@ -15,7 +16,7 @@ from ..utils.validators import Fields, json_body
 
 bp = Blueprint("orders", __name__, url_prefix="/api")
 
-PAYMENT_METHODS = ("cod", "khqr")
+PAYMENT_METHODS = ("cod", "khqr", "aba")
 STORE = {"name": "Anime World Shop", "address": "#88 St. 315, Boeung Kak 2, Toul Kork, Phnom Penh", "hours": "9:00 - 20:00"}
 
 
@@ -161,13 +162,13 @@ def _order_number(order):
 @bp.post("/orders")
 @jwt_required()
 def place_order():
-    """Body: {"address_id": 1, "delivery_method": "standard", "payment_method": "khqr", "coupon": "WELCOME10", "note": ""}.
+    """Body: {"address_id": 1, "delivery_method": "standard", "payment_method": "khqr" | "aba" | "cod", "coupon": "WELCOME10", "note": ""}.
     Turns the cart into an order, lowers stock and empties the cart."""
     data = json_body()
     user_id = _user_id()
     f = Fields(data)
     delivery = f.choice("delivery_method", DELIVERY_METHODS, default="standard", message="Choose Standard or Store pickup")
-    payment = f.choice("payment_method", PAYMENT_METHODS, required=True, message="Choose KHQR or Cash on delivery")
+    payment = f.choice("payment_method", PAYMENT_METHODS, required=True, message="Choose KHQR, ABA PayWay or Cash on delivery")
     code = f.text("coupon", max_len=30, label="Promo code")
     note = f.text("note", max_len=255, label="The note")
     address_id = data.get("address_id")
@@ -230,7 +231,7 @@ def place_order():
     db.session.add(order)
     db.session.flush()
     order.order_number = _order_number(order)
-    notify.order_event(order, "placed_khqr" if payment == "khqr" else "placed_cod")
+    notify.order_event(order, f"placed_{payment}")
     db.session.commit()
     return success(order.to_dict(with_items=True), "Order placed", 201)
 
@@ -238,7 +239,7 @@ def place_order():
 @bp.get("/orders")
 @jwt_required()
 def list_orders():
-    """Newest first, with their items. Unpaid KHQR orders past their time are cancelled first."""
+    """Newest first, with their items. Unpaid online orders past their time are cancelled first."""
     orders = (
         Order.query.filter_by(user_id=_user_id())
         .options(selectinload(Order.items).selectinload(OrderItem.product))
@@ -246,7 +247,7 @@ def list_orders():
         .all()
     )
     for order in orders:
-        if order.payment_method == "khqr" and order.status == "pending":
+        if order.payment_method != "cod" and order.status == "pending":
             payments.refresh(order)
     return success(_with_my_ratings([o.to_dict(with_items=True) for o in orders]))
 
@@ -286,7 +287,7 @@ def _with_my_ratings(orders):
     return orders
 
 
-# ---------- KHQR payment ----------
+# ---------- Online payment (Bakong KHQR, ABA PayWay) ----------
 
 def _own_order(order_id):
     return Order.query.filter_by(id=order_id, user_id=_user_id()).first()
@@ -296,21 +297,36 @@ def _payment_response(order, payment):
     return success({"payment": payment.to_dict(), "order": order.to_dict(with_items=True)})
 
 
-@bp.post("/orders/<int:order_id>/khqr")
-@jwt_required()
-def start_khqr(order_id):
-    """Makes (once) and returns the order's KHQR code. Calling it again returns the same code."""
+def _start_payment(order_id, method):
     order = _own_order(order_id)
     if not order:
         return error("Order not found", 404)
-    if order.payment_method != "khqr":
-        return error("This order is paid in cash", 409)
+    if order.payment_method != method:
+        return error("This order is paid in cash" if order.payment_method == "cod" else "This order is paid another way", 409)
     existing = payments.active_payment(order)
     if existing is None and order.payment_status == "paid":
         return error("This order is already paid", 409)
     if order.status == "cancelled" and (existing is None or existing.status != "paid"):
         return error("This order was cancelled", 409)
-    return _payment_response(order, payments.start(order))
+    try:
+        return _payment_response(order, payments.start(order))
+    except PaywayError as exc:
+        current_app.logger.warning("PayWay purchase for %s failed: %s", order.order_number, exc)
+        return error("ABA PayWay is not available right now. Please try again in a minute.", 502)
+
+
+@bp.post("/orders/<int:order_id>/khqr")
+@jwt_required()
+def start_khqr(order_id):
+    """Makes (once) and returns the order's Bakong KHQR code. Calling it again returns the same code."""
+    return _start_payment(order_id, "khqr")
+
+
+@bp.post("/orders/<int:order_id>/payway")
+@jwt_required()
+def start_payway(order_id):
+    """Makes (once) the order's ABA PayWay transaction: its KHQR and the ABA Mobile link."""
+    return _start_payment(order_id, "aba")
 
 
 @bp.get("/orders/<int:order_id>/payment")
@@ -320,6 +336,18 @@ def payment_status(order_id):
     order = _own_order(order_id)
     payment = payments.active_payment(order) if order else None
     if not payment:
-        return error("No KHQR payment for this order", 404)
+        return error("No online payment for this order", 404)
     return _payment_response(order, payments.refresh(order, payment))
 
+
+
+@bp.post("/payments/payway/callback")
+def payway_callback():
+    """PayWay posts here when a payment finishes. The body is only a hint: the
+    payment counts once PayWay's own status check says APPROVED."""
+    data = request.form if request.form else (request.get_json(silent=True) or {})
+    tran_id = str(data.get("tran_id") or "")[:20]
+    payment = Payment.query.filter_by(tran_id=tran_id, provider="payway").first() if tran_id else None
+    if payment:
+        payments.refresh(payment.order, payment)
+    return "OK"

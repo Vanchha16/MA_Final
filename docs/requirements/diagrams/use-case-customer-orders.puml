@@ -7,6 +7,7 @@ title Anime World Shop - Customer: Checkout and Orders
 
 actor Customer
 actor "Bakong KHQR\n(payment system)" as Bakong <<system>>
+actor "ABA PayWay\n(payment gateway)" as PayWay <<system>>
 
 rectangle "Anime World Shop - customer app" {
   package "Checkout and orders" {
@@ -15,6 +16,7 @@ rectangle "Anime World Shop - customer app" {
     usecase "Choose delivery and\npayment method" as C_Method
     usecase "Apply coupon" as C_Coupon
     usecase "Pay with KHQR" as C_Khqr
+    usecase "Pay with ABA PayWay" as C_Aba
     usecase "View order history" as C_History
     usecase "View order details\nand tracking" as C_OrderDetails
     usecase "Confirm order received" as C_Received
@@ -30,6 +32,8 @@ C_Order .> C_Method : <<include>>
 C_Coupon .> C_Order : <<extend>>
 C_Khqr .> C_Order : <<extend>>\n(payment = KHQR)
 C_Khqr --> Bakong
+C_Aba .> C_Order : <<extend>>\n(payment = ABA PayWay)
+C_Aba --> PayWay
 Customer --> C_History
 Customer --> C_OrderDetails
 C_Received .> C_OrderDetails : <<extend>>

@@ -12,7 +12,8 @@ def _wants(user_id, kind):
 ORDER_TEXT = {
     "placed_cod": ("Order placed", "We got order {number}. Pay {total} when it arrives."),
     "placed_khqr": ("Pay to confirm your order", "Scan the KHQR for {number} ({total}) within 15 minutes."),
-    "paid": ("Payment received", "{total} for {number} by KHQR. We are packing it now."),
+    "placed_aba": ("Pay to confirm your order", "Pay {total} for {number} with ABA PayWay within 15 minutes."),
+    "paid": ("Payment received", "{total} for {number} by {method}. We are packing it now."),
     "confirmed": ("Order confirmed", "We are packing order {number} now."),
     "shipped": ("Your order is on the way", "Order {number} arrives tomorrow, 9:00 - 18:00."),
     "ready": ("Ready to pick up", "Order {number} is waiting for you at our Toul Kork shop."),
@@ -29,7 +30,8 @@ def order_event(order, key):
     event = key.split("_")[0] if key.startswith("placed") else ("shipped" if key == "ready" else key)
     db.session.add(Notification(
         user_id=order.user_id, type="order", event=event, order_id=order.id, title=title,
-        message=text.format(number=order.order_number, total=f"${float(order.total):g}"),
+        message=text.format(number=order.order_number, total=f"${float(order.total):g}",
+                            method="ABA PayWay" if order.payment_method == "aba" else "KHQR"),
     ))
 
 

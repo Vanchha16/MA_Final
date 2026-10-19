@@ -80,7 +80,7 @@ class ShopIndexView(AdminIndexView):
         stats = admin_ops.stats()
         week = [{"day": datetime.fromisoformat(d["date"]).strftime("%a"), "revenue": d["revenue"]} for d in stats["week"]]
         return self.render("admin/dashboard.html", stats=stats, week=week, orders=orders, messages=messages, low=low,
-                           events=admin_ops.activity(8), next_step=_next_step, step_label=STEP_LABEL,
+                           events=admin_ops.activity(8), next_step=_next_step, step_label=STEP_LABEL, pay_names={**admin_ops.PAY_NAMES, "cod": "Cash"},
                            quick=QuickForm(), greeting=_greeting(), now=datetime.now())
 
     # ---------- one-click actions (also used by the Orders and Products lists) ----------

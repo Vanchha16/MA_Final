@@ -45,4 +45,13 @@ class Config:
     BAKONG_ACCOUNT_ID = os.getenv("BAKONG_ACCOUNT_ID", "")
     KHQR_MERCHANT_NAME = os.getenv("KHQR_MERCHANT_NAME", "Anime World Shop")
     KHQR_MERCHANT_CITY = os.getenv("KHQR_MERCHANT_CITY", "Phnom Penh")
-    KHQR_MINUTES = 15                # an unpaid KHQR order is cancelled after this
+    KHQR_MINUTES = 15                # an unpaid KHQR / ABA PayWay order is cancelled after this
+
+    # ABA PayWay: the merchant id and API key ("public key") from ABA. PayWay
+    # posts the result to PAYWAY_CALLBACK_URL (needs a public address, e.g. an
+    # ngrok URL + /api/payments/payway/callback); without one the app's
+    # status checks still find the payment.
+    PAYWAY_MERCHANT_ID = os.getenv("PAYWAY_MERCHANT_ID", "")
+    PAYWAY_API_KEY = os.getenv("PAYWAY_API_KEY", "")
+    PAYWAY_BASE = os.getenv("PAYWAY_BASE", "https://checkout-sandbox.payway.com.kh")
+    PAYWAY_CALLBACK_URL = os.getenv("PAYWAY_CALLBACK_URL", "")

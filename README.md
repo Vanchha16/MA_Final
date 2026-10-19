@@ -60,6 +60,11 @@ Forgot-password emails: with `MAIL_MODE=console` (default) the code is printed i
 server terminal, and in debug mode the app shows a "Dev code" chip to tap. For real email
 set `MAIL_MODE=smtp` and the `MAIL_*` values in `.env` (see `.env.example`).
 
+Online payments: Bakong KHQR needs `BAKONG_TOKEN` and `BAKONG_ACCOUNT_ID`; ABA PayWay needs
+`PAYWAY_MERCHANT_ID` and `PAYWAY_API_KEY` (sandbox by default, `PAYWAY_BASE` switches to live).
+Ask the team for the values; they are never committed. After pulling, run `flask --app run init-db`
+once so the database gets the new payment columns.
+
 Start the API:
 
 ```bash
