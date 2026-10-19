@@ -2,6 +2,8 @@
 backend/.venv/
 backend/.env
 backend/uploads/
+# Kept on the store-info branch only
+backend/tests/
 __pycache__/
 *.pyc
 
