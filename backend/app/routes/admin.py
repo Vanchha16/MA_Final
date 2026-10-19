@@ -1,5 +1,6 @@
-"""Admin API: the shop owner manages products, categories, customers, orders and
-Contact messages. Every route needs a login token of an active admin account."""
+"""Admin API: the shop team manages products, categories, customers, orders and
+Contact messages. Staff and admin accounts can use it; promo codes, blocking customers
+and managing staff are for the owner (admin) only."""
 from datetime import datetime
 from functools import wraps
 
@@ -7,11 +8,12 @@ from flask import Blueprint, request
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 from PIL import UnidentifiedImageError
 from slugify import slugify
-from sqlalchemy import func, or_
+from sqlalchemy import case, func, or_
 from sqlalchemy.orm import selectinload
 
-from ..admin_ops import AdminError, activity, delete_category, next_statuses, reply_contact, set_customer_active, set_order_status, stats
-from ..extensions import db
+from ..admin_ops import (AdminError, activity, delete_category, next_statuses, reply_contact, set_customer_active, set_order_status,
+                         stats, update_staff)
+from ..extensions import bcrypt, db
 from ..models import Category, ContactMessage, Coupon, Order, OrderItem, Product, ProductImage, Review, Series, User
 from ..product_images import add_uploaded_photo, remove_photo
 from ..utils.responses import error, success
@@ -22,16 +24,32 @@ bp = Blueprint("admin_api", __name__, url_prefix="/api/admin")
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
 
-def admin_required(view):
-    @wraps(view)
-    def wrapper(*args, **kwargs):
-        verify_jwt_in_request()
-        user = db.session.get(User, int(get_jwt_identity()))
-        if user is None or user.role != "admin":
-            return error("Admins only", 403)
-        return view(*args, **kwargs)
+TEAM_ROLES = ("staff", "admin")
 
-    return wrapper
+
+def _role_required(roles, message):
+    def decorator(view):
+        @wraps(view)
+        def wrapper(*args, **kwargs):
+            verify_jwt_in_request()
+            user = db.session.get(User, int(get_jwt_identity()))
+            if user is None or user.role not in roles:
+                return error(message, 403)
+            return view(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+# Staff and the owner
+staff_required = _role_required(TEAM_ROLES, "Shop staff only")
+# The owner only
+admin_required = _role_required(("admin",), "Admins only")
+
+
+def _me():
+    return db.session.get(User, int(get_jwt_identity()))
 
 
 def _page(query, item):
@@ -52,13 +70,13 @@ def _body():
 
 
 @bp.get("/stats")
-@admin_required
+@staff_required
 def dashboard():
     return success(stats())
 
 
 @bp.get("/activity")
-@admin_required
+@staff_required
 def live_activity():
     """The dashboard's Live activity feed. Query: limit (default 20, max 50)."""
     return success(activity(min(max(request.args.get("limit", 20, type=int), 1), 50)))
@@ -147,7 +165,7 @@ def _admin_product(product_id):
 
 
 @bp.get("/products")
-@admin_required
+@staff_required
 def list_products():
     """All products, hidden ones too. Query: q, category_id, active=1|0, low_stock=1, page, per_page."""
     query = Product.query.options(selectinload(Product.images), selectinload(Product.category), selectinload(Product.series))
@@ -165,7 +183,7 @@ def list_products():
 
 
 @bp.post("/products")
-@admin_required
+@staff_required
 def create_product():
     product = Product(stock=0)
     errors = _apply_product(product, _body(), creating=True)
@@ -178,7 +196,7 @@ def create_product():
 
 
 @bp.get("/products/<int:product_id>")
-@admin_required
+@staff_required
 def get_product(product_id):
     product = _admin_product(product_id)
     if product is None:
@@ -187,7 +205,7 @@ def get_product(product_id):
 
 
 @bp.put("/products/<int:product_id>")
-@admin_required
+@staff_required
 def update_product(product_id):
     """Send only the fields to change."""
     product = _admin_product(product_id)
@@ -202,7 +220,7 @@ def update_product(product_id):
 
 
 @bp.delete("/products/<int:product_id>")
-@admin_required
+@staff_required
 def hide_product(product_id):
     """Hides the product from the shop. It is kept because past orders point to it."""
     product = _admin_product(product_id)
@@ -215,7 +233,7 @@ def hide_product(product_id):
 
 
 @bp.post("/products/<int:product_id>/images")
-@admin_required
+@staff_required
 def upload_photo(product_id):
     """multipart/form-data with a `file` (JPG, PNG or WebP, 5 MB max). Made square and saved as WebP."""
     product = _admin_product(product_id)
@@ -238,7 +256,7 @@ def upload_photo(product_id):
 
 
 @bp.delete("/products/<int:product_id>/images/<int:image_id>")
-@admin_required
+@staff_required
 def delete_photo(product_id, image_id):
     image = ProductImage.query.filter_by(id=image_id, product_id=product_id).first()
     if image is None:
@@ -288,14 +306,14 @@ def _apply_category(category, data, creating):
 
 
 @bp.get("/categories")
-@admin_required
+@staff_required
 def list_categories():
     counts = dict(db.session.query(Product.category_id, func.count(Product.id)).group_by(Product.category_id).all())
     return success([_category_dict(c, counts) for c in Category.query.order_by(Category.id)])
 
 
 @bp.post("/categories")
-@admin_required
+@staff_required
 def create_category():
     category = Category()
     errors = _apply_category(category, _body(), creating=True)
@@ -308,7 +326,7 @@ def create_category():
 
 
 @bp.put("/categories/<int:category_id>")
-@admin_required
+@staff_required
 def update_category(category_id):
     category = db.session.get(Category, category_id)
     if category is None:
@@ -322,7 +340,7 @@ def update_category(category_id):
 
 
 @bp.delete("/categories/<int:category_id>")
-@admin_required
+@staff_required
 def remove_category(category_id):
     category = db.session.get(Category, category_id)
     if category is None:
@@ -351,7 +369,7 @@ def _customer_dict(u, with_orders=False):
 
 
 @bp.get("/customers")
-@admin_required
+@staff_required
 def list_customers():
     """Query: q (name, email or phone), active=1|0, page, per_page."""
     query = User.query.filter_by(role="customer").options(selectinload(User.orders))
@@ -368,7 +386,7 @@ def _customer(user_id):
 
 
 @bp.get("/customers/<int:user_id>")
-@admin_required
+@staff_required
 def get_customer(user_id):
     user = _customer(user_id)
     if user is None:
@@ -391,6 +409,87 @@ def update_customer(user_id):
 
 
 # ---------------------------------------------------------------------------
+# Staff (the owner adds shop accounts, changes their role, disables them)
+# ---------------------------------------------------------------------------
+
+def _staff_dict(u):
+    data = u.to_dict()
+    data["is_active"] = u.is_active
+    data["last_login_at"] = u.last_login_at.isoformat() if u.last_login_at else None
+    return data
+
+
+def _staff(user_id):
+    return User.query.filter(User.id == user_id, User.role.in_(TEAM_ROLES)).first()
+
+
+@bp.get("/staff")
+@admin_required
+def list_staff():
+    """Admin and staff accounts, owners first. Query: q (name, email or phone), active=1|0."""
+    query = User.query.filter(User.role.in_(TEAM_ROLES))
+    if q := request.args.get("q", "").strip():
+        like = f"%{q}%"
+        query = query.filter(or_(User.full_name.ilike(like), User.email.ilike(like), User.phone.ilike(like)))
+    if request.args.get("active") in ("0", "1"):
+        query = query.filter(User.is_active.is_(request.args["active"] == "1"))
+    owners_first = case((User.role == "admin", 0), else_=1)
+    return success([_staff_dict(u) for u in query.order_by(owners_first, User.full_name)])
+
+
+@bp.post("/staff")
+@admin_required
+def create_staff():
+    """Body: full_name, email, password, phone?, role (staff|admin, default staff)."""
+    f = Fields(_body())
+    full_name = f.person_name("full_name", label="Name")
+    email = f.email()
+    password = f.password("password")
+    phone = f.phone()
+    role = f.choice("role", TEAM_ROLES, default="staff", message="Choose staff or admin")
+    if email and User.query.filter_by(email=email).first():
+        f.errors.setdefault("email", "Email is already registered")
+    if f.errors:
+        return error("Validation failed", 422, f.errors)
+    user = User(full_name=full_name, email=email, phone=phone, role=role,
+                password_hash=bcrypt.generate_password_hash(password).decode())
+    db.session.add(user)
+    db.session.commit()
+    return success(_staff_dict(user), "Staff account added", 201)
+
+
+@bp.put("/staff/<int:user_id>")
+@admin_required
+def edit_staff(user_id):
+    """Send only what changes: full_name, phone, role, is_active, password (a new one to give them).
+    A new role, a new password or disabling signs them out everywhere."""
+    user = _staff(user_id)
+    if user is None:
+        return error("Staff account not found", 404)
+    f = Fields(_body())
+    changes = {}
+    if f.has("full_name"):
+        changes["full_name"] = f.person_name("full_name", label="Name")
+    if f.has("phone"):
+        changes["phone"] = f.phone()
+    if f.has("role"):
+        changes["role"] = f.choice("role", TEAM_ROLES, required=True, message="Choose staff or admin")
+    if f.has("is_active"):
+        changes["is_active"] = f.boolean("is_active")
+    if f.has("password"):
+        changes["password_hash"] = f.password("password", label="New password")
+    if f.errors:
+        return error("Validation failed", 422, f.errors)
+    if "password_hash" in changes:
+        changes["password_hash"] = bcrypt.generate_password_hash(changes["password_hash"]).decode()
+    try:
+        update_staff(user, _me(), changes)
+    except AdminError as e:
+        return error(str(e), 409)
+    return success(_staff_dict(user), "Staff account saved")
+
+
+# ---------------------------------------------------------------------------
 # Orders
 # ---------------------------------------------------------------------------
 
@@ -404,7 +503,7 @@ def _order_dict(o, with_items=False):
 
 
 @bp.get("/orders")
-@admin_required
+@staff_required
 def list_orders():
     """Every customer's orders, newest first. Query: status, q (order number or customer), page, per_page."""
     query = Order.query.join(User, Order.user_id == User.id).options(selectinload(Order.items).selectinload(OrderItem.product).selectinload(Product.images), selectinload(Order.user))
@@ -419,7 +518,7 @@ def list_orders():
 
 
 @bp.get("/orders/<int:order_id>")
-@admin_required
+@staff_required
 def get_order(order_id):
     order = Order.query.options(selectinload(Order.items).selectinload(OrderItem.product)).filter_by(id=order_id).first()
     if order is None:
@@ -428,7 +527,7 @@ def get_order(order_id):
 
 
 @bp.put("/orders/<int:order_id>/status")
-@admin_required
+@staff_required
 def update_order_status(order_id):
     """Body: {status}. Allowed steps are in the order's next_statuses; the customer is notified."""
     order = db.session.get(Order, order_id)
@@ -446,7 +545,7 @@ def update_order_status(order_id):
 # ---------------------------------------------------------------------------
 
 @bp.get("/contact-messages")
-@admin_required
+@staff_required
 def list_contact_messages():
     """Query: status=open|answered, page, per_page."""
     query = ContactMessage.query
@@ -462,7 +561,7 @@ def list_contact_messages():
 
 
 @bp.post("/contact-messages/<int:message_id>/reply")
-@admin_required
+@staff_required
 def reply_to_message(message_id):
     """Body: {reply}. The customer gets the reply in Notifications."""
     message = db.session.get(ContactMessage, message_id)
@@ -587,7 +686,7 @@ def delete_coupon(coupon_id):
 
 
 @bp.get("/reviews")
-@admin_required
+@staff_required
 def list_reviews():
     """All reviews, newest first. Query: rating=1-5, q (product or customer), page, per_page."""
     query = Review.query.join(Product).join(User, User.id == Review.user_id)
@@ -607,7 +706,7 @@ def list_reviews():
 
 
 @bp.delete("/reviews/<int:review_id>")
-@admin_required
+@staff_required
 def delete_review(review_id):
     """Removes a review (spam or rude words). The product's rating updates at once."""
     review = db.session.get(Review, review_id)

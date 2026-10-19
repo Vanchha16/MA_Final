@@ -168,6 +168,30 @@ class Customer {
       );
 }
 
+/// A staff or admin account (GET /api/admin/staff, owner only).
+class StaffMember {
+  final int id;
+  final String fullName, email, role;
+  final String? phone;
+  final bool isActive;
+  final DateTime? lastLoginAt;
+
+  const StaffMember({required this.id, required this.fullName, required this.email, this.role = 'staff', this.phone, this.isActive = true, this.lastLoginAt});
+
+  bool get isAdmin => role == 'admin';
+  String get initials => fullName.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).take(2).map((w) => w[0].toUpperCase()).join();
+
+  factory StaffMember.fromJson(Map<String, dynamic> json) => StaffMember(
+        id: json['id'],
+        fullName: json['full_name'],
+        email: json['email'],
+        role: json['role'] ?? 'staff',
+        phone: json['phone'],
+        isActive: json['is_active'] ?? true,
+        lastLoginAt: json['last_login_at'] == null ? null : DateTime.tryParse(json['last_login_at']),
+      );
+}
+
 /// A Contact message (GET /api/admin/contact-messages).
 class AdminMessage {
   final int id;

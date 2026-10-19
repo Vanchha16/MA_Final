@@ -3,7 +3,9 @@ import { api, ApiError, setSignedOutHandler, tokenStore } from './api';
 
 const AuthContext = createContext(null);
 
-/** Who is signed in. Only admin accounts get in; anyone else sees an error. */
+/** Who is signed in. Staff and admin accounts get in; customers see an error. */
+const TEAM = ['staff', 'admin'];
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
@@ -22,20 +24,22 @@ export function AuthProvider({ children }) {
       return;
     }
     api.get('/auth/me')
-      .then((me) => (me.role === 'admin' ? setUser(me) : logout('This account is not a shop admin.')))
+      .then((me) => (TEAM.includes(me.role) ? setUser(me) : logout('This account is not shop staff.')))
       .catch(() => logout())
       .finally(() => setReady(true));
   }, [logout]);
 
   const login = useCallback(async (email, password) => {
     const data = await api.post('/auth/login', { email, password });
-    if (data.user.role !== 'admin') throw new ApiError('This account is not a shop admin. Use the mobile app to shop.', 403);
+    if (!TEAM.includes(data.user.role)) throw new ApiError('This account is not shop staff. Use the mobile app to shop.', 403);
     tokenStore.set(data.token);
     setNotice(null);
     setUser(data.user);
   }, []);
 
-  const value = useMemo(() => ({ user, ready, login, logout, notice }), [user, ready, login, logout, notice]);
+  // The owner: staff, promo codes and blocking customers
+  const isAdmin = user?.role === 'admin';
+  const value = useMemo(() => ({ user, isAdmin, ready, login, logout, notice }), [user, isAdmin, ready, login, logout, notice]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

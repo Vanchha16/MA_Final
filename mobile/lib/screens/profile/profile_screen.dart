@@ -135,7 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 16),
               MenuCard(items: [
-                if (context.watch<AuthProvider>().user?.isAdmin ?? false)
+                if (context.watch<AuthProvider>().user?.isStaff ?? false)
                   MenuItemData(icon: Icons.admin_panel_settings_rounded, label: context.l10n.adminTitle, onTap: () => AdminShell.open(context)),
                 MenuItemData(
                   icon: Icons.favorite_rounded,

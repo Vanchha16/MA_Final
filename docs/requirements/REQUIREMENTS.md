@@ -22,7 +22,7 @@ Anime World Shop is made of three parts that share one database:
 | Part | Who uses it | Built with |
 |---|---|---|
 | **Mobile app - customer side** | Shoppers | Flutter (Android, iOS, web) |
-| **Mobile app - admin side** | Shop owner and staff (same app, opened by an admin account) | Flutter |
+| **Mobile app - admin side** | Shop owner and staff (same app, opened by an admin or staff account) | Flutter |
 | **Backend REST API + web admin panel** | The mobile app; staff on a computer (`/admin`) | Python Flask, MySQL |
 
 In scope: accounts, catalogue, search and filters, cart, wishlist, checkout, KHQR, ABA PayWay and cash on delivery payment, order tracking, receipts, product reviews and ratings, notifications, contact messages, settings, and the shop management tools.
@@ -49,7 +49,8 @@ Out of scope for version 1.0: delivery-company integration, refunds through the 
 |---|---|---|
 | **Customer** | Buys products | Find items fast, see real stock and prices, pay easily, know where the order is |
 | **Visitor** | Has not signed in yet | Create an account, sign in, recover a forgotten password |
-| **Admin (shop owner / staff)** | Runs the shop | Handle new orders quickly, keep stock right, add products, answer customers |
+| **Admin (shop owner)** | Owns the shop | Everything staff do, plus manage staff accounts, promo codes and blocked customers |
+| **Staff** | Runs the shop day to day | Handle new orders quickly, keep stock right, add products, answer customers |
 | **Bakong KHQR** (external system) | Payment network | Receives the QR payment request and reports when it is paid |
 | **ABA PayWay** (external system) | Payment gateway | Creates a PayWay payment (KHQR + ABA Mobile link), reports its status and posts the result back |
 | **Email service** (external system) | Sends mail | Delivers password reset codes |
@@ -90,7 +91,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 
 | ID | Requirement | Priority |
 |---|---|---|
-| FR-U01 | The app shows a **splash screen** with the logo while it checks for a saved login, then opens the shop (customer), the admin area (admin) or the login screen. | M |
+| FR-U01 | The app shows a **splash screen** with the logo while it checks for a saved login, then opens the shop (customer), the admin area (admin or staff) or the login screen. | M |
 | FR-U02 | A visitor can **register** with full name, email, password and an optional phone number. | M |
 | FR-U03 | A user can **log in** with email and password and stays logged in until they log out. | M |
 | FR-U04 | A user who **forgot the password** can request a 6-digit code by email, enter it, and choose a new password. | M |
@@ -99,7 +100,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | FR-U07 | A logged-in user can **change the password** after entering the current one. | S |
 | FR-U08 | A customer can add, edit, delete and choose a default **delivery address**. | S |
 | FR-U09 | A user can **log out**; the app asks for confirmation first. | M |
-| FR-U10 | Accounts have a **role** (customer or admin); admin-only screens and API calls are refused for customers. | M |
+| FR-U10 | Accounts have a **role** (customer, staff or admin); shop screens and API calls are refused for customers, and owner-only ones (staff, promo codes, blocking customers) for staff. | M |
 
 ### 4.2 Product browsing (FR-P)
 
@@ -170,6 +171,8 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | FR-AD07 | The shop can be managed on a computer in a **React web admin** at `/dashboard`: the same dashboard as the app (revenue, 7-day chart, orders to handle with one-click steps, live activity with Reply / Restock, low stock with +5, refreshing every 20 seconds) and pages for orders, products with photos, categories, customers, messages, reviews and coupons, with a Light / Dark / System theme switch. | C |
 | FR-AD08 | A server-rendered **admin panel** at `/admin` (Flask-Admin) offers the same dashboard and one-click actions, as a fallback that needs no JavaScript build. | C |
 | FR-AD09 | The admin can **manage promo codes** (add, edit, switch off, delete) and **remove reviews** (spam, rude words). | C |
+| FR-AD10 | The admin (owner) can **manage staff accounts** in the app and the web admin: add a staff or admin account with a starting password, change the name, phone and role, reset the password and disable / enable the account. A new role, a new password or disabling signs that person out at once. Nobody can change their own role or disable themselves, and the shop always keeps one active admin. | S |
+| FR-AD11 | A **staff** account opens the same admin area but only sees what staff may do: dashboard, orders, products, categories, messages, reviews and customers (view only). Staff, Coupons and Block customer are hidden, and the API refuses them (403). | S |
 
 ---
 
@@ -179,10 +182,10 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 
 | ID | Core function | How the backend provides it |
 |---|---|---|
-| BE-01 | User authentication and authorization | `/api/auth/*` (register, login, me, forgot password, verify code, reset password); JWT on every protected route; role check on `/api/admin/*`; blocked users refused |
+| BE-01 | User authentication and authorization | `/api/auth/*` (register, login, me, forgot password, verify code, reset password); JWT on every protected route; role check on `/api/admin/*` (staff or admin; owner-only routes need admin); blocked users refused |
 | BE-02 | Product management | Public `/api/products`, `/api/products/<id>`, search suggestions; admin `/api/admin/products` create, update, delete, photos, stock |
 | BE-03 | Category management | Public `/api/categories`; admin `/api/admin/categories` create, rename, delete |
-| BE-04 | Customer management | Own profile `/api/profile`, addresses `/api/addresses`, preferences; admin `/api/admin/customers` list, details, block |
+| BE-04 | Customer management | Own profile `/api/profile`, addresses `/api/addresses`, preferences; admin `/api/admin/customers` list, details, block; staff accounts `/api/admin/staff` list, add, change, disable |
 | BE-05 | Shopping cart management | `/api/cart` add, update quantity, remove, clear, coupon; wishlist `/api/wishlist` |
 | BE-06 | Order management | `/api/checkout`, `/api/orders` place, list, details, received, KHQR and ABA PayWay payment, PayWay callback; admin `/api/admin/orders` list, details, status |
 | BE-07 | API for the mobile app | 64 REST endpoints, JSON in and out, documented (section 5.2) |
@@ -210,7 +213,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | NFR-04 | Localisation | The app works in English and Khmer and remembers the choice. | gen-l10n `.arb` files; customer screens translated (admin tools in English for v1.0) |
 | NFR-05 | Performance | Screens show data within about 2 seconds on a normal connection; lists load in pages; photos are cached. | Pagination (max 50 per page), photos cached on the device with `cached_network_image` |
 | NFR-06 | Security | Passwords are never stored in plain text. | bcrypt hashes |
-| NFR-07 | Security | Only logged-in users reach their own data; only admins reach admin data. | JWT (7-day expiry), ownership checks on every order/address/cart query, role check, blocked accounts rejected |
+| NFR-07 | Security | Only logged-in users reach their own data; only shop staff reach shop data, and only the owner manages staff. | JWT (7-day expiry), ownership checks on every order/address/cart query, role check, blocked accounts rejected |
 | NFR-08 | Security | Passwords and reset codes cannot be brute-forced, and the shop cannot be flooded. | Login: 10 tries a minute per network and 10 per 15 minutes per email; sign-up: 20 an hour per network; contact: 5 messages in 10 minutes and 30 a day per account (Flask-Limiter, `429`). Reset code valid 10 minutes, locked after 5 wrong tries, 60 s between requests, max 5 requests per hour |
 | NFR-08b | Security | Changing or resetting the password signs out the account's other devices. | A token version in each login token; older tokens get `401` |
 | NFR-09 | Security | Secrets are not in the source code. | `.env` file (git-ignored) for database URL, secret keys, Bakong token and PayWay API key |
@@ -236,6 +239,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | BR-08 | Cancelling an order returns its items to stock. |
 | BR-09 | A category can be deleted only when it has no products. |
 | BR-10 | A blocked customer cannot log in or use an existing token until an admin unblocks them. |
+| BR-11 | A disabled staff account cannot log in or use an existing token. Admins cannot change their own role or disable themselves, and the last active admin cannot be demoted or disabled. |
 | BR-11 | A product's sale price must be lower than its normal price; stock is 0 or more. |
 | BR-12 | Each status change and each answer to a message creates a notification for the customer. |
 | BR-13 | Only a customer who received a product (a delivered order containing it) can review it; one review per customer and product, and posting again edits it. A comment has at most 1,000 characters. |
@@ -264,7 +268,7 @@ Order items copy the product name and unit price at the time of purchase, so old
 
 ## 9. Screen inventory
 
-The brief asks for at least 20 screens. The app has **42** (32 customer, 10 admin), plus sheets such as Filter, Rate a product and To review.
+The brief asks for at least 20 screens. The app has **44** (32 customer, 12 admin), plus sheets such as Filter, Rate a product and To review.
 
 | # | Screen | Brief item | # | Screen | Brief item |
 |---|---|---|---|---|---|
@@ -289,6 +293,8 @@ The brief asks for at least 20 screens. The app has **42** (32 customer, 10 admi
 | 19 | Checkout (+ address form) | Checkout | 40 | Admin Customer Details | (admin) |
 | 20 | KHQR / ABA PayWay Payment | (bonus: online payment) | 41 | Admin Messages | (admin) |
 | 21 | Order Placed | Order Confirmation | 42 | Reviews | (bonus: reviews and ratings) |
+| | | | 43 | Admin Staff | (admin only) |
+| | | | 44 | Add / Edit Staff Member | (admin only) |
 
 "Add to Cart" is a feature on Product List and Product Details (with an animation and an "Added to cart" sheet), so it has no separate screen. Screenshots of each screen are in [`docs/screenshots/`](../screenshots/).
 

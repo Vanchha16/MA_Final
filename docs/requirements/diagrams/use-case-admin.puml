@@ -1,12 +1,14 @@
 @startuml use-case-admin
-' Anime World Shop - the shop owner's tools (admin app tabs and the /admin web panel)
+' Anime World Shop - the shop team's tools (admin app tabs and the web admin). Admin = owner, a kind of Staff
 !pragma layout smetana
 !include style.iuml
 left to right direction
 title Anime World Shop - Admin Use Cases
 
+actor Staff
 actor Admin
 actor Customer
+Admin -up-|> Staff
 
 rectangle "Anime World Shop - admin app and web panel" {
   package "Dashboard" {
@@ -32,23 +34,32 @@ rectangle "Anime World Shop - admin app and web panel" {
     usecase "Block / unblock customer" as A_Block
     usecase "Reply to a message" as A_Reply
   }
+  package "Shop team (owner only)" {
+    usecase "Manage staff accounts\n(add, role, password)" as A_Staff
+    usecase "Disable / enable\nstaff account" as A_Disable
+    usecase "Manage promo codes" as A_Coupons
+  }
 }
 
-Admin --> A_Stats
-Admin --> A_Feed
-Admin --> A_Orders
-Admin --> A_OrderDetail
-Admin --> A_Step
-Admin --> A_Cancel
+Staff --> A_Stats
+Staff --> A_Feed
+Staff --> A_Orders
+Staff --> A_OrderDetail
+Staff --> A_Step
+Staff --> A_Cancel
 A_Step .> A_Notify : <<include>>
-Admin --> A_Product
+Staff --> A_Product
 A_Photos .> A_Product : <<extend>>
-Admin --> A_Stock
-Admin --> A_Hide
-Admin --> A_Cats
-Admin --> A_Customers
+Staff --> A_Stock
+Staff --> A_Hide
+Staff --> A_Cats
+Staff --> A_Customers
+Staff --> A_Reply
+Admin --> A_Block
 A_Block .> A_Customers : <<extend>>
-Admin --> A_Reply
+Admin --> A_Staff
+A_Disable .> A_Staff : <<extend>>
+Admin --> A_Coupons
 A_Notify --> Customer
 note right of A_Notify
   Also sent when an order

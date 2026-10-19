@@ -16,13 +16,14 @@ import '../../widgets/pill_button.dart';
 import '../auth/login_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
+import 'admin_staff_screen.dart';
 import 'admin_widgets.dart';
 
 const _violet = Color(0xFF7C3AED);
 const _cyan = Color(0xFF06B6D4);
 
-/// Admin More tab: Messages, Customers, Categories, then the shop, the web
-/// panel, Settings and Log out.
+/// Admin More tab: Messages, Customers, Categories, Staff (owner only), then the
+/// shop, the web admin, Settings and Log out.
 class AdminMoreScreen extends StatelessWidget {
   final AdminService service;
   final int openMessages;
@@ -65,15 +66,18 @@ class AdminMoreScreen extends StatelessWidget {
             for (final (i, r) in rows.indexed) ...[if (i > 0) Divider(height: 1, indent: 70, color: scheme.outlineVariant.withValues(alpha: 0.5)), r],
           ]),
         );
-    final panel = ApiConstants.baseUrl.replaceFirst(RegExp(r'/api/?$'), '/admin');
+    final owner = context.watch<AuthProvider>().user?.isAdmin ?? false;
+    // The Flask-Admin panel is for the owner; staff use the web admin
+    final panel = ApiConstants.baseUrl.replaceFirst(RegExp(r'/api/?$'), owner ? '/admin' : '/dashboard');
     return SafeArea(
       bottom: false,
       child: ListView(padding: const EdgeInsets.fromLTRB(20, 0, 20, 96), children: [
         const Padding(padding: EdgeInsets.fromLTRB(0, 10, 0, 12), child: AdminTitleText('More')),
         group([
           row('messages', Icons.forum_rounded, _cyan, 'Messages', 'Questions from the Contact screen', () => push(AdminMessagesScreen(service: service)), badge: openMessages),
-          row('customers', Icons.people_rounded, AppTheme.success, 'Customers', 'Orders, spending, block or unblock', () => push(AdminCustomersScreen(service: service))),
+          row('customers', Icons.people_rounded, AppTheme.success, 'Customers', owner ? 'Orders, spending, block or unblock' : 'Orders and spending', () => push(AdminCustomersScreen(service: service))),
           row('categories', Icons.category_rounded, _violet, 'Categories', 'Add, rename or delete', () => push(AdminCategoriesScreen(service: service))),
+          if (owner) row('staff', Icons.badge_rounded, AppTheme.abaNavy, 'Staff', 'Add staff, roles, passwords', () => push(AdminStaffScreen(service: service))),
         ]),
         const SizedBox(height: 12),
         group([
@@ -487,7 +491,8 @@ class _AdminCustomerScreenState extends State<AdminCustomerScreen> {
             ),
           ]),
         ),
-        bottomNavigationBar: Padding(
+        // Only the owner can block; staff just look
+        bottomNavigationBar: !(context.watch<AuthProvider>().user?.isAdmin ?? false) ? null : Padding(
           padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + MediaQuery.paddingOf(context).bottom),
           child: _c.isActive
               ? PillButton.danger(key: const Key('admin_customer_block'), label: 'Block customer', leadingIcon: Icons.block_rounded, loading: _busy, onPressed: _toggle)

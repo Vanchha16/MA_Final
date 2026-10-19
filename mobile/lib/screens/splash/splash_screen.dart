@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     await Future.wait([auth.tryAutoLogin(), Future.delayed(_duration)]);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(
-      builder: (_) => !auth.isLoggedIn ? const LoginScreen() : (auth.user!.isAdmin ? const AdminShell() : const MainShell()),
+      builder: (_) => !auth.isLoggedIn ? const LoginScreen() : (auth.user!.isStaff ? const AdminShell() : const MainShell()),
     ));
   }
 
