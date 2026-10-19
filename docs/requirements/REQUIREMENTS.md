@@ -339,7 +339,7 @@ Each item of the brief, the requirements that cover it and where it is implement
 
 **Constraints**
 - Built and demonstrated by a student team within one term; the backend runs on a local computer (WAMP MySQL on port 3306) for the demo.
-- KHQR runs in **mock** mode for the demo (a demo QR and a "Simulate payment" button); setting `PAYMENT_PROVIDER=bakong` with a Bakong token makes it take real payments.
+- KHQR takes real payments through Bakong: the server needs a Bakong Open API token (`BAKONG_TOKEN`, renewed about every 90 days) and the receiving account (`BAKONG_ACCOUNT_ID`).
 - Reset codes are printed in the server console in development (`MAIL_MODE=console`); real email needs SMTP settings.
 
 **Assumptions**

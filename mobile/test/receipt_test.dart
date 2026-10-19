@@ -116,8 +116,10 @@ void main() {
 
   testWidgets('after paying, the actions sit under the receipt: Save receipt and View order work', (tester) async {
     final export = FakeExport();
-    await _pump(tester, KhqrPaymentScreen(order: FakePaymentService.order, service: FakePaymentService(), export: export), settle: false);
-    await tester.tap(find.byKey(const Key('khqr_simulate')));
+    final payments = FakePaymentService();
+    await _pump(tester, KhqrPaymentScreen(order: FakePaymentService.order, service: payments, export: export), settle: false);
+    payments.state = KhqrStatus.paid;
+    await tester.tap(find.byKey(const Key('khqr_check')));
     await tester.pump();
     await tester.pump(KhqrPaymentScreen.printDuration);
     await tester.pump(const Duration(milliseconds: 300));

@@ -335,7 +335,7 @@ class Payment(TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, index=True)
-    provider = db.Column(db.Enum("mock", "bakong", name="payment_provider"), nullable=False)
+    provider = db.Column(db.Enum("mock", "bakong", name="payment_provider"), nullable=False)  # "mock": old demo-mode rows
     qr = db.Column(db.Text, nullable=False)
     md5 = db.Column(db.String(32), nullable=False, unique=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
@@ -354,7 +354,6 @@ class Payment(TimestampMixin, db.Model):
             "status": self.status,
             "expires_at": self.expires_at.isoformat() + "Z",
             "paid_at": self.paid_at.isoformat() + "Z" if self.paid_at else None,
-            "demo": self.provider == "mock",
         }
 
 

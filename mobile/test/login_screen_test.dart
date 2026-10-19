@@ -67,13 +67,8 @@ void main() {
     expect(find.bySemanticsLabel('Login'), findsOneWidget);
   });
 
-  testWidgets('demo account button fills the form (debug builds)', (tester) async {
+  testWidgets('there is no demo account shortcut', (tester) async {
     await _pumpLogin(tester);
-
-    await tester.ensureVisible(find.text('Use demo account'));
-    await tester.tap(find.text('Use demo account'));
-    await tester.pump();
-
-    expect(find.text('demo@shop.com'), findsOneWidget);
+    expect(find.text('Use demo account'), findsNothing);
   });
 }

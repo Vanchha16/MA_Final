@@ -1,6 +1,6 @@
 """Bakong KHQR payments for orders.
 
-Every place that can see a payment (the app polling, the demo button) goes
+Every place that can see a payment (the app polling, the order list) goes
 through refresh(), so "mark paid" and "expire" happen in exactly one way.
 """
 from datetime import timedelta
@@ -39,7 +39,7 @@ def start(order):
     )
     payment = Payment(
         order_id=order.id,
-        provider="bakong" if cfg["PAYMENT_PROVIDER"] == "bakong" else "mock",
+        provider="bakong",
         qr=created.qr,
         md5=created.md5,
         amount=order.total,
@@ -87,11 +87,12 @@ def expire(order, payment):
 
 
 def refresh(order, payment=None):
-    """Checks the payment once: marks it paid, or expires it when its time is up."""
+    """Checks the payment once: marks it paid, or expires it when its time is up.
+    Bakong is asked first, so money paid just before the deadline still counts."""
     payment = payment or active_payment(order)
     if payment is None or payment.status != "pending":
         return payment
-    if payment.provider == "bakong" and _paid_on_bakong(payment):
+    if _paid_on_bakong(payment):
         return mark_paid(order, payment)
     if utcnow() >= payment.expires_at:
         return expire(order, payment)

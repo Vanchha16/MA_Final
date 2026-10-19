@@ -76,7 +76,8 @@ void main() {
     await tester.pump(KhqrPaymentScreen.pollEvery);
     expect(payments.checks, 1); // checks by itself
 
-    await tester.tap(find.byKey(const Key('khqr_simulate')));
+    payments.state = KhqrStatus.paid; // paid in the bank app: the next check sees it
+    await tester.pump(KhqrPaymentScreen.pollEvery);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byKey(const Key('khqr_card')), findsOneWidget); // squashing into the printer
@@ -115,17 +116,18 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('khqr_expired')), findsOneWidget);
     expect(find.text('Back to shop'), findsOneWidget);
-    expect(find.byKey(const Key('khqr_simulate')), findsNothing);
   });
 
-  testWidgets('real payments (not demo) have no simulate button', (tester) async {
-    await _pump(tester, FakeCheckoutService(addresses: [FakeCheckoutService.home]), payments: FakePaymentService(demo: false));
+  testWidgets("I've paid - check now asks the server straight away", (tester) async {
+    final payments = FakePaymentService();
+    await _pump(tester, FakeCheckoutService(addresses: [FakeCheckoutService.home]), payments: payments);
     await _place(tester);
     expect(find.byKey(const Key('khqr_card')), findsOneWidget);
-    expect(find.byKey(const Key('khqr_simulate')), findsNothing);
+    payments.state = KhqrStatus.paid;
     await tester.tap(find.byKey(const Key('khqr_check')));
-    await tester.pump();
-    await tester.pumpWidget(const SizedBox()); // stop the timers
+    await tester.pumpAndSettle();
+    expect(payments.checks, 1);
+    expect(find.byKey(const Key('khqr_paid_stamp')), findsOneWidget);
   });
 
   testWidgets('store pickup is free and paid at the shop', (tester) async {

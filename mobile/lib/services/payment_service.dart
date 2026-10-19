@@ -13,7 +13,4 @@ class PaymentService {
 
   /// pending, paid or expired (an expired order is cancelled).
   Future<(KhqrPayment, Order)> status(int orderId) async => _read(await _api.get('${ApiConstants.orders}/$orderId/payment'));
-
-  /// Demo mode only.
-  Future<(KhqrPayment, Order)> simulate(int orderId) async => _read(await _api.post('${ApiConstants.orders}/$orderId/payment/simulate'));
 }

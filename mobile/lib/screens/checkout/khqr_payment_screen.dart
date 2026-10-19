@@ -52,7 +52,7 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
   KhqrPayment? _payment;
   String? _error;
   Timer? _poll, _tick;
-  bool _checking = false, _simulating = false, _checkingByHand = false;
+  bool _checking = false, _checkingByHand = false;
 
   @override
   void initState() {
@@ -127,19 +127,6 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
     if (mounted) setState(() => _checkingByHand = false);
   }
 
-  Future<void> _simulate() async {
-    setState(() => _simulating = true);
-    try {
-      _show(await _service.simulate(_order.id));
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), behavior: SnackBarBehavior.floating));
-      }
-    } finally {
-      if (mounted) setState(() => _simulating = false);
-    }
-  }
-
   Duration get _left {
     final left = _payment!.expiresAt.difference(DateTime.now().toUtc());
     return left.isNegative ? Duration.zero : left;
@@ -197,12 +184,7 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
                       KhqrPayment _ when expired => const _ExpiredState(),
                       final KhqrPayment payment => _Printer(
                           t: paid ? t : 0,
-                          waiting: _Waiting(
-                            payment: payment,
-                            left: _left,
-                            simulating: _simulating,
-                            onSimulate: payment.demo ? _simulate : null,
-                          ),
+                          waiting: _Waiting(payment: payment, left: _left),
                           paidOrder: paid ? _order : null,
                           paidAt: payment.paidAt,
                           // After the stamp: what happens next, right under the receipt
@@ -361,10 +343,8 @@ class _PaidActions extends StatelessWidget {
 class _Waiting extends StatelessWidget {
   final KhqrPayment payment;
   final Duration left;
-  final bool simulating;
-  final VoidCallback? onSimulate;
 
-  const _Waiting({required this.payment, required this.left, required this.simulating, this.onSimulate});
+  const _Waiting({required this.payment, required this.left});
 
   @override
   Widget build(BuildContext context) {
@@ -457,15 +437,6 @@ class _Waiting extends StatelessWidget {
               ),
           ]),
         ),
-        if (onSimulate != null) ...[
-          const SizedBox(height: 8),
-          TextButton.icon(
-            key: const Key('khqr_simulate'),
-            onPressed: simulating ? null : onSimulate,
-            icon: const Icon(Icons.science_outlined),
-            label: const Text('Simulate payment (demo)'),
-          ),
-        ],
       ]),
     );
   }
