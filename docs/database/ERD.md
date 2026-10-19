@@ -6,6 +6,17 @@ image [`erd.png`](erd.png) or [`erd.pdf`](erd.pdf). The same diagram is below
 
 ![ERD](erd.png)
 
+## Detailed ER diagram (every column and foreign key)
+
+Drawn from the real MySQL database in the style of Navicat's ER view: each table with every
+column and its type, primary keys (key icon), indexed / foreign-key columns (diamond), and a
+crow's-foot line for each of the 19 foreign keys, labelled with its constraint name.
+Files: [`erd-diagram.png`](erd-diagram.png), [`erd-diagram.pdf`](erd-diagram.pdf),
+[`erd-diagram.svg`](erd-diagram.svg). To redraw it after a schema change, with WAMP's MySQL running:
+`python docs/database/make_erd_diagram.py`, then export `erd-diagram.html` from Chrome.
+
+![Detailed ER diagram](erd-diagram.png)
+
 ```mermaid
 erDiagram
     USERS ||--o{ ADDRESSES : has
