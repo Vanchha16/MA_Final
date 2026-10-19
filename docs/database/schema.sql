@@ -1,5 +1,7 @@
 -- =============================================================
 -- E-Commerce Mobile App - Database Schema (MySQL 8.0)
+-- Every table is InnoDB: MyISAM (WAMP's default) would silently drop the
+-- foreign keys, so the tables would have no relationships.
 -- =============================================================
 
 CREATE DATABASE IF NOT EXISTS ecommerce_db
@@ -27,7 +29,7 @@ CREATE TABLE users (
   notify_news    BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB;
 
 -- One-time codes for "Forgot Password"
 CREATE TABLE password_resets (
@@ -39,7 +41,7 @@ CREATE TABLE password_resets (
   used        BOOLEAN      NOT NULL DEFAULT FALSE,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE addresses (
   id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -54,7 +56,7 @@ CREATE TABLE addresses (
   is_default     BOOLEAN      NOT NULL DEFAULT FALSE,
   created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 -- -------------------------------------------------------------
 -- Catalog
@@ -66,7 +68,7 @@ CREATE TABLE categories (
   description TEXT         NULL,
   image_url   VARCHAR(255) NULL,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB;
 
 -- Anime franchise (One Piece, Pokemon, ...) - lets users browse/filter by series
 CREATE TABLE series (
@@ -75,7 +77,7 @@ CREATE TABLE series (
   slug        VARCHAR(120) NOT NULL UNIQUE,
   image_url   VARCHAR(255) NULL,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE products (
   id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -97,7 +99,7 @@ CREATE TABLE products (
   INDEX idx_products_name (name),
   INDEX idx_products_brand (brand),
   INDEX idx_products_price (price)
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE product_images (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -106,7 +108,7 @@ CREATE TABLE product_images (
   is_primary BOOLEAN      NOT NULL DEFAULT FALSE,
   sort_order INT          NOT NULL DEFAULT 0,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 -- -------------------------------------------------------------
 -- Shopping
@@ -121,7 +123,7 @@ CREATE TABLE cart_items (
   FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
   UNIQUE KEY uq_cart_user_product (user_id, product_id)
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE favorites (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -131,7 +133,7 @@ CREATE TABLE favorites (
   FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
   UNIQUE KEY uq_fav_user_product (user_id, product_id)
-);
+) ENGINE=InnoDB;
 
 -- -------------------------------------------------------------
 -- Orders
@@ -158,7 +160,7 @@ CREATE TABLE orders (
   updated_at       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
   INDEX idx_orders_user (user_id, created_at)
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE order_items (
   id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -171,7 +173,7 @@ CREATE TABLE order_items (
   subtotal     DECIMAL(10,2) NOT NULL,
   FOREIGN KEY (order_id)   REFERENCES orders(id)   ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
-);
+) ENGINE=InnoDB;
 
 -- One online payment per order attempt (Bakong KHQR or ABA PayWay). The QR string
 -- and its md5 are made once and reused for every status check (a new QR would be a
@@ -192,7 +194,7 @@ CREATE TABLE payments (
   created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   INDEX idx_payments_order (order_id)
-);
+) ENGINE=InnoDB;
 
 -- -------------------------------------------------------------
 -- Extras
@@ -211,7 +213,7 @@ CREATE TABLE notifications (
   created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 -- Questions sent from the app's Contact screen; replies arrive as notifications
 CREATE TABLE contact_messages (
@@ -226,7 +228,7 @@ CREATE TABLE contact_messages (
   created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
-);
+) ENGINE=InnoDB;
 
 -- Bonus: product reviews & ratings. Only for products in the customer's
 -- delivered orders (checked by the API); one per customer and product.
@@ -242,7 +244,7 @@ CREATE TABLE reviews (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE,
   UNIQUE KEY uq_review_user_product (user_id, product_id)
-);
+) ENGINE=InnoDB;
 
 -- Promo codes for the cart (WELCOME10, ANIME5 ...). A coupon stands alone:
 -- the cart sends its code, the server checks it and works out the discount.
@@ -257,4 +259,4 @@ CREATE TABLE coupons (
   expires_at    DATETIME      NULL,
   is_active     BOOLEAN       NOT NULL DEFAULT TRUE,
   created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB;
