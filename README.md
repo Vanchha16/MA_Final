@@ -17,6 +17,8 @@ backend/     Flask REST API (+ the Flask-Admin panel at /admin)
 mobile/      Flutter app (customer shop + admin tabs for an admin account)
 web-admin/   React web admin (Vite + Tailwind), served by Flask at /dashboard
 docs/        Requirement analysis, diagrams, API docs
+  PROJECT_DOCUMENTATION  Complete project documentation in one file (.md, .docx, .pdf),
+                 built by docs/make_project_doc.py from the documents below
   requirements/  REQUIREMENTS (Requirement Analysis) and USE_CASES (Use Case
                  Diagram + specifications), each as .md, .docx and .pdf;
                  diagrams/ has the PlantUML sources and PNGs
