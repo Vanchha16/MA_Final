@@ -43,5 +43,14 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- ABA PayWay: open ABA Mobile, or its store page when it is not installed -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="abamobilebank"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
     </queries>
 </manifest>

@@ -262,7 +262,7 @@ class Order(TimestampMixin, db.Model):
         db.Enum("pending", "confirmed", "shipped", "delivered", "cancelled", name="order_status"),
         nullable=False, default="pending",
     )
-    payment_method = db.Column(db.Enum("cod", "khqr", "card", name="payment_method"), nullable=False, default="cod")
+    payment_method = db.Column(db.Enum("cod", "khqr", "aba", "card", name="payment_method"), nullable=False, default="cod")
     payment_status = db.Column(
         db.Enum("unpaid", "paid", "failed", "refunded", name="payment_status"),
         nullable=False, default="unpaid",
@@ -329,14 +329,18 @@ class OrderItem(db.Model):
 
 
 class Payment(TimestampMixin, db.Model):
-    """One KHQR payment attempt for an order. The QR (and its md5) is made once
-    and reused for every status check, because a new QR is a new transaction."""
+    """One online payment attempt for an order (Bakong KHQR or ABA PayWay). The QR
+    (and its md5) is made once and reused for every status check, because a new
+    QR is a new transaction. PayWay payments also keep their tran_id and the link
+    that opens ABA Mobile."""
     __tablename__ = "payments"
 
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, index=True)
-    provider = db.Column(db.Enum("mock", "bakong", name="payment_provider"), nullable=False)  # "mock": old demo-mode rows
+    provider = db.Column(db.Enum("mock", "bakong", "payway", name="payment_provider"), nullable=False)  # "mock": old demo-mode rows
     qr = db.Column(db.Text, nullable=False)
+    tran_id = db.Column(db.String(20), unique=True)  # PayWay only
+    deeplink = db.Column(db.Text)  # PayWay only: opens ABA Mobile with the amount filled in
     md5 = db.Column(db.String(32), nullable=False, unique=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     currency = db.Column(db.String(3), nullable=False, default="USD")
@@ -348,7 +352,9 @@ class Payment(TimestampMixin, db.Model):
 
     def to_dict(self):
         return {
+            "provider": "payway" if self.provider == "payway" else "bakong",
             "qr": self.qr,
+            "deeplink": self.deeplink,
             "amount": float(self.amount),
             "currency": self.currency,
             "status": self.status,

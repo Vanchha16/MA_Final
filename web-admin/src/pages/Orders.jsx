@@ -4,7 +4,7 @@ import { api } from '../api';
 import OrderDrawer from '../components/OrderDrawer';
 import { useToast } from '../components/toast';
 import { Button, Card, Chip, Empty, ErrorBox, FilterChips, PageTitle, Photo, SearchBox, StatusChip } from '../components/ui';
-import { STEP_DONE, STEP_LABEL, dateTime, money, nextStep, paymentText } from '../lib/format';
+import { STEP_DONE, STEP_LABEL, dateTime, money, nextStep, paymentName, paymentText } from '../lib/format';
 import { useStats } from '../stats';
 
 const FILTERS = [
@@ -96,7 +96,7 @@ export default function Orders() {
                     <td className="text-right" onClick={(ev) => ev.stopPropagation()}>
                       {step ? (
                         <Button small loading={busy === o.id} onClick={() => move(o, step)} data-testid={`orders-step-${o.id}`}>{STEP_LABEL[step]}</Button>
-                      ) : o.status === 'pending' ? <Chip className="bg-amber-100 text-amber-700">Waiting for KHQR</Chip> : null}
+                      ) : o.status === 'pending' ? <Chip className="bg-amber-100 text-amber-700">Waiting for {paymentName(o)}</Chip> : null}
                     </td>
                   </tr>
                 );

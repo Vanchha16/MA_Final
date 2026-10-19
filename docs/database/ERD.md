@@ -124,9 +124,11 @@ erDiagram
     PAYMENTS {
         int id PK
         int order_id FK
-        enum provider "mock | bakong"
+        enum provider "mock | bakong | payway"
         text qr
         char md5 UK
+        varchar tran_id UK
+        text deeplink
         decimal amount
         enum status "pending | paid | expired"
         datetime expires_at
@@ -197,7 +199,7 @@ erDiagram
 | Series → Products | 1 : N | Anime franchise; optional (e.g. card sleeves have no series) |
 | Product → Product images | 1 : N | One image is marked `is_primary` |
 | User → Notifications | 1 : N | Order updates, promos, support replies; may point to an order |
-| Order → Payments | 1 : N | KHQR attempts; the QR and its md5 are made once and reused while checking |
+| Order → Payments | 1 : N | KHQR / ABA PayWay attempts; the QR and its md5 are made once and reused while checking |
 | User → Contact messages | 1 : N | Questions from the Contact screen; the shop's reply comes back as a notification |
 | Order → Contact messages | 1 : N | Optional, only for order and payment questions |
 | User/Product → Reviews | N : M | Bonus feature; one review per user per product |

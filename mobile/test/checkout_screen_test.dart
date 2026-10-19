@@ -98,6 +98,29 @@ void main() {
     expect(results, [true]); // the Cart forgets the promo code
   });
 
+  testWidgets('ABA PayWay is a third choice: its screen has Open ABA Mobile and prints the receipt', (tester) async {
+    final service = FakeCheckoutService(addresses: [FakeCheckoutService.home]);
+    final payments = FakePaymentService(payway: true);
+    await _pump(tester, service, payments: payments);
+    expect(find.byKey(const Key('pay_khqr')), findsOneWidget);
+    expect(find.byKey(const Key('pay_cod')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('pay_aba')));
+    await tester.pump();
+    await _place(tester);
+    expect(service.placed.single['payment'], PaymentMethod.aba);
+
+    expect(find.text('Pay with ABA'), findsOneWidget);
+    expect(find.text('ABA PAYWAY'), findsOneWidget);
+    expect(find.byKey(const Key('khqr_qr')), findsOneWidget);
+    expect(find.byKey(const Key('aba_open')), findsOneWidget);
+
+    payments.state = KhqrStatus.paid;
+    await tester.pump(KhqrPaymentScreen.pollEvery);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('khqr_paid_stamp')), findsOneWidget);
+    expect(find.text('Paid by ABA PayWay'), findsOneWidget);
+  });
+
   testWidgets('closing the KHQR screen shows Order placed, which can open it again', (tester) async {
     await _pump(tester, FakeCheckoutService(addresses: [FakeCheckoutService.home]));
     await _place(tester);

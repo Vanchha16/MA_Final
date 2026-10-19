@@ -39,8 +39,11 @@ export const STEP_DONE = { confirmed: 'confirmed', shipped: 'marked shipped', de
 /** The forward step of an order (not Cancel), or null. */
 export const nextStep = (order) => (order.next_statuses || []).find((s) => s !== 'cancelled') || null;
 
-export const paymentText = (o) =>
-  `${o.payment_method === 'khqr' ? 'KHQR' : 'Cash'}${o.payment_status === 'paid' ? ' paid' : ''}`;
+const PAY_NAMES = { khqr: 'KHQR', aba: 'ABA PayWay', cod: 'Cash' };
+
+export const paymentName = (o) => PAY_NAMES[o.payment_method] || 'Cash';
+
+export const paymentText = (o) => `${paymentName(o)}${o.payment_status === 'paid' ? ' paid' : ''}`;
 
 export const greeting = (date = new Date()) => {
   const h = date.getHours();

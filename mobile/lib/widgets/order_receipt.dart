@@ -47,7 +47,7 @@ class OrderReceipt extends StatelessWidget {
           Text(formatPrice(order.total), key: const Key('khqr_receipt_total'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
         ]),
         const SizedBox(height: 6),
-        Text(order.paymentMethod == PaymentMethod.khqr ? 'Paid by KHQR' : 'Paid in cash on delivery', style: const TextStyle(fontSize: 12, color: _muted)),
+        Text(order.paymentMethod.online ? 'Paid by ${order.paymentMethod.shortName}' : 'Paid in cash on delivery', style: const TextStyle(fontSize: 12, color: _muted)),
         const SizedBox(height: 46), // room for the PAID stamp
         Row(children: [for (var i = 0; i < 22; i++) Expanded(child: Container(height: 1.2, margin: const EdgeInsets.symmetric(horizontal: 2), color: _line))]),
         const SizedBox(height: 10),
