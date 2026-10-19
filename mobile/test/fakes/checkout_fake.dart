@@ -115,13 +115,12 @@ class FakeCheckoutService extends CheckoutService {
   Future<List<Address>> deleteAddress(int id) async => [...saved..removeWhere((a) => a.id == id)];
 }
 
-/// KHQR payments in memory: pending until [simulate] is called (or [status] is changed).
+/// KHQR payments in memory: pending until a test changes [state] (the bank says paid or expired).
 class FakePaymentService extends PaymentService {
   KhqrStatus state;
-  bool demo;
   int checks = 0;
 
-  FakePaymentService({this.state = KhqrStatus.pending, this.demo = true});
+  FakePaymentService({this.state = KhqrStatus.pending});
 
   static const order = Order(
     id: 7,
@@ -145,7 +144,6 @@ class FakePaymentService extends PaymentService {
           status: state,
           expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 15)),
           paidAt: state == KhqrStatus.paid ? DateTime.utc(2026, 10, 16, 3, 42) : null,
-          demo: demo,
         ),
         order,
       );
@@ -156,12 +154,6 @@ class FakePaymentService extends PaymentService {
   @override
   Future<(KhqrPayment, Order)> status(int orderId) async {
     checks++;
-    return _now;
-  }
-
-  @override
-  Future<(KhqrPayment, Order)> simulate(int orderId) async {
-    state = KhqrStatus.paid;
     return _now;
   }
 }

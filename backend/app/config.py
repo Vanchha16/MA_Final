@@ -39,12 +39,10 @@ class Config:
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
     MAIL_FROM = os.getenv("MAIL_FROM", "Anime World Shop <no-reply@animeworld.shop>")
 
-    # KHQR payments: "mock" makes a real-looking KHQR code and lets the app
-    # simulate the payment (demo / development); "bakong" checks the real
-    # Bakong API with BAKONG_TOKEN and pays BAKONG_ACCOUNT_ID.
-    PAYMENT_PROVIDER = os.getenv("PAYMENT_PROVIDER", "mock")
+    # KHQR payments: the QR pays BAKONG_ACCOUNT_ID, and the Bakong API (with
+    # BAKONG_TOKEN) tells us when it is paid.
     BAKONG_TOKEN = os.getenv("BAKONG_TOKEN", "")
-    BAKONG_ACCOUNT_ID = os.getenv("BAKONG_ACCOUNT_ID", "demo_shop@devb")
+    BAKONG_ACCOUNT_ID = os.getenv("BAKONG_ACCOUNT_ID", "")
     KHQR_MERCHANT_NAME = os.getenv("KHQR_MERCHANT_NAME", "Anime World Shop")
     KHQR_MERCHANT_CITY = os.getenv("KHQR_MERCHANT_CITY", "Phnom Penh")
     KHQR_MINUTES = 15                # an unpaid KHQR order is cancelled after this

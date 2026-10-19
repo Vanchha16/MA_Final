@@ -602,7 +602,6 @@ Bakong KHQR online payment
 |---|---|---|---|
 | `POST` | `/api/orders/{order_id}/khqr` | Make (once) the order's KHQR code | yes |
 | `GET` | `/api/orders/{order_id}/payment` | Payment status (polled by the app) | yes |
-| `POST` | `/api/orders/{order_id}/payment/simulate` | Demo mode: pretend the bank app paid | yes |
 
 #### `POST /api/orders/{order_id}/khqr`
 
@@ -627,18 +626,6 @@ Parameters: `order_id` (path, required).
 Response 200: `data` = `PaymentState`
 
 Errors: 401, 404
-
-#### `POST /api/orders/{order_id}/payment/simulate`
-
-Demo mode: pretend the bank app paid.
-
-Only when PAYMENT_PROVIDER=mock.
-
-Parameters: `order_id` (path, required).
-
-Response 200: `data` = `PaymentState`
-
-Errors: 401, 403, 404, 409
 
 ### Profile
 
@@ -1275,7 +1262,7 @@ Errors: 401, 403, 404
 
 ### Payment
 
-{qr: string, amount: number, currency: string, status: `pending` \| `paid` \| `expired`, expires_at: string, paid_at: string or null, demo: boolean}
+{qr: string, amount: number, currency: string, status: `pending` \| `paid` \| `expired`, expires_at: string, paid_at: string or null}
 
 ### PaymentState
 
