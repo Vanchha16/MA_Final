@@ -57,12 +57,19 @@ enum DeliveryMethod {
 }
 
 enum PaymentMethod {
-  khqr('khqr', 'Bakong KHQR'),
-  cod('cod', 'Cash on delivery');
+  khqr('khqr', 'Bakong KHQR', 'KHQR'),
+  aba('aba', 'ABA PayWay', 'ABA PayWay'),
+  cod('cod', 'Cash on delivery', 'Cash');
 
   final String apiValue;
   final String label;
-  const PaymentMethod(this.apiValue, this.label);
+
+  /// For tight spots: "KHQR paid", "Paid by ABA PayWay".
+  final String shortName;
+  const PaymentMethod(this.apiValue, this.label, this.shortName);
+
+  /// Paid in the app (a QR or ABA Mobile) before the shop packs it.
+  bool get online => this != cod;
 
   static PaymentMethod fromApi(String? value) => values.firstWhere((m) => m.apiValue == value, orElse: () => cod);
 }
@@ -185,7 +192,7 @@ class Order {
         'delivered' => OrderStage.delivered,
         'shipped' => OrderStage.onTheWay,
         'confirmed' => OrderStage.packing,
-        _ when paymentMethod == PaymentMethod.khqr && paymentStatus != 'paid' => OrderStage.toPay,
+        _ when paymentMethod.online && paymentStatus != 'paid' => OrderStage.toPay,
         _ when paymentMethod == PaymentMethod.cod => OrderStage.waitingConfirm,
         _ => OrderStage.packing, // pending but already paid
       };
@@ -246,7 +253,8 @@ class Order {
 
 enum KhqrStatus { pending, paid, expired }
 
-/// A KHQR payment for an order (POST /api/orders/{id}/khqr).
+/// An online payment for an order: Bakong KHQR (POST /api/orders/{id}/khqr) or
+/// ABA PayWay (POST /api/orders/{id}/payway), which also has a link that opens ABA Mobile.
 class KhqrPayment {
   final String qr;
   final double amount;
@@ -255,6 +263,12 @@ class KhqrPayment {
   final DateTime expiresAt;
   final DateTime? paidAt;
 
+  /// ABA PayWay (else Bakong).
+  final bool payway;
+
+  /// ABA PayWay only: opens ABA Mobile with the payment filled in.
+  final String? deeplink;
+
   const KhqrPayment({
     required this.qr,
     required this.amount,
@@ -262,6 +276,8 @@ class KhqrPayment {
     required this.status,
     required this.expiresAt,
     this.paidAt,
+    this.payway = false,
+    this.deeplink,
   });
 
   factory KhqrPayment.fromJson(Map<String, dynamic> json) => KhqrPayment(
@@ -271,5 +287,7 @@ class KhqrPayment {
         status: KhqrStatus.values.byName(json['status']),
         expiresAt: DateTime.parse(json['expires_at']),
         paidAt: json['paid_at'] == null ? null : DateTime.parse(json['paid_at']),
+        payway: json['provider'] == 'payway',
+        deeplink: json['deeplink'],
       );
 }

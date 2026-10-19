@@ -171,7 +171,9 @@ class AdminOrdersScreenState extends State<AdminOrdersScreen> {
   }
 }
 
-String _payText(Order o) => o.paymentMethod == PaymentMethod.khqr ? (o.paymentStatus == 'paid' ? 'KHQR paid' : 'KHQR unpaid') : (o.paymentStatus == 'paid' ? 'Cash paid' : 'Cash');
+String _payText(Order o) => o.paymentMethod.online
+    ? '${o.paymentMethod.shortName} ${o.paymentStatus == 'paid' ? 'paid' : 'unpaid'}'
+    : (o.paymentStatus == 'paid' ? 'Cash paid' : 'Cash');
 
 Future<bool> confirmCancel(BuildContext context, AdminOrder o) async =>
     await showConfirmDialog(
@@ -324,7 +326,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
                     kv('Subtotal', formatPrice(o.subtotal)),
                     if (o.discount > 0) kv('Promo ${o.couponCode ?? ''}'.trim(), '-${formatPrice(o.discount)}', color: AppTheme.success),
                     kv('Delivery', o.shippingFee == 0 ? 'Free' : formatPrice(o.shippingFee)),
-                    kv('${o.paymentMethod == PaymentMethod.khqr ? 'KHQR' : 'Cash'} · ${o.paymentStatus == 'paid' ? 'paid' : 'not paid yet'}', formatPrice(o.total), bold: true, color: scheme.primary),
+                    kv('${o.paymentMethod.shortName} · ${o.paymentStatus == 'paid' ? 'paid' : 'not paid yet'}', formatPrice(o.total), bold: true, color: scheme.primary),
                   ]),
                 ),
               ]),

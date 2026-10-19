@@ -148,7 +148,7 @@ CREATE TABLE orders (
   total            DECIMAL(10,2) NOT NULL,
   delivery_method  ENUM('standard','pickup') NOT NULL DEFAULT 'standard',
   status           ENUM('pending','confirmed','shipped','delivered','cancelled') NOT NULL DEFAULT 'pending',
-  payment_method   ENUM('cod','khqr','card') NOT NULL DEFAULT 'cod',
+  payment_method   ENUM('cod','khqr','aba','card') NOT NULL DEFAULT 'cod',
   payment_status   ENUM('unpaid','paid','failed','refunded') NOT NULL DEFAULT 'unpaid',
   note             VARCHAR(255)  NULL,
   created_at       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -170,14 +170,17 @@ CREATE TABLE order_items (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
 );
 
--- One KHQR payment per order attempt. The QR string and its md5 are made once
--- and reused for every status check (a new QR would be a new transaction).
+-- One online payment per order attempt (Bakong KHQR or ABA PayWay). The QR string
+-- and its md5 are made once and reused for every status check (a new QR would be a
+-- new transaction). PayWay rows also keep PayWay's tran_id and the ABA Mobile link.
 CREATE TABLE payments (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   order_id   INT UNSIGNED  NOT NULL,
-  provider   ENUM('mock','bakong') NOT NULL,
+  provider   ENUM('mock','bakong','payway') NOT NULL,
   qr         TEXT          NOT NULL,
   md5        CHAR(32)      NOT NULL UNIQUE,
+  tran_id    VARCHAR(20)   NULL UNIQUE,
+  deeplink   TEXT          NULL,
   amount     DECIMAL(10,2) NOT NULL,
   currency   CHAR(3)       NOT NULL DEFAULT 'USD',
   status     ENUM('pending','paid','expired') NOT NULL DEFAULT 'pending',

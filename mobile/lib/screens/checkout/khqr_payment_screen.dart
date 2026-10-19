@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
@@ -17,7 +18,8 @@ import '../orders/receipt_screen.dart';
 import '../shell/main_shell.dart';
 import 'order_placed_screen.dart';
 
-/// Pay with KHQR (picked from the KHQR previews: F layout + H receipt).
+/// Pay with KHQR (picked from the KHQR previews: F layout + H receipt), or
+/// with ABA PayWay: the same flow, plus a button that opens ABA Mobile.
 ///
 /// Waiting: a KHQR card with the QR, a countdown and how to pay; the app
 /// checks the payment every few seconds. Paid: the card slides up into a
@@ -33,7 +35,25 @@ class KhqrPaymentScreen extends StatefulWidget {
   /// Save receipt (tests pass a fake).
   final ReceiptExport export;
 
-  const KhqrPaymentScreen({super.key, required this.order, this.service, this.fromCheckout = false, this.export = const ReceiptExport()});
+  /// Opens a link in another app (ABA Mobile, the app store); tests pass a fake.
+  final Future<bool> Function(Uri link) openLink;
+
+  const KhqrPaymentScreen({
+    super.key,
+    required this.order,
+    this.service,
+    this.fromCheckout = false,
+    this.export = const ReceiptExport(),
+    this.openLink = _openExternal,
+  });
+
+  static Future<bool> _openExternal(Uri link) async {
+    try {
+      return await launchUrl(link, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// How often the app asks the server about the payment.
   static const pollEvery = Duration(seconds: 3);
@@ -74,7 +94,7 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
 
   Future<void> _start() async {
     try {
-      _show(await _service.start(_order.id), animate: false);
+      _show(await _service.start(_order), animate: false);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     }
@@ -127,6 +147,23 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
     if (mounted) setState(() => _checkingByHand = false);
   }
 
+  /// Opens ABA Mobile with the payment filled in; without the app, offers to get it.
+  Future<void> _openAba() async {
+    final link = _payment?.deeplink;
+    if (link != null && await widget.openLink(Uri.parse(link))) return;
+    if (!mounted) return;
+    final ios = Theme.of(context).platform == TargetPlatform.iOS;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      key: const Key('aba_missing'),
+      behavior: SnackBarBehavior.floating,
+      content: const Text('ABA Mobile is not on this phone. Scan the QR with any bank app, or get ABA Mobile.'),
+      action: SnackBarAction(
+        label: 'Get ABA',
+        onPressed: () => widget.openLink(Uri.parse(ios ? 'https://apps.apple.com/app/id968860649' : 'https://play.google.com/store/apps/details?id=com.paygo24.ibank')),
+      ),
+    ));
+  }
+
   Duration get _left {
     final left = _payment!.expiresAt.difference(DateTime.now().toUtc());
     return left.isNegative ? Duration.zero : left;
@@ -174,7 +211,7 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
               return Column(
                 children: [
                   _TopBar(
-                    title: expired ? 'Payment' : (paid && t >= 0.45 ? 'Your receipt' : 'Pay with KHQR'),
+                    title: expired ? 'Payment' : (paid && t >= 0.45 ? 'Your receipt' : (payment?.payway ?? false) ? 'Pay with ABA' : 'Pay with KHQR'),
                     onClose: _close,
                   ),
                   Expanded(
@@ -184,7 +221,9 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
                       KhqrPayment _ when expired => const _ExpiredState(),
                       final KhqrPayment payment => _Printer(
                           t: paid ? t : 0,
-                          waiting: _Waiting(payment: payment, left: _left),
+                          waiting: payment.payway
+                              ? _AbaWaiting(payment: payment, left: _left, onOpen: _openAba)
+                              : _Waiting(payment: payment, left: _left),
                           paidOrder: paid ? _order : null,
                           paidAt: payment.paidAt,
                           // After the stamp: what happens next, right under the receipt
@@ -347,99 +386,187 @@ class _Waiting extends StatelessWidget {
   const _Waiting({required this.payment, required this.left});
 
   @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+        child: Column(children: [
+          _QrCard(payment: payment, left: left, band: 'KHQR'),
+          const SizedBox(height: 16),
+          const _WaitingRow(),
+          const SizedBox(height: 16),
+          _Steps([
+            'Open ABA, ACLEDA, Wing or any bank app',
+            'Tap Scan and point it at the QR',
+            'Check ${formatPrice(payment.amount)} to Anime World Shop, then pay',
+          ]),
+        ]),
+      );
+}
+
+/// The white card with the QR, the amount and the countdown, under a coloured band.
+class _QrCard extends StatelessWidget {
+  final KhqrPayment payment;
+  final Duration left;
+  final String band;
+
+  const _QrCard({required this.payment, required this.left, required this.band});
+
+  @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final total = left.inSeconds;
-    final countdown = '${total ~/ 60}:${(total % 60).toString().padLeft(2, '0')}';
-    const amber = Color(0xFFB45309);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+    return Container(
+      key: const Key('khqr_card'),
+      width: 300,
+      decoration: BoxDecoration(
+        color: Colors.white, // a QR always sits on white, also in dark mode
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: AppTheme.primaryDark.withValues(alpha: dark ? 0 : 0.10), blurRadius: 22, offset: const Offset(0, 8))],
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Column(children: [
         Container(
-          key: const Key('khqr_card'),
-          width: 300,
-          decoration: BoxDecoration(
-            color: Colors.white, // a QR always sits on white, also in dark mode
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(color: AppTheme.primaryDark.withValues(alpha: dark ? 0 : 0.10), blurRadius: 22, offset: const Offset(0, 8))],
+          height: 46,
+          color: const Color(0xFFE11D2A),
+          alignment: Alignment.center,
+          child: Text(band, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(22, 16, 22, 10),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Anime World Shop', style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
+                const SizedBox(height: 2),
+                Text(formatPrice(payment.amount), key: const Key('khqr_amount'),
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+              ]),
+            ),
+          ]),
+        ),
+        const Divider(height: 1, color: Color(0xFFE2E8F0)),
+        Padding(
+          padding: const EdgeInsets.all(22),
+          child: Semantics(
+            label: 'KHQR code to pay ${formatPrice(payment.amount)}',
+            child: QrImageView(key: const Key('khqr_qr'), data: payment.qr, size: 210, padding: EdgeInsets.zero, backgroundColor: Colors.white),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(children: [
-            Container(
-              height: 46,
-              color: const Color(0xFFE11D2A),
-              alignment: Alignment.center,
-              child: const Text('KHQR', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 2)),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 16, 22, 10),
-              child: Row(children: [
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Anime World Shop', style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
-                    const SizedBox(height: 2),
-                    Text(formatPrice(payment.amount), key: const Key('khqr_amount'),
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  ]),
-                ),
-              ]),
-            ),
-            const Divider(height: 1, color: Color(0xFFE2E8F0)),
-            Padding(
-              padding: const EdgeInsets.all(22),
-              child: Semantics(
-                label: 'KHQR code to pay ${formatPrice(payment.amount)}',
-                child: QrImageView(key: const Key('khqr_qr'), data: payment.qr, size: 210, padding: EdgeInsets.zero, backgroundColor: Colors.white),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                SizedBox.square(
-                  dimension: 22,
-                  child: CircularProgressIndicator(value: total / 900, strokeWidth: 3, color: AppTheme.amber, backgroundColor: const Color(0xFFFDE68A)),
-                ),
-                const SizedBox(width: 8),
-                Text('Expires in $countdown', key: const Key('khqr_countdown'), style: const TextStyle(fontWeight: FontWeight.bold, color: amber)),
-              ]),
-            ),
-          ]),
         ),
-        const SizedBox(height: 16),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2.4, color: scheme.onSurfaceVariant)),
-          const SizedBox(width: 10),
-          Flexible(child: Text('Waiting for your payment...', style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600))),
-        ]),
-        const SizedBox(height: 16),
-        Container(
-          width: 300,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: dark ? scheme.surfaceContainer : Colors.white, borderRadius: BorderRadius.circular(20)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            for (final (n, text) in [
-              ('1', 'Open ABA, ACLEDA, Wing or any bank app'),
-              ('2', 'Tap Scan and point it at the QR'),
-              ('3', 'Check ${formatPrice(payment.amount)} to Anime World Shop, then pay'),
-            ])
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: dark ? scheme.surfaceContainerHighest : AppTheme.skyTint,
-                    child: Text(n, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: scheme.primary)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
-                ]),
-              ),
-          ]),
-        ),
+        Padding(padding: const EdgeInsets.only(bottom: 16), child: _Countdown(left: left)),
       ]),
     );
   }
+}
+
+class _Countdown extends StatelessWidget {
+  final Duration left;
+
+  const _Countdown({required this.left});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = left.inSeconds;
+    final countdown = '${total ~/ 60}:${(total % 60).toString().padLeft(2, '0')}';
+    const amber = Color(0xFFB45309);
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      SizedBox.square(
+        dimension: 22,
+        child: CircularProgressIndicator(value: total / 900, strokeWidth: 3, color: AppTheme.amber, backgroundColor: const Color(0xFFFDE68A)),
+      ),
+      const SizedBox(width: 8),
+      Text('Expires in $countdown', key: const Key('khqr_countdown'), style: const TextStyle(fontWeight: FontWeight.bold, color: amber)),
+    ]);
+  }
+}
+
+class _WaitingRow extends StatelessWidget {
+  const _WaitingRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2.4, color: scheme.onSurfaceVariant)),
+      const SizedBox(width: 10),
+      Flexible(child: Text('Waiting for your payment...', style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600))),
+    ]);
+  }
+}
+
+class _Steps extends StatelessWidget {
+  final List<String> steps;
+
+  const _Steps(this.steps);
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: 300,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: dark ? scheme.surfaceContainer : Colors.white, borderRadius: BorderRadius.circular(20)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        for (final (i, text) in steps.indexed)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(children: [
+              CircleAvatar(
+                radius: 12,
+                backgroundColor: dark ? scheme.surfaceContainerHighest : AppTheme.skyTint,
+                child: Text('${i + 1}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: scheme.primary)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
+            ]),
+          ),
+      ]),
+    );
+  }
+}
+
+class _OpenAbaButton extends StatelessWidget {
+  final VoidCallback onOpen;
+
+  const _OpenAbaButton({required this.onOpen});
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 300,
+        child: PillButton(
+          key: const Key('aba_open'),
+          label: 'Open ABA Mobile',
+          leadingIcon: Icons.open_in_new_rounded,
+          color: AppTheme.abaNavy,
+          foregroundColor: Colors.white,
+          onPressed: onOpen,
+        ),
+      );
+}
+
+/// ABA PayWay while waiting (picked layout A): the KHQR card with Open ABA Mobile under it.
+class _AbaWaiting extends StatelessWidget {
+  final KhqrPayment payment;
+  final Duration left;
+  final VoidCallback onOpen;
+
+  const _AbaWaiting({required this.payment, required this.left, required this.onOpen});
+
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+        child: Column(children: [
+          _QrCard(payment: payment, left: left, band: 'ABA PAYWAY'),
+          const SizedBox(height: 16),
+          _OpenAbaButton(onOpen: onOpen),
+          const SizedBox(height: 14),
+          const _WaitingRow(),
+          const SizedBox(height: 14),
+          _Steps([
+            'Tap Open ABA Mobile, or scan the QR with any bank app',
+            'Check ${formatPrice(payment.amount)} to Anime World Shop',
+            'Confirm, and this page updates by itself',
+          ]),
+        ]),
+      );
 }
 
 class _ExpiredState extends StatelessWidget {

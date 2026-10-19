@@ -120,12 +120,31 @@ class FakePaymentService extends PaymentService {
   KhqrStatus state;
   int checks = 0;
 
-  FakePaymentService({this.state = KhqrStatus.pending});
+  /// ABA PayWay instead of Bakong: the QR comes with an ABA Mobile link.
+  final bool payway;
+
+  FakePaymentService({this.state = KhqrStatus.pending, this.payway = false});
 
   static const order = Order(
     id: 7,
     number: 'AWS-20261016-0007',
     paymentMethod: PaymentMethod.khqr,
+    subtotal: 179,
+    discount: 17.9,
+    couponCode: 'WELCOME10',
+    total: 161.1,
+    itemCount: 3,
+    lines: [
+      OrderLine(productId: 1, name: 'Monkey D. Luffy Gear 5 1/7 Scale Figure', unitPrice: 169, quantity: 1),
+      OrderLine(productId: 3, name: 'One Piece Booster Pack #3', unitPrice: 5, quantity: 2),
+    ],
+  );
+
+  /// The same order, paid with ABA PayWay.
+  static const abaOrder = Order(
+    id: 7,
+    number: 'AWS-20261016-0007',
+    paymentMethod: PaymentMethod.aba,
     subtotal: 179,
     discount: 17.9,
     couponCode: 'WELCOME10',
@@ -144,12 +163,14 @@ class FakePaymentService extends PaymentService {
           status: state,
           expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 15)),
           paidAt: state == KhqrStatus.paid ? DateTime.utc(2026, 10, 16, 3, 42) : null,
+          payway: payway,
+          deeplink: payway ? 'abamobilebank://ababank.com?type=payway&qrcode=000201' : null,
         ),
-        order,
+        payway ? abaOrder : order,
       );
 
   @override
-  Future<(KhqrPayment, Order)> start(int orderId) async => _now;
+  Future<(KhqrPayment, Order)> start(Order order) async => _now;
 
   @override
   Future<(KhqrPayment, Order)> status(int orderId) async {

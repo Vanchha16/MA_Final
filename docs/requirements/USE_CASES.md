@@ -20,6 +20,7 @@ The Word copies (`.docx`) are made from these Markdown files with `python make_d
 | **Customer** | Primary | A registered shopper. A specialisation of User: everything a User can do, plus shopping. |
 | **Admin** | Primary | The shop owner or staff. A specialisation of User. Uses the admin tabs of the app, the React web admin at `/dashboard` or the panel at `/admin`. |
 | **Bakong KHQR** | Secondary (external system) | Cambodia's national QR payment network. Receives KHQR payment requests and reports when they are paid. |
+| **ABA PayWay** | Secondary (external system) | ABA Bank's payment gateway. Creates a payment (KHQR + ABA Mobile link), answers status checks and posts the result back. |
 | **Email service** | Secondary (external system) | Sends the 6-digit password reset codes. |
 
 ---
@@ -69,6 +70,7 @@ The Word copies (`.docx`) are made from these Markdown files with `python make_d
 | UC-13 | Place order (checkout) | Customer | FR-O01 - FR-O03 | Checkout, Order Placed |
 | UC-14 | Apply coupon | Customer | FR-C05 | Cart |
 | UC-15 | Pay with KHQR | Customer, Bakong KHQR | FR-O04 | KHQR Payment |
+| UC-15b | Pay with ABA PayWay | Customer, ABA PayWay | FR-O04b | ABA PayWay Payment |
 | UC-16 | View order history and details | Customer | FR-O05, FR-O06 | My Orders, Order Details |
 | UC-17 | Confirm received / buy again / view receipt | Customer | FR-O07 | Order Details, Receipt |
 | UC-18 | Read notifications | Customer | FR-A01 | Notifications |
@@ -203,7 +205,7 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 |---|---|
 | **Actor** | Customer |
 | **Includes** | Choose delivery address; choose delivery and payment method |
-| **Extended by** | UC-14 Apply coupon; UC-15 Pay with KHQR |
+| **Extended by** | UC-14 Apply coupon; UC-15 Pay with KHQR; UC-15b Pay with ABA PayWay |
 | **Precondition** | Logged in; the cart is not empty. |
 
 **Main flow**
@@ -211,17 +213,17 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 2. The app loads `GET /api/checkout`: cart lines, addresses, delivery options and totals.
 3. The customer chooses (or adds) a delivery address.
 4. The customer chooses Standard delivery ($2, free from $50) or Store pickup (free).
-5. The customer chooses KHQR or Cash on delivery and can add a note.
+5. The customer chooses KHQR, ABA PayWay or Cash on delivery and can add a note.
 6. The customer taps "Place order"; the app sends `POST /api/orders`.
 7. The system checks every line against the current stock, then in one transaction takes the stock (a conditional update, so the last item can't be sold twice), creates the order (number like `AWS-20261016-00042`) and its items, and empties the cart.
 8. The system creates an "Order placed" notification.
-9. Cash on delivery: the app shows the Order Placed screen. KHQR: continue with UC-15.
+9. Cash on delivery: the app shows the Order Placed screen. KHQR: continue with UC-15. ABA PayWay: continue with UC-15b.
 
 **Alternative flows**
 - A1 (step 3): no address yet. The app opens the Address Form first.
 - A2 (step 7): an item sold out or has less stock than ordered since it was added. `409`, e.g. "Some items changed. Only 1 left of Nendoroid Anya Forger."; nothing is ordered and the customer can fix the cart.
 - A4 (step 6): the cart is empty. `409`, "Your cart is empty".
-- A3 (step 6): no payment method chosen. `422`, "Choose KHQR or Cash on delivery".
+- A3 (step 6): no payment method chosen. `422`, "Choose KHQR, ABA PayWay or Cash on delivery".
 
 **Postcondition** A *pending* order exists, stock is reserved and the cart is empty.
 
@@ -245,6 +247,31 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 **Alternative flows**
 - A1 (step 5): 15 minutes pass without payment. The order is cancelled and its stock returned; the app shows "This QR code expired" and a Try again button.
 - A2 (step 5): the customer taps "I've paid - check now" to check straight away instead of waiting for the next automatic check.
+
+**Postcondition** The order is *paid* and waits for the shop to confirm it.
+
+### UC-15b Pay with ABA PayWay
+
+| | |
+|---|---|
+| **Actors** | Customer, ABA PayWay |
+| **Extends** | UC-13 Place order, when the payment method is ABA PayWay |
+| **Precondition** | A pending, unpaid ABA PayWay order. |
+
+**Main flow**
+1. The app requests a payment (`POST /api/orders/<id>/payway`).
+2. The system sends PayWay a signed purchase (HMAC-SHA512 over the fields in PayWay's order) with the order total, the items and a 15-minute lifetime, and stores PayWay's transaction id, KHQR and ABA Mobile link.
+3. The app shows the ABA PayWay card (QR, amount, countdown) and an **Open ABA Mobile** button.
+4. The customer taps Open ABA Mobile and confirms the payment there, or scans the QR with any bank app.
+5. The app checks the status every few seconds (`GET /api/orders/<id>/payment`); the system asks PayWay (`check-transaction-2`) about that transaction.
+6. When PayWay reports *APPROVED*, the system marks the payment and the order as paid and sends a "Payment received" notification.
+7. The app prints out the receipt ("Paid by ABA PayWay") and offers Save receipt, View order and Continue shopping.
+
+**Alternative flows**
+- A1 (step 2): PayWay refuses or cannot be reached. `502`, "ABA PayWay is not available right now"; the order stays pending and the customer can try again.
+- A2 (step 4): ABA Mobile is not installed. The app says so and offers the app store; the QR still works with any bank app.
+- A3 (step 5): PayWay posts the result to `/api/payments/payway/callback`. The system does not trust the posted data: it asks PayWay itself (step 5) before marking anything paid.
+- A4 (step 5): 15 minutes pass without payment. As UC-15 A1: the order is cancelled and its stock returned.
 
 **Postcondition** The order is *paid* and waits for the shop to confirm it.
 

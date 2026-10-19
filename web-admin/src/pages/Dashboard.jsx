@@ -7,7 +7,7 @@ import ReplyDrawer from '../components/ReplyDrawer';
 import { useToast } from '../components/toast';
 import { Button, Card, Chip, Empty, ErrorBox, Icon, Kpi, PageTitle, Photo, SearchBox, StatusChip } from '../components/ui';
 import { useAuth } from '../auth';
-import { STEP_DONE, STEP_LABEL, greeting, money, moneyShort, nextStep, paymentText, timeAgo } from '../lib/format';
+import { STEP_DONE, STEP_LABEL, greeting, money, moneyShort, nextStep, paymentName, paymentText, timeAgo } from '../lib/format';
 import { useStats } from '../stats';
 import { useTheme } from '../theme';
 
@@ -179,7 +179,7 @@ export default function Dashboard() {
                             <Button small loading={busy === `row-${o.id}`} onClick={() => moveOrder(o.id, step, `row-${o.id}`)} data-testid={`order-step-${o.id}`}>
                               {STEP_LABEL[step]}
                             </Button>
-                          ) : <Chip className="bg-amber-100 text-amber-700">Waiting for KHQR</Chip>}
+                          ) : <Chip className="bg-amber-100 text-amber-700">Waiting for {paymentName(o)}</Chip>}
                         </td>
                       </tr>
                     );

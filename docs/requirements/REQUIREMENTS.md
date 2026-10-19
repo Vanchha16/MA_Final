@@ -25,7 +25,7 @@ Anime World Shop is made of three parts that share one database:
 | **Mobile app - admin side** | Shop owner and staff (same app, opened by an admin account) | Flutter |
 | **Backend REST API + web admin panel** | The mobile app; staff on a computer (`/admin`) | Python Flask, MySQL |
 
-In scope: accounts, catalogue, search and filters, cart, wishlist, checkout, KHQR and cash on delivery payment, order tracking, receipts, product reviews and ratings, notifications, contact messages, settings, and the shop management tools.
+In scope: accounts, catalogue, search and filters, cart, wishlist, checkout, KHQR, ABA PayWay and cash on delivery payment, order tracking, receipts, product reviews and ratings, notifications, contact messages, settings, and the shop management tools.
 Out of scope for version 1.0: delivery-company integration, refunds through the app, multiple shops (marketplace) and loyalty point redemption.
 
 ### 1.4 Definitions
@@ -33,6 +33,7 @@ Out of scope for version 1.0: delivery-company integration, refunds through the 
 | Term | Meaning |
 |---|---|
 | KHQR | Cambodia's national QR payment standard (Bakong). Any Cambodian bank app can pay a KHQR code. |
+| ABA PayWay | ABA Bank's online payment gateway. It gives a KHQR code and a link that opens the ABA Mobile app with the payment filled in. |
 | COD | Cash on delivery |
 | Series | The anime a product belongs to, e.g. One Piece, Jujutsu Kaisen, Pokemon |
 | TCG | Trading card game (booster boxes, structure decks) |
@@ -50,6 +51,7 @@ Out of scope for version 1.0: delivery-company integration, refunds through the 
 | **Visitor** | Has not signed in yet | Create an account, sign in, recover a forgotten password |
 | **Admin (shop owner / staff)** | Runs the shop | Handle new orders quickly, keep stock right, add products, answer customers |
 | **Bakong KHQR** (external system) | Payment network | Receives the QR payment request and reports when it is paid |
+| **ABA PayWay** (external system) | Payment gateway | Creates a PayWay payment (KHQR + ABA Mobile link), reports its status and posts the result back |
 | **Email service** (external system) | Sends mail | Delivers password reset codes |
 | **Lecturer / assessor** | Grades the project | Brief coverage, documentation, working demo |
 | **Development team** | Builds and maintains the system | Clear requirements, tests, readable code |
@@ -72,6 +74,7 @@ The brief lets each team choose its backend technology. Our choices and the reas
 | Database | **MySQL 8** | Relational data with foreign keys fits orders, items and stock; matches the ERD |
 | Security | **Flask-JWT-Extended**, **bcrypt** | Stateless login tokens; passwords stored as salted hashes |
 | Payment | **bakong-khqr** package | Generates real KHQR codes and checks their payment status |
+| Payment | ABA PayWay API (**requests**) | Signed (HMAC-SHA512) purchase and check-transaction calls |
 | API documentation | **OpenAPI 3 + Swagger UI** | Interactive docs at `/api/docs`, plus a generated Markdown copy |
 | Web admin | **React 18 + Vite + Tailwind CSS + Recharts** (at `/dashboard`) and **Flask-Admin** (at `/admin`) | A modern desktop dashboard on the same JSON API, plus a server-rendered fallback |
 | Localisation | **flutter_localizations / gen-l10n** | English and Khmer |
@@ -125,10 +128,11 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 
 | ID | Requirement | Priority |
 |---|---|---|
-| FR-O01 | **Checkout** lets the customer choose the delivery address, delivery method (standard delivery or store pickup) and payment method (KHQR or cash on delivery), and add a note. | M |
+| FR-O01 | **Checkout** lets the customer choose the delivery address, delivery method (standard delivery or store pickup) and payment method (KHQR, ABA PayWay or cash on delivery), and add a note. | M |
 | FR-O02 | Placing the order checks stock again, creates the order and its items, lowers stock and empties the cart. | M |
 | FR-O03 | An **order confirmation** screen shows the order number, total and next steps. | M |
 | FR-O04 | For KHQR orders the app shows a **KHQR code** with a countdown; the app detects the payment automatically and shows a receipt. | C (bonus: online payment) |
+| FR-O04b | For **ABA PayWay** orders the app shows PayWay's KHQR with a countdown and an **Open ABA Mobile** button (or a link to get the app); the payment is detected the same way and a receipt is printed. | C (bonus: online payment) |
 | FR-O05 | **Order history** lists the customer's orders, current ones first, with status and photos. | M |
 | FR-O06 | **Order details** show a status tracker (placed, paid, shipped, delivered), items, address, payment and totals. | M |
 | FR-O07 | The customer can **confirm an order was received**, **buy the same items again**, and **view, save or share the receipt** of a paid order. | S |
@@ -180,7 +184,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | BE-03 | Category management | Public `/api/categories`; admin `/api/admin/categories` create, rename, delete |
 | BE-04 | Customer management | Own profile `/api/profile`, addresses `/api/addresses`, preferences; admin `/api/admin/customers` list, details, block |
 | BE-05 | Shopping cart management | `/api/cart` add, update quantity, remove, clear, coupon; wishlist `/api/wishlist` |
-| BE-06 | Order management | `/api/checkout`, `/api/orders` place, list, details, received, KHQR payment; admin `/api/admin/orders` list, details, status |
+| BE-06 | Order management | `/api/checkout`, `/api/orders` place, list, details, received, KHQR and ABA PayWay payment, PayWay callback; admin `/api/admin/orders` list, details, status |
 | BE-07 | API for the mobile app | 64 REST endpoints, JSON in and out, documented (section 5.2) |
 
 ### 5.2 API requirements
@@ -209,9 +213,9 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | NFR-07 | Security | Only logged-in users reach their own data; only admins reach admin data. | JWT (7-day expiry), ownership checks on every order/address/cart query, role check, blocked accounts rejected |
 | NFR-08 | Security | Passwords and reset codes cannot be brute-forced, and the shop cannot be flooded. | Login: 10 tries a minute per network and 10 per 15 minutes per email; sign-up: 20 an hour per network; contact: 5 messages in 10 minutes and 30 a day per account (Flask-Limiter, `429`). Reset code valid 10 minutes, locked after 5 wrong tries, 60 s between requests, max 5 requests per hour |
 | NFR-08b | Security | Changing or resetting the password signs out the account's other devices. | A token version in each login token; older tokens get `401` |
-| NFR-09 | Security | Secrets are not in the source code. | `.env` file (git-ignored) for database URL, secret keys and Bakong token |
+| NFR-09 | Security | Secrets are not in the source code. | `.env` file (git-ignored) for database URL, secret keys, Bakong token and PayWay API key |
 | NFR-10 | Reliability | Stock can never go below zero, even when two customers buy the last item at the same moment, and an order is all-or-nothing. | Each item's stock is taken with one conditional `UPDATE ... WHERE stock >= quantity` inside the order's transaction; if it no longer matches, the whole order is rolled back with `409` |
-| NFR-11 | Reliability | Unpaid KHQR orders do not hold stock forever. | Cancelled and restocked after 15 minutes |
+| NFR-11 | Reliability | Unpaid KHQR / ABA PayWay orders do not hold stock forever. | Cancelled and restocked after 15 minutes |
 | NFR-12 | Maintainability | Code is organised and tested. | Flask Blueprints, Flutter screens/services/providers folders; 87 backend tests (pytest) and 169 Flutter tests; `flutter analyze` with no issues |
 | NFR-13 | Portability | Runs on Android, iOS and the web. | Flutter; API base URL in one constant |
 | NFR-14 | Compatibility | The backend works with MySQL in use and SQLite in tests. | SQLAlchemy models; `flask init-db` creates the tables |
@@ -228,7 +232,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | BR-04 | A coupon is valid only if it is active, not expired, and the subtotal reaches its minimum. Percentage coupons can have a maximum discount. |
 | BR-05 | Order numbers are unique and readable, e.g. `AWS-20261016-00042`: the date plus the order's own id, so two orders placed at the same moment never share a number. |
 | BR-06 | Orders move only forward: pending -> confirmed -> shipped -> delivered. Pending and confirmed orders can be cancelled; shipped and delivered orders cannot. |
-| BR-07 | An unpaid KHQR order cannot be confirmed; it waits for payment or is cancelled after 15 minutes, and its stock is returned. |
+| BR-07 | An unpaid KHQR or ABA PayWay order cannot be confirmed; it waits for payment or is cancelled after 15 minutes, and its stock is returned. |
 | BR-08 | Cancelling an order returns its items to stock. |
 | BR-09 | A category can be deleted only when it has no products. |
 | BR-10 | A blocked customer cannot log in or use an existing token until an admin unblocks them. |
@@ -247,7 +251,7 @@ The system stores 16 entities. The nine suggested in the brief are all present:
 | Users | `users` | `password_resets` - reset codes |
 | Categories | `categories` | `series` - anime franchise of a product |
 | Products | `products` | `coupons` - promo codes |
-| Product Images | `product_images` | `payments` - KHQR payments |
+| Product Images | `product_images` | `payments` - KHQR and ABA PayWay payments |
 | Cart | `cart_items` | `notifications` |
 | Orders | `orders` | `contact_messages` |
 | Order Items | `order_items` | `reviews` - star ratings, tags and comments |
@@ -283,7 +287,7 @@ The brief asks for at least 20 screens. The app has **42** (32 customer, 10 admi
 | 17 | Cart | Shopping Cart, Update Quantity, Remove | 38 | Admin Categories | (admin) |
 | 18 | Wishlist | Wishlist / Favorite Products | 39 | Admin Customers | (admin) |
 | 19 | Checkout (+ address form) | Checkout | 40 | Admin Customer Details | (admin) |
-| 20 | KHQR Payment | (bonus: online payment) | 41 | Admin Messages | (admin) |
+| 20 | KHQR / ABA PayWay Payment | (bonus: online payment) | 41 | Admin Messages | (admin) |
 | 21 | Order Placed | Order Confirmation | 42 | Reviews | (bonus: reviews and ratings) |
 
 "Add to Cart" is a feature on Product List and Product Details (with an animation and an "Added to cart" sheet), so it has no separate screen. Screenshots of each screen are in [`docs/screenshots/`](../screenshots/).
@@ -327,7 +331,7 @@ Each item of the brief, the requirements that cover it and where it is implement
 | Database: ERD and schema | Section 8 | `docs/database/` | Done |
 | Flutter, Dart, state management | Section 3 | Provider | Done |
 | Git and GitHub | Section 3 | github.com/Vanchha16/MA_Final | Done |
-| Bonus: online payment | FR-O04 | KHQR (Bakong) | Done |
+| Bonus: online payment | FR-O04, FR-O04b | KHQR (Bakong) and ABA PayWay | Done |
 | Bonus: multi-language | FR-A02, NFR-04 | English / Khmer | Done |
 | Bonus: dark mode | FR-A02 | Light / dark / system | Done |
 | Bonus: advanced search and filtering | FR-P05, FR-P06 | Suggestions, multi-brand, price range, sort | Done |
@@ -340,10 +344,11 @@ Each item of the brief, the requirements that cover it and where it is implement
 **Constraints**
 - Built and demonstrated by a student team within one term; the backend runs on a local computer (WAMP MySQL on port 3306) for the demo.
 - KHQR takes real payments through Bakong: the server needs a Bakong Open API token (`BAKONG_TOKEN`, renewed about every 90 days) and the receiving account (`BAKONG_ACCOUNT_ID`).
+- ABA PayWay uses the merchant id and API key from ABA (`PAYWAY_MERCHANT_ID`, `PAYWAY_API_KEY`). The project uses PayWay's **sandbox**: its test QR cannot be paid by a real bank app, so a real PayWay payment needs production keys. PayWay's pushback needs a public address (`PAYWAY_CALLBACK_URL`); without it the app's status checks find the payment.
 - Reset codes are printed in the server console in development (`MAIL_MODE=console`); real email needs SMTP settings.
 
 **Assumptions**
-- Customers have a smartphone with internet access and a Cambodian bank app for KHQR.
+- Customers have a smartphone with internet access and a Cambodian bank app for KHQR (ABA Mobile for the quickest ABA PayWay payment).
 - Prices are in US dollars; delivery is within Phnom Penh.
 - Product photos are the brands' official images, used for educational purposes only.
 

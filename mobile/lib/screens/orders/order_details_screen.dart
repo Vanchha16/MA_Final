@@ -226,7 +226,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   _Section(
                     title: 'PAYMENT',
                     child: _InfoRow(
-                      icon: o.paymentMethod == PaymentMethod.khqr ? Icons.qr_code_2_rounded : Icons.payments_rounded,
+                      icon: switch (o.paymentMethod) {
+                        PaymentMethod.khqr => Icons.qr_code_2_rounded,
+                        PaymentMethod.aba => Icons.account_balance_rounded,
+                        PaymentMethod.cod => Icons.payments_rounded,
+                      },
                       title: o.paymentMethod.label,
                       body: switch ((o.paymentStatus, o.stage)) {
                         ('paid', _) => 'Paid',
