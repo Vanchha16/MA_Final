@@ -51,12 +51,7 @@ Demo logins: `demo@shop.com` / `demo123` (customer), `admin@shop.com` / `demo123
 `staff@shop.com` / `demo123` (staff: runs orders and products, but cannot manage staff, promo codes or block customers).
 The owner adds and manages staff accounts in **More > Staff** (app) or **Staff** (web admin).
 
-Run the backend tests:
-
-```bash
-pip install -r requirements-dev.txt
-python -m pytest
-```
+The backend tests (`backend/tests`) are kept on the `store-info` branch, not on `main`.
 
 Forgot-password emails: with `MAIL_MODE=console` (default) the code is printed in the
 server terminal, and in debug mode the app shows a "Dev code" chip to tap. For real email
@@ -82,7 +77,7 @@ Once it is running:
 | [docs/API.md](docs/API.md) | The same API documentation as one Markdown file, for the report |
 
 After changing an API route, update `backend/app/api_docs.py` and run `flask --app run api-docs`
-(a test fails if a route is missing from the docs or `docs/API.md` is out of date).
+so `docs/API.md` stays up to date.
 
 ## Web admin
 
