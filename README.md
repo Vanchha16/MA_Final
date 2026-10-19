@@ -51,7 +51,7 @@ Demo logins: `demo@shop.com` / `demo123` (customer), `admin@shop.com` / `demo123
 `staff@shop.com` / `demo123` (staff: runs orders and products, but cannot manage staff, promo codes or block customers).
 The owner adds and manages staff accounts in **More > Staff** (app) or **Staff** (web admin).
 
-The backend tests (`backend/tests`) are kept on the `store-info` branch, not on `main`.
+The tests (`backend/tests` and `web-admin/src/test`) are kept on the `store-info` branch, not on `main`.
 
 Forgot-password emails: with `MAIL_MODE=console` (default) the code is printed in the
 server terminal, and in debug mode the app shows a "Dev code" chip to tap. For real email
@@ -103,7 +103,6 @@ as the backend runs. To change it (needs Node.js 18+):
 cd web-admin
 npm install
 npm run dev      # http://localhost:5173/dashboard/ (calls the backend on :5000)
-npm test         # Vitest + Testing Library
 npm run build    # writes the new build into backend/app/static/web-admin
 ```
 
