@@ -243,4 +243,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(demoProducts[0].name), findsOneWidget);
   });
+
+  testWidgets('payment choices show the Bakong (KHQR) and ABA logos', (tester) async {
+    await _pump(tester, FakeCheckoutService(addresses: [FakeCheckoutService.home]));
+    expect(find.byKey(const Key('pay_logo_khqr')), findsOneWidget);
+    expect(find.byKey(const Key('pay_logo_aba')), findsOneWidget);
+    expect(find.bySemanticsLabel('ABA Bank'), findsOneWidget);
+  });
 }
