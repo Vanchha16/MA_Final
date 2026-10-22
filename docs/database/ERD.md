@@ -127,10 +127,14 @@ erDiagram
         decimal total
         enum status
         enum payment_method
-        enum payment_status
+        enum payment_status "unpaid | paid | failed | refund_pending | refunded"
         enum delivery_method "standard | pickup"
         decimal discount
         varchar coupon_code
+        varchar cancelled_by "customer | shop | system"
+        varchar cancel_reason
+        datetime cancelled_at
+        datetime refunded_at
         datetime created_at
     }
     PAYMENTS {

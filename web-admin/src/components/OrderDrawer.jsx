@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api';
-import { STEP_DONE, STEP_LABEL, dateTime, money, nextStep, paymentText } from '../lib/format';
+import { STEP_DONE, STEP_LABEL, cancelledByText, dateTime, money, nextStep, paymentName, paymentText } from '../lib/format';
 import { useToast } from './toast';
 import { Button, ConfirmDialog, Drawer, ErrorBox, Icon, Photo, Spinner, StatusChip } from './ui';
 
-/** One order: items, customer, delivery, totals, and the next step / Cancel. */
+/** One order: items, customer, delivery, totals, and the next step / Cancel.
+ *  A cancelled paid order shows the refund to send and Mark refunded. */
 export default function OrderDrawer({ orderId, onClose, onChanged }) {
   const toast = useToast();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(null);
   const [askCancel, setAskCancel] = useState(false);
+  const [askRefund, setAskRefund] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -41,7 +43,23 @@ export default function OrderDrawer({ orderId, onClose, onChanged }) {
     }
   };
 
+  const refund = async () => {
+    setBusy('refund');
+    try {
+      const updated = await api.post(`/admin/orders/${orderId}/refund`);
+      setOrder(updated);
+      toast(`${updated.order_number} marked refunded · the customer was told`, { icon: 'currency_exchange' });
+      onChanged?.(updated);
+    } catch (e) {
+      toast(e.message, { error: true });
+    } finally {
+      setBusy(null);
+      setAskRefund(false);
+    }
+  };
+
   const next = order && nextStep(order);
+  const refundPending = order?.payment_status === 'refund_pending';
   const canCancel = order?.next_statuses?.includes('cancelled');
   return (
     <>
@@ -51,7 +69,11 @@ export default function OrderDrawer({ orderId, onClose, onChanged }) {
         width={520}
         title={order ? order.order_number : 'Order'}
         footer={
-          order && (next || canCancel) ? (
+          refundPending ? (
+            <Button className="w-full" icon="currency_exchange" loading={busy === 'refund'} onClick={() => setAskRefund(true)} data-testid="drawer-refund">
+              Mark refunded
+            </Button>
+          ) : order && (next || canCancel) ? (
             <div className="flex gap-3">
               {canCancel && <Button variant="dangerOutline" className="flex-1" onClick={() => setAskCancel(true)}>Cancel order</Button>}
               {next && (
@@ -72,6 +94,13 @@ export default function OrderDrawer({ orderId, onClose, onChanged }) {
               <span className="text-muted">{dateTime(order.created_at)}</span>
               <span className="ml-auto text-xl font-extrabold text-brand">{money(order.total)}</span>
             </div>
+            {order.status === 'cancelled' && (
+              <section className={`rounded-2xl p-3.5 ${refundPending ? 'bg-amber-100' : order.payment_status === 'refunded' ? 'bg-green-100' : 'bg-soft'}`} data-testid="drawer-cancel-info">
+                <div className="font-bold">{cancelledByText(order)}{order.cancel_reason ? ` · ${order.cancel_reason}` : ''}</div>
+                {refundPending && <div className="mt-1 text-amber-700">Paid by {paymentName(order)}: send {money(order.total)} back to the customer, then press Mark refunded.</div>}
+                {order.payment_status === 'refunded' && <div className="mt-1 text-green-700">Refunded {money(order.total)}{order.refunded_at ? ` on ${dateTime(order.refunded_at)}` : ''}.</div>}
+              </section>
+            )}
             <section>
               <h3 className="mb-2 text-[11px] font-bold tracking-wider text-muted">CUSTOMER</h3>
               <div className="flex items-center gap-3 rounded-2xl bg-soft p-3.5">
@@ -117,18 +146,30 @@ export default function OrderDrawer({ orderId, onClose, onChanged }) {
               ))}
               <div className="mt-2 flex justify-between border-t border-line pt-2 text-[15px] font-bold"><span>Total</span><span className="text-brand">{money(order.total)}</span></div>
             </section>
-            {!next && !canCancel && <div className="text-center text-muted">This order is finished.</div>}
+            {!next && !canCancel && !refundPending && <div className="text-center text-muted">This order is finished.</div>}
           </div>
         )}
       </Drawer>
       <ConfirmDialog
         open={askCancel}
         title="Cancel this order?"
-        message="The customer is told, and the items go back on sale."
+        message={order?.payment_status === 'paid' && order?.payment_method !== 'cod'
+          ? `The customer is told, and the items go back on sale. It is paid, so you will need to send ${money(order.total)} back.`
+          : 'The customer is told, and the items go back on sale.'}
         confirmLabel="Cancel order"
         busy={busy === 'cancelled'}
         onCancel={() => setAskCancel(false)}
         onConfirm={() => move('cancelled')}
+      />
+      <ConfirmDialog
+        open={askRefund}
+        title="Mark as refunded?"
+        message={order ? `Only after you have sent ${money(order.total)} back to ${order.customer.full_name}. They get a notification.` : ''}
+        confirmLabel="Mark refunded"
+        danger={false}
+        busy={busy === 'refund'}
+        onCancel={() => setAskRefund(false)}
+        onConfirm={refund}
       />
     </>
   );

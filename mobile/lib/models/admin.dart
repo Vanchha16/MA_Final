@@ -32,10 +32,10 @@ class AdminStats {
       );
 }
 
-enum ActivityKind { paid, order, message, soldOut }
+enum ActivityKind { paid, order, cancelled, message, soldOut }
 
 /// What the shop can do about an event right now.
-enum ActivityAction { confirm, ship, reply, restock }
+enum ActivityAction { confirm, ship, reply, restock, refund }
 
 /// One line of the dashboard's Live activity (GET /api/admin/activity).
 class ActivityEvent {
@@ -63,7 +63,7 @@ class ActivityEvent {
 
   factory ActivityEvent.fromJson(Map<String, dynamic> json) => ActivityEvent(
         id: json['id'],
-        kind: switch (json['kind']) { 'paid' => ActivityKind.paid, 'message' => ActivityKind.message, 'sold_out' => ActivityKind.soldOut, _ => ActivityKind.order },
+        kind: switch (json['kind']) { 'paid' => ActivityKind.paid, 'message' => ActivityKind.message, 'sold_out' => ActivityKind.soldOut, 'cancelled' => ActivityKind.cancelled, _ => ActivityKind.order },
         at: DateTime.parse(json['at']),
         title: json['title'],
         message: json['message'],

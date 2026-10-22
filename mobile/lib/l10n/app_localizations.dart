@@ -1022,6 +1022,30 @@ abstract class AppLocalizations {
   /// **'Restock'**
   String get actRestock;
 
+  /// No description provided for @actRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark refunded'**
+  String get actRefund;
+
+  /// No description provided for @doneRefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunded'**
+  String get doneRefunded;
+
+  /// No description provided for @refundAskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as refunded?'**
+  String get refundAskTitle;
+
+  /// No description provided for @refundAskMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Only after you have sent the money for {order} back to the customer. They get a notification.'**
+  String refundAskMessage(String order);
+
   /// No description provided for @doneConfirmed.
   ///
   /// In en, this message translates to:

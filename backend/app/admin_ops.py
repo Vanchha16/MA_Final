@@ -44,13 +44,49 @@ def restock(order):
                 product.stock += item.quantity
 
 
-def set_order_status(order, status):
+CANCEL_REASON_MAX = 200
+
+
+def cancel_order(order, by, reason=None):
+    """Cancels an order for the customer, the shop or the system (not paid in time):
+    puts the stock back, stops waiting for its payment, and if it was already paid
+    online marks the money as owed back (refund_pending). Tells the customer.
+    The caller checks that the order can still be cancelled, and commits."""
+    order.status = "cancelled"
+    order.cancelled_by = by
+    order.cancel_reason = (reason or "").strip()[:CANCEL_REASON_MAX] or None
+    order.cancelled_at = utcnow()
+    restock(order)
+    for payment in order.payments:
+        if payment.status == "pending":
+            payment.status = "expired"
+    if order.payment_status == "paid" and order.payment_method != "cod":
+        order.payment_status = "refund_pending"
+    notify.order_event(order, {"customer": "cancelled_customer", "shop": "cancelled_shop"}.get(by, "cancelled"))
+
+
+def mark_refunded(order):
+    """The shop has sent the money of a cancelled paid order back. Commits."""
+    if order.payment_status != "refund_pending":
+        raise AdminError("This order has no refund waiting")
+    order.payment_status = "refunded"
+    order.refunded_at = utcnow()
+    notify.order_event(order, "refunded")
+    db.session.commit()
+    return order
+
+
+def set_order_status(order, status, reason=None):
     """Moves an order one step on and tells the customer. Commits."""
     if not isinstance(status, str) or status not in ORDER_STEPS:
         raise AdminError(f"Unknown status: {status}")
     if status not in next_statuses(order):
         raise AdminError(f"A {order.status} order cannot be marked {status}")
 
+    if status == "cancelled":
+        cancel_order(order, "shop", reason)
+        db.session.commit()
+        return order
     order.status = status
     if status == "confirmed":
         notify.order_event(order, "confirmed")
@@ -60,12 +96,6 @@ def set_order_status(order, status):
         if order.payment_method == "cod":
             order.payment_status = "paid"  # cash collected at the door
         notify.order_event(order, "delivered")
-    elif status == "cancelled":
-        restock(order)
-        for payment in order.payments:
-            if payment.status == "pending":
-                payment.status = "expired"
-        notify.order_event(order, "cancelled")
     db.session.commit()
     return order
 
@@ -147,6 +177,7 @@ def stats():
         "customers": User.query.filter_by(role="customer").count(),
         "orders": Order.query.count(),
         "orders_to_handle": Order.query.filter(Order.status.in_(["pending", "confirmed"])).count(),
+        "refunds_to_send": Order.query.filter_by(payment_status="refund_pending").count(),
         "revenue": float(paid.with_entities(func.coalesce(func.sum(Order.total), 0)).scalar()),
         "open_messages": ContactMessage.query.filter_by(status="open").count(),
     }
@@ -177,6 +208,11 @@ def activity(limit=20):
                        "message": f"{name} · {total} · {pay}",
                        "action": "confirm" if o.status == "pending" and o.payment_method == "cod" else
                                  "ship" if o.status == "confirmed" and paid is None else None})
+        if o.cancelled_at and o.cancelled_by in ("customer", "shop"):
+            who = f"{name} cancelled it" if o.cancelled_by == "customer" else "Cancelled by the shop"
+            events.append({**base, "id": f"cancel-{o.id}", "kind": "cancelled", "at": o.cancelled_at, "title": f"Order {o.order_number} cancelled",
+                           "message": f"{who}{': ' + o.cancel_reason if o.cancel_reason else ''} · {total}",
+                           "payment_status": o.payment_status, "action": "refund" if o.payment_status == "refund_pending" else None})
     for m in ContactMessage.query.order_by(ContactMessage.created_at.desc()).limit(10):
         events.append({"id": f"message-{m.id}", "kind": "message", "at": m.created_at, "title": "New message",
                        "message": f'"{m.message[:90]}"', "message_id": m.id, "status": m.status,

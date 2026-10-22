@@ -253,7 +253,7 @@ All five bonus features in the brief are done.
 | Product reviews and ratings | Star rating, tags and a comment for delivered products; average rating and a full Reviews page | Product Details, Reviews, Rate sheet |
 | Advanced search and filtering | Live suggestions while typing, filters by category, series, brand, price range and stock, sorting, grid / list view | Search, Product List, Filter sheet |
 
-Extra work beyond the brief: a staff role with owner-only staff management, a React web admin,
+Extra work beyond the brief: customers can cancel orders before they ship, with refund tracking for paid ones; a staff role with owner-only staff management, a React web admin,
 live activity on the admin dashboard, promo codes, notifications and contact messages.
 """
 
@@ -263,9 +263,9 @@ Automated tests run before every merge into `main`:
 
 | Part | Tool | Tests | What they cover |
 |---|---|---|---|
-| Backend API | pytest | 138 | Every route: login and roles, catalogue, cart, checkout, KHQR and PayWay payments, admin and staff rules, validation, API docs up to date |
-| Mobile app | flutter_test | 187 | Every screen's main flows with fake services (login, cart, checkout, payment, orders, admin tabs, staff) |
-| Web admin | Vitest + Testing Library | 13 | Dashboard, order steps, staff page, theme switch |
+| Backend API | pytest | 143 | Every route: login and roles, catalogue, cart, checkout, KHQR and PayWay payments, cancelling and refunds, admin and staff rules, validation, API docs up to date |
+| Mobile app | flutter_test | 193 | Every screen's main flows with fake services (login and address pop-ups, cart, checkout, payment, orders, cancel and refund, admin tabs, staff) |
+| Web admin | Vitest + Testing Library | 15 | Dashboard, order steps, refunds, staff page, theme switch |
 
 `flutter analyze` reports no issues. The test folders (`backend/tests`, `web-admin/src/test`) are kept on
 the `store-info` branch of the repository.

@@ -14,11 +14,12 @@ import { useTheme } from '../theme';
 const KIND = {
   paid: ['payments', 'bg-green-100 text-green-700'],
   order: ['shopping_bag', 'bg-brand-tint text-brand'],
+  cancelled: ['remove_shopping_cart', 'bg-red-100 text-red-700'],
   message: ['forum', 'bg-cyan-100 text-cyan-700'],
   review: ['star', 'bg-amber-100 text-amber-700'],
   sold_out: ['inventory_2', 'bg-red-100 text-red-700'],
 };
-const ACTION_LABEL = { confirm: 'Confirm', ship: 'Ship it', reply: 'Reply', restock: 'Restock' };
+const ACTION_LABEL = { confirm: 'Confirm', ship: 'Ship it', reply: 'Reply', restock: 'Restock', refund: 'Refund' };
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -97,6 +98,8 @@ export default function Dashboard() {
       const m = messages.find((x) => x.id === e.message_id) || (await api.get('/admin/contact-messages', { per_page: 100 })).items.find((x) => x.id === e.message_id);
       return m ? setReplyTo(m) : toast('That message was already answered', { error: true });
     }
+    // Refunds are confirmed in the order drawer (after the money was sent back)
+    if (e.action === 'refund') return setOpenOrder(e.order_id);
     if (e.action === 'restock') {
       const p = await api.get(`/admin/products/${e.product_id}`);
       return restock(p, key);

@@ -116,8 +116,12 @@ Table orders {
   delivery_method varchar [note: 'standard | pickup']
   status varchar [note: 'pending | confirmed | shipped | delivered | cancelled']
   payment_method varchar [note: 'cod | khqr | aba | card']
-  payment_status varchar [note: 'unpaid | paid | failed | refunded']
+  payment_status varchar [note: 'unpaid | paid | failed | refund_pending | refunded']
   note varchar(255)
+  cancelled_by varchar(10) [note: 'customer | shop | system']
+  cancel_reason varchar(200)
+  cancelled_at datetime
+  refunded_at datetime
   created_at datetime
   updated_at datetime
 }
