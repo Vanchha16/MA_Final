@@ -14,7 +14,10 @@ class NotificationBell extends StatelessWidget {
 
   Future<void> _open(BuildContext context) async {
     final shop = context.read<ShopProvider>();
-    if (!shop.signedIn) return ShopActions.askToLogin(context, 'Log in to see your notifications');
+    if (!shop.signedIn) {
+      final ok = await ShopActions.askToLogin(context, 'Log in to see your order updates and offers.', icon: Icons.notifications_rounded);
+      if (!ok || !context.mounted) return;
+    }
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
     await shop.refreshUnread();
   }
