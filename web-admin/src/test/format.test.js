@@ -1,4 +1,4 @@
-import { money, nextStep, parseTime, paymentText, timeAgo } from '../lib/format';
+import { cancelledByText, money, nextStep, parseTime, paymentText, timeAgo } from '../lib/format';
 
 test('money has two decimals and thousands', () => {
   expect(money(1053)).toBe('$1,053.00');
@@ -19,4 +19,11 @@ test('the next step skips Cancel, and payment text', () => {
   expect(paymentText({ payment_method: 'khqr', payment_status: 'paid' })).toBe('KHQR paid');
   expect(paymentText({ payment_method: 'cod', payment_status: 'unpaid' })).toBe('Cash');
   expect(paymentText({ payment_method: 'aba', payment_status: 'paid' })).toBe('ABA PayWay paid');
+});
+
+test('refund states and who cancelled', () => {
+  expect(paymentText({ payment_method: 'khqr', payment_status: 'refund_pending' })).toBe('KHQR · refund to send');
+  expect(paymentText({ payment_method: 'aba', payment_status: 'refunded' })).toBe('ABA PayWay · refunded');
+  expect(cancelledByText({ cancelled_by: 'customer' })).toBe('Cancelled by the customer');
+  expect(cancelledByText({ cancelled_by: 'system' })).toBe('Not paid in time');
 });
