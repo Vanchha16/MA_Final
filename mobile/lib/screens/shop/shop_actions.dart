@@ -9,12 +9,13 @@ import '../../providers/shop_provider.dart';
 import '../../services/catalog_service.dart';
 import '../../widgets/cart_drive.dart';
 import '../../widgets/product_image.dart';
-import '../auth/login_screen.dart';
+import '../../widgets/login_required.dart';
 import '../catalog/product_details_screen.dart';
 import '../shell/main_shell.dart';
 
 /// What happens when a product card's heart or plus is tapped, the same on
-/// every screen: guests are asked to log in, errors show in a SnackBar.
+/// every screen: guests get the "Log in to continue" pop-up (and the action
+/// goes on once they have logged in), errors show in a SnackBar.
 class ShopActions {
   static void _snack(BuildContext context, String message, {SnackBarAction? action}) {
     ScaffoldMessenger.of(context)
@@ -22,18 +23,16 @@ class ShopActions {
       ..showSnackBar(SnackBar(content: Text(message), action: action, behavior: SnackBarBehavior.floating));
   }
 
-  static void askToLogin(BuildContext context, String message) => _snack(
-        context,
-        message,
-        action: SnackBarAction(
-          label: 'Log in',
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginScreen())),
-        ),
-      );
+  /// True once the guest has logged in from the pop-up.
+  static Future<bool> askToLogin(BuildContext context, String message, {IconData icon = Icons.lock_rounded}) =>
+      showLoginRequired(context, message: message, icon: icon);
 
   static Future<void> toggleWishlist(BuildContext context, Product product) async {
     final shop = context.read<ShopProvider>();
-    if (!shop.signedIn) return askToLogin(context, 'Log in to save items to your wishlist');
+    if (!shop.signedIn) {
+      final ok = await askToLogin(context, 'Log in to save items to your wishlist.', icon: Icons.favorite_rounded);
+      if (!ok || !context.mounted) return;
+    }
     try {
       final added = await shop.toggleWishlist(product.id);
       if (context.mounted) _snack(context, added ? 'Saved to your wishlist' : 'Removed from your wishlist');
@@ -48,8 +47,8 @@ class ShopActions {
   static Future<Cart> addToCart(BuildContext context, Product product, {int quantity = 1, bool toast = true}) async {
     final shop = context.read<ShopProvider>();
     if (!shop.signedIn) {
-      askToLogin(context, 'Log in to add items to your cart');
-      throw StateError('not signed in');
+      final ok = await askToLogin(context, 'Log in to add items to your cart.', icon: Icons.shopping_bag_rounded);
+      if (!ok || !context.mounted) throw StateError('not signed in');
     }
     try {
       final cart = await shop.addToCart(product.id, quantity: quantity);

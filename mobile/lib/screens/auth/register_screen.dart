@@ -16,7 +16,10 @@ import '../shell/main_shell.dart';
 
 /// Create account (Figma: "04 - Register"), same playful style as Login.
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  /// Opened from the "Log in to continue" pop-up: go back there (true) instead of to Home.
+  final bool returnOnSuccess;
+
+  const RegisterScreen({super.key, this.returnOnSuccess = false});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -84,6 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             phone: phone.isEmpty ? null : phone,
           );
       if (!mounted) return;
+      if (widget.returnOnSuccess) return Navigator.of(context).pop(true);
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainShell()),
         (_) => false,
