@@ -527,6 +527,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actRestock => 'Restock';
 
   @override
+  String get actRefund => 'Mark refunded';
+
+  @override
+  String get doneRefunded => 'Refunded';
+
+  @override
+  String get refundAskTitle => 'Mark as refunded?';
+
+  @override
+  String refundAskMessage(String order) {
+    return 'Only after you have sent the money for $order back to the customer. They get a notification.';
+  }
+
+  @override
   String get doneConfirmed => 'Confirmed · customer told';
 
   @override

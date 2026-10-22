@@ -266,11 +266,16 @@ class Order(TimestampMixin, db.Model):
         nullable=False, default="pending",
     )
     payment_method = db.Column(db.Enum("cod", "khqr", "aba", "card", name="payment_method"), nullable=False, default="cod")
+    # refund_pending: a paid online order was cancelled and the shop still has to send the money back
     payment_status = db.Column(
-        db.Enum("unpaid", "paid", "failed", "refunded", name="payment_status"),
+        db.Enum("unpaid", "paid", "failed", "refund_pending", "refunded", name="payment_status"),
         nullable=False, default="unpaid",
     )
     note = db.Column(db.String(255))
+    cancelled_by = db.Column(db.String(10))  # customer | shop | system (not paid in time)
+    cancel_reason = db.Column(db.String(200))
+    cancelled_at = db.Column(db.DateTime)
+    refunded_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     items = db.relationship("OrderItem", backref="order", cascade="all, delete-orphan")
@@ -293,6 +298,12 @@ class Order(TimestampMixin, db.Model):
             "delivery_method": self.delivery_method,
             "item_count": sum(i.quantity for i in self.items),
             "created_at": self.created_at.isoformat(),
+            # The customer can cancel until the order is shipped
+            "can_cancel": self.status in ("pending", "confirmed"),
+            "cancelled_by": self.cancelled_by,
+            "cancel_reason": self.cancel_reason,
+            "cancelled_at": self.cancelled_at.isoformat() if self.cancelled_at else None,
+            "refunded_at": self.refunded_at.isoformat() if self.refunded_at else None,
         }
         if with_items:
             data["shipping"] = {

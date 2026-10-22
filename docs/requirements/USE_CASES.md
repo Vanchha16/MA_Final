@@ -74,6 +74,7 @@ The Word copies (`.docx`) are made from these Markdown files with `python make_d
 | UC-15b | Pay with ABA PayWay | Customer, ABA PayWay | FR-O04b | ABA PayWay Payment |
 | UC-16 | View order history and details | Customer | FR-O05, FR-O06 | My Orders, Order Details |
 | UC-17 | Confirm received / buy again / view receipt | Customer | FR-O07 | Order Details, Receipt |
+| UC-17b | Cancel an order | Customer | FR-O08 | Order Details |
 | UC-18 | Read notifications | Customer | FR-A01 | Notifications |
 | UC-19 | Change settings | Customer, Admin | FR-A02 | Settings |
 | UC-20 | Send a message to the shop | Customer | FR-A04 | Contact Us |
@@ -88,6 +89,7 @@ The Word copies (`.docx`) are made from these Markdown files with `python make_d
 | UC-A6 | View and block / unblock customers | Admin | FR-AD05 | Admin Customers, Customer Details |
 | UC-A7 | Reply to a message | Admin | FR-AD06 | Admin Messages |
 | UC-A8 | Manage staff accounts | Admin | FR-AD10, FR-AD11 | Admin Staff, Add / Edit Staff Member |
+| UC-A9 | Send a refund (mark refunded) | Staff, Admin | FR-AD12 | Admin Orders, Order Details, web admin Orders |
 
 ---
 
@@ -292,6 +294,29 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 **Alternative flows**
 - A1 (step 2): no orders yet. Empty state with "Start shopping".
 
+### UC-17b Cancel an order
+
+| | |
+|---|---|
+| **Actor** | Customer |
+| **Extends** | UC-16 View order history and details |
+| **Precondition** | The customer's order is pending or confirmed (not shipped yet). |
+
+**Main flow**
+1. In Order Details the customer taps **Cancel order** (shown only while it can be cancelled).
+2. The app asks "Cancel this order?" and offers optional reasons (Changed my mind, Ordered by mistake, Found a better price, It takes too long).
+3. The customer picks a reason (or none) and taps **Cancel order**.
+4. The system checks the order is still pending or confirmed, cancels it, puts its items back on sale and stops waiting for its payment (`POST /api/orders/<id>/cancel`).
+5. If it was paid by KHQR or ABA PayWay, the payment becomes **Refund pending** and the message says the money comes back within 3 working days.
+6. The customer gets a notification; the order moves to Past orders with "Cancelled" (or "Refund pending").
+
+**Alternative flows**
+- A1 (step 3): the customer taps "Keep my order". Nothing changes.
+- A2 (step 4): the order has shipped in the meantime. `409`, "This order is already on its way, so it can't be cancelled".
+- A3 (later): the shop marks the refund as sent (UC-A9). The order shows **Refunded** and the customer gets a "Refund sent" notification.
+
+**Postcondition** The order is cancelled, its stock is back on sale, and any payment is owed back to the customer.
+
 ### UC-22 Rate a product
 
 | | |
@@ -332,11 +357,29 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 6. The app updates the list, the badge and the dashboard.
 
 **Alternative flows**
-- A1 (step 3): the admin taps Cancel. The app asks "Cancel this order?"; on confirm the order is cancelled, its stock returned and the customer notified.
+- A1 (step 3): the admin taps Cancel. The app asks "Cancel this order?"; on confirm the order is cancelled, its stock returned and the customer notified. A paid KHQR / ABA PayWay order becomes **Refund to send** (UC-A9).
 - A2 (step 4): the step is not allowed (e.g. shipping a pending order, cancelling a shipped one). `409`, "A shipped order cannot be marked cancelled".
 - A3 (step 4): an unpaid KHQR order can only be cancelled, not confirmed.
 
 **Postcondition** The order has its new status and the customer knows.
+
+### UC-A9 Send a refund (mark refunded)
+
+| | |
+|---|---|
+| **Actor** | Staff or Admin (and the Customer who gets the money back) |
+| **Precondition** | A cancelled order that was paid by KHQR or ABA PayWay (payment status *refund_pending*). |
+
+**Main flow**
+1. The shop sees the order in Orders under **Refund to send** (also a "Refund" button in Live activity).
+2. The shop sends the order total back to the customer itself (bank transfer or ABA).
+3. The shop opens the order and taps **Mark refunded**; the app asks to confirm that the money was sent.
+4. The system marks the payment *refunded* with the date (`POST /api/admin/orders/<id>/refund`) and notifies the customer ("Refund sent").
+
+**Alternative flows**
+- A1 (step 4): the order has no refund waiting (already refunded, or never paid). `409`, "This order has no refund waiting".
+
+**Postcondition** The customer sees **Refunded** on the order; the refund is no longer on the shop's list.
 
 ### UC-A3 Add / edit product
 

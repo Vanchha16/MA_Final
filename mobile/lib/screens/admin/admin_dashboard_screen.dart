@@ -14,6 +14,7 @@ import '../../l10n/l10n.dart';
 import '../../models/admin.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/admin_service.dart';
+import '../../widgets/confirm_dialog.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
 import '../../widgets/quantity_stepper.dart';
@@ -101,7 +102,13 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
     // Ask first (reply text, stock count); show busy only while it is sent
     final reply = e.action == ActivityAction.reply ? await _askReply(e) : null;
     final count = e.action == ActivityAction.restock ? await _askStock() : null;
-    if ((e.action == ActivityAction.reply && reply == null) || (e.action == ActivityAction.restock && count == null) || !mounted) return;
+    final refund = e.action == ActivityAction.refund ? await _askRefund(e) : null;
+    if ((e.action == ActivityAction.reply && reply == null) ||
+        (e.action == ActivityAction.restock && count == null) ||
+        (e.action == ActivityAction.refund && refund != true) ||
+        !mounted) {
+      return;
+    }
     setState(() => _busy.add(e.id));
     try {
       final done = switch (e.action!) {
@@ -109,6 +116,7 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ActivityAction.ship => await widget.service.setOrderStatus(e.orderId!, 'shipped').then((_) => l.doneShipped),
         ActivityAction.reply => await widget.service.reply(e.messageId!, reply!).then((_) => l.doneReplied),
         ActivityAction.restock => await widget.service.setStock(e.productId!, count!).then((_) => l.doneRestocked(count)),
+        ActivityAction.refund => await widget.service.markRefunded(e.orderId!).then((_) => l.doneRefunded),
       };
       if (mounted) setState(() => _done[e.id] = done);
       unawaited(_load(quiet: true));
@@ -120,6 +128,16 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
       if (mounted) setState(() => _busy.remove(e.id));
     }
   }
+
+  /// Only after the money was sent back (bank transfer / ABA).
+  Future<bool?> _askRefund(ActivityEvent e) => showConfirmDialog(
+        context,
+        icon: const Icon(Icons.currency_exchange_rounded, color: AppTheme.danger, size: 30),
+        title: context.l10n.refundAskTitle,
+        message: context.l10n.refundAskMessage(e.orderNumber ?? ''),
+        confirmLabel: context.l10n.actRefund,
+        confirmKey: const Key('admin_refund_confirm'),
+      );
 
   Future<String?> _askReply(ActivityEvent e) {
     final l = context.l10n;
@@ -387,6 +405,7 @@ class _EventRow extends StatelessWidget {
   static (IconData, Color) _look(ActivityKind k) => switch (k) {
         ActivityKind.paid => (Icons.payments_rounded, AppTheme.success),
         ActivityKind.order => (Icons.receipt_long_rounded, AppTheme.amber),
+        ActivityKind.cancelled => (Icons.remove_shopping_cart_rounded, AppTheme.danger),
         ActivityKind.message => (Icons.forum_rounded, AppTheme.accent),
         ActivityKind.soldOut => (Icons.warning_rounded, AppTheme.danger),
       };
@@ -413,6 +432,7 @@ class _EventRow extends StatelessWidget {
       ActivityAction.ship => l.actShip,
       ActivityAction.reply => l.actReply,
       ActivityAction.restock => l.actRestock,
+      ActivityAction.refund => l.actRefund,
       null => null,
     };
 

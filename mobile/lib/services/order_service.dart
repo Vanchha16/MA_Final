@@ -12,4 +12,8 @@ class OrderService {
 
   /// Only for orders on the way; returns the delivered order.
   Future<Order> received(int id) async => Order.fromJson(await _api.post('${ApiConstants.orders}/$id/received'));
+
+  /// Cancels an order that has not shipped. A paid online one becomes refund_pending.
+  Future<Order> cancel(int id, {String? reason}) async =>
+      Order.fromJson(await _api.post('${ApiConstants.orders}/$id/cancel', data: {'reason': ?reason}));
 }

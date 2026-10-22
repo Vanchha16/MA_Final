@@ -29,6 +29,9 @@ class AdminService {
   Future<AdminOrder> setOrderStatus(int orderId, String status) async =>
       AdminOrder.fromJson(await _api.put('$_base/orders/$orderId/status', data: {'status': status}));
 
+  /// The shop has sent a cancelled paid order's money back; the customer is told.
+  Future<AdminOrder> markRefunded(int orderId) async => AdminOrder.fromJson(await _api.post('$_base/orders/$orderId/refund'));
+
   // ---------- Products ----------
 
   Future<List<AdminProduct>> products() async =>

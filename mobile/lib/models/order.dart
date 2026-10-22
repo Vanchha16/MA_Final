@@ -167,6 +167,13 @@ class Order {
   final DateTime? createdAt;
   final List<OrderLine> lines;
 
+  /// The customer can cancel until it ships.
+  final bool canCancel;
+
+  /// customer | shop | system (not paid in time).
+  final String? cancelledBy, cancelReason;
+  final DateTime? refundedAt;
+
   const Order({
     required this.id,
     required this.number,
@@ -185,7 +192,15 @@ class Order {
     this.note,
     this.createdAt,
     this.lines = const [],
+    this.canCancel = false,
+    this.cancelledBy,
+    this.cancelReason,
+    this.refundedAt,
   });
+
+  /// A paid online order was cancelled: the shop still has to send the money back.
+  bool get refundPending => paymentStatus == 'refund_pending';
+  bool get refunded => paymentStatus == 'refunded';
 
   OrderStage get stage => switch (status) {
         'cancelled' => OrderStage.cancelled,
@@ -224,6 +239,10 @@ class Order {
         note: note,
         createdAt: createdAt,
         lines: lines ?? this.lines,
+        canCancel: canCancel,
+        cancelledBy: cancelledBy,
+        cancelReason: cancelReason,
+        refundedAt: refundedAt,
       );
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -247,6 +266,10 @@ class Order {
       note: json['note'],
       createdAt: json['created_at'] == null ? null : DateTime.tryParse(json['created_at']),
       lines: [for (final l in json['items'] as List? ?? []) OrderLine.fromJson(l)],
+      canCancel: json['can_cancel'] ?? false,
+      cancelledBy: json['cancelled_by'],
+      cancelReason: json['cancel_reason'],
+      refundedAt: json['refunded_at'] == null ? null : DateTime.tryParse(json['refunded_at']),
     );
   }
 }

@@ -26,7 +26,7 @@ Anime World Shop is made of three parts that share one database:
 | **Backend REST API + web admin panel** | The mobile app; staff on a computer (`/admin`) | Python Flask, MySQL |
 
 In scope: accounts, catalogue, search and filters, cart, wishlist, checkout, KHQR, ABA PayWay and cash on delivery payment, order tracking, receipts, product reviews and ratings, notifications, contact messages, settings, and the shop management tools.
-Out of scope for version 1.0: delivery-company integration, refunds through the app, multiple shops (marketplace) and loyalty point redemption.
+Out of scope for version 1.0: delivery-company integration, automatic refunds through the payment provider (the shop sends refunds itself and records them in the app), multiple shops (marketplace) and loyalty point redemption.
 
 ### 1.4 Definitions
 
@@ -137,6 +137,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | FR-O05 | **Order history** lists the customer's orders, current ones first, with status and photos. | M |
 | FR-O06 | **Order details** show a status tracker (placed, paid, shipped, delivered), items, address, payment and totals. | M |
 | FR-O07 | The customer can **confirm an order was received**, **buy the same items again**, and **view, save or share the receipt** of a paid order. | S |
+| FR-O08 | The customer can **cancel an order** until it ships (pending or confirmed), with an optional reason (changed my mind, ordered by mistake, found a better price, it takes too long). The stock goes back on sale. If it was paid by KHQR or ABA PayWay, the order shows **Refund pending**, then **Refunded** once the shop has sent the money back; each step is a notification. | S |
 
 ### 4.5 Additional features (FR-A)
 
@@ -172,6 +173,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | FR-AD08 | A server-rendered **admin panel** at `/admin` (Flask-Admin) offers the same dashboard and one-click actions, as a fallback that needs no JavaScript build. | C |
 | FR-AD09 | The admin can **manage promo codes** (add, edit, switch off, delete) and **remove reviews** (spam, rude words). | C |
 | FR-AD10 | The admin (owner) can **manage staff accounts** in the app and the web admin: add a staff or admin account with a starting password, change the name, phone and role, reset the password and disable / enable the account. A new role, a new password or disabling signs that person out at once. Nobody can change their own role or disable themselves, and the shop always keeps one active admin. | S |
+| FR-AD12 | The shop sees cancelled paid orders as **Refund to send** (filter in Orders, "Refund" in Live activity, a count in the dashboard numbers), sends the money back itself (bank transfer or ABA) and taps **Mark refunded**; the customer is notified. When the shop cancels an order it can give a reason, which the customer sees. | S |
 | FR-AD11 | A **staff** account opens the same admin area but only sees what staff may do: dashboard, orders, products, categories, messages, reviews and customers (view only). Staff, Coupons and Block customer are hidden, and the API refuses them (403). | S |
 
 ---
@@ -187,7 +189,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | BE-03 | Category management | Public `/api/categories`; admin `/api/admin/categories` create, rename, delete |
 | BE-04 | Customer management | Own profile `/api/profile`, addresses `/api/addresses`, preferences; admin `/api/admin/customers` list, details, block; staff accounts `/api/admin/staff` list, add, change, disable |
 | BE-05 | Shopping cart management | `/api/cart` add, update quantity, remove, clear, coupon; wishlist `/api/wishlist` |
-| BE-06 | Order management | `/api/checkout`, `/api/orders` place, list, details, received, KHQR and ABA PayWay payment, PayWay callback; admin `/api/admin/orders` list, details, status |
+| BE-06 | Order management | `/api/checkout`, `/api/orders` place, list, details, received, cancel, KHQR and ABA PayWay payment, PayWay callback; admin `/api/admin/orders` list, details, status, refund |
 | BE-07 | API for the mobile app | 64 REST endpoints, JSON in and out, documented (section 5.2) |
 
 ### 5.2 API requirements
@@ -234,12 +236,13 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | BR-03 | A cart quantity cannot exceed the product's stock; sold-out or hidden products cannot be ordered. |
 | BR-04 | A coupon is valid only if it is active, not expired, and the subtotal reaches its minimum. Percentage coupons can have a maximum discount. |
 | BR-05 | Order numbers are unique and readable, e.g. `AWS-20261016-00042`: the date plus the order's own id, so two orders placed at the same moment never share a number. |
-| BR-06 | Orders move only forward: pending -> confirmed -> shipped -> delivered. Pending and confirmed orders can be cancelled; shipped and delivered orders cannot. |
+| BR-06 | Orders move only forward: pending -> confirmed -> shipped -> delivered. Pending and confirmed orders can be cancelled, by the customer or the shop; shipped and delivered orders cannot. |
 | BR-07 | An unpaid KHQR or ABA PayWay order cannot be confirmed; it waits for payment or is cancelled after 15 minutes, and its stock is returned. |
 | BR-08 | Cancelling an order returns its items to stock. |
 | BR-09 | A category can be deleted only when it has no products. |
 | BR-10 | A blocked customer cannot log in or use an existing token until an admin unblocks them. |
-| BR-11 | A disabled staff account cannot log in or use an existing token. Admins cannot change their own role or disable themselves, and the last active admin cannot be demoted or disabled. |
+| BR-12 | A disabled staff account cannot log in or use an existing token. Admins cannot change their own role or disable themselves, and the last active admin cannot be demoted or disabled. |
+| BR-13 | Cancelling an order that was paid by KHQR or ABA PayWay makes its payment **refund_pending**; only the shop can mark it **refunded**, and refunded or pending money is not counted as revenue. Cash on delivery orders are never paid before delivery, so they need no refund. |
 | BR-11 | A product's sale price must be lower than its normal price; stock is 0 or more. |
 | BR-12 | Each status change and each answer to a message creates a notification for the customer. |
 | BR-13 | Only a customer who received a product (a delivered order containing it) can review it; one review per customer and product, and posting again edits it. A comment has at most 1,000 characters. |
@@ -327,7 +330,7 @@ Each item of the brief, the requirements that cover it and where it is implement
 | Checkout | FR-O01, FR-O02 | `checkout_screen.dart` / `GET /api/checkout`, `POST /api/orders` | Done |
 | Order Confirmation | FR-O03 | `order_placed_screen.dart` | Done |
 | Order History | FR-O05 | `orders_screen.dart` / `GET /api/orders` | Done |
-| Order Details | FR-O06, FR-O07 | `order_details_screen.dart` / `GET /api/orders/<id>` | Done |
+| Order Details | FR-O06, FR-O07, FR-O08 | `order_details_screen.dart` / `GET /api/orders/<id>`, `POST /api/orders/<id>/cancel` | Done |
 | Notifications | FR-A01 | `notifications_screen.dart` / `/api/notifications/*` | Done |
 | Settings | FR-A02 | `settings_screen.dart` / `/api/profile/preferences` | Done |
 | About Application | FR-A03 | `about_screen.dart`, `legal_screen.dart` | Done |

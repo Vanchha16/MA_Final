@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import OrderDrawer from '../components/OrderDrawer';
 import { useToast } from '../components/toast';
-import { Button, Card, Chip, Empty, ErrorBox, FilterChips, PageTitle, Photo, SearchBox, StatusChip } from '../components/ui';
+import { Button, Card, Chip, Empty, ErrorBox, FilterChips, Icon, PageTitle, Photo, SearchBox, StatusChip } from '../components/ui';
 import { STEP_DONE, STEP_LABEL, dateTime, money, nextStep, paymentName, paymentText } from '../lib/format';
 import { useStats } from '../stats';
 
@@ -14,6 +14,7 @@ const FILTERS = [
   ['shipped', 'Shipped', (o) => o.status === 'shipped'],
   ['delivered', 'Delivered', (o) => o.status === 'delivered'],
   ['cancelled', 'Cancelled', (o) => o.status === 'cancelled'],
+  ['refund', 'Refund to send', (o) => o.payment_status === 'refund_pending'],
   ['all', 'All', () => true],
 ];
 
@@ -96,7 +97,8 @@ export default function Orders() {
                     <td className="text-right" onClick={(ev) => ev.stopPropagation()}>
                       {step ? (
                         <Button small loading={busy === o.id} onClick={() => move(o, step)} data-testid={`orders-step-${o.id}`}>{STEP_LABEL[step]}</Button>
-                      ) : o.status === 'pending' ? <Chip className="bg-amber-100 text-amber-700">Waiting for {paymentName(o)}</Chip> : null}
+                      ) : o.payment_status === 'refund_pending' ? <Chip className="bg-amber-100 text-amber-700"><Icon name="currency_exchange" size={13} />Refund to send</Chip>
+                        : o.status === 'pending' ? <Chip className="bg-amber-100 text-amber-700">Waiting for {paymentName(o)}</Chip> : null}
                     </td>
                   </tr>
                 );
