@@ -134,7 +134,9 @@ void main() {
     final shop = FakeShopService();
     await _pump(tester, _details(FakeCatalogService(), 0), shop: shop, signedIn: false);
     await _tap(tester, find.byKey(const Key('details_add')));
-    expect(find.text('Log in to add items to your cart'), findsOneWidget);
+    expect(find.text('Log in to add items to your cart.'), findsOneWidget);
+    await _tap(tester, find.byKey(const Key('login_required_later')));
+    expect(find.byKey(const Key('login_required')), findsNothing);
     expect(shop.cart, 0);
   });
 
