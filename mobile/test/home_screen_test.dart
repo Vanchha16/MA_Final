@@ -115,6 +115,7 @@ void main() {
     expect(find.text('Log in to continue'), findsOneWidget);
     expect(find.text('Log in to save items to your wishlist.'), findsOneWidget);
     await _tap(tester, find.byKey(const Key('login_required_later')));
+    await tester.pump(const Duration(milliseconds: 400)); // the pop-up animates out
     expect(find.byKey(const Key('login_required')), findsNothing);
 
     await _tap(tester, find.byKey(const Key('add_1')));
