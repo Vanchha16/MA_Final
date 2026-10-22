@@ -6,6 +6,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from .. import notify, payments
+from ..admin_ops import CANCEL_REASON_MAX, cancel_order
 from ..extensions import db
 from ..models import Address, CartItem, Order, OrderItem, Payment, Product, Review, User
 from ..payway import PaywayError
@@ -267,6 +268,28 @@ def mark_received(order_id):
     notify.order_event(order, "delivered")
     db.session.commit()
     return success(_with_my_ratings([order.to_dict(with_items=True)])[0], "Enjoy your order!")
+
+
+@bp.post("/orders/<int:order_id>/cancel")
+@jwt_required()
+def cancel_my_order(order_id):
+    """The customer cancels an order that has not been shipped yet. Body: {reason?}.
+    A paid KHQR / ABA PayWay order becomes refund_pending: the shop sends the money back."""
+    order = Order.query.filter_by(id=order_id, user_id=_user_id()).first()
+    if not order:
+        return error("Order not found", 404)
+    if order.status not in ("pending", "confirmed"):
+        return error("This order is already on its way, so it can't be cancelled" if order.status in ("shipped", "delivered")
+                     else "This order is already cancelled", 409)
+    reason = json_body().get("reason")
+    if reason is not None and not isinstance(reason, str):
+        return error("Validation failed", 422, {"reason": "reason must be text"})
+    if reason and len(reason.strip()) > CANCEL_REASON_MAX:
+        return error("Validation failed", 422, {"reason": f"Keep the reason under {CANCEL_REASON_MAX} characters"})
+    cancel_order(order, "customer", reason)
+    db.session.commit()
+    message = "Order cancelled. We will refund you within 3 working days." if order.payment_status == "refund_pending" else "Order cancelled"
+    return success(_with_my_ratings([order.to_dict(with_items=True)])[0], message)
 
 
 @bp.get("/orders/<int:order_id>")

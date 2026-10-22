@@ -154,8 +154,13 @@ CREATE TABLE orders (
   delivery_method  ENUM('standard','pickup') NOT NULL DEFAULT 'standard',
   status           ENUM('pending','confirmed','shipped','delivered','cancelled') NOT NULL DEFAULT 'pending',
   payment_method   ENUM('cod','khqr','aba','card') NOT NULL DEFAULT 'cod',
-  payment_status   ENUM('unpaid','paid','failed','refunded') NOT NULL DEFAULT 'unpaid',
+  -- refund_pending: a paid online order was cancelled and the shop still has to send the money back
+  payment_status   ENUM('unpaid','paid','failed','refund_pending','refunded') NOT NULL DEFAULT 'unpaid',
   note             VARCHAR(255)  NULL,
+  cancelled_by     VARCHAR(10)   NULL,      -- customer | shop | system (not paid in time)
+  cancel_reason    VARCHAR(200)  NULL,
+  cancelled_at     DATETIME      NULL,
+  refunded_at      DATETIME      NULL,
   created_at       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,

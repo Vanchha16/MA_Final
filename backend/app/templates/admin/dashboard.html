@@ -83,7 +83,7 @@
             <td>{{ o.user.full_name }}</td>
             <td>{% if photo %}<img src="{{ photo.photo_url }}" class="thumb" style="width:32px;height:32px" alt="">{% endif %}</td>
             <td class="font-weight-bold">${{ '%.2f' % o.total }}</td>
-            <td class="muted">{{ pay_names.get(o.payment_method, 'Cash') }}{% if o.payment_status == 'paid' %} paid{% endif %}</td>
+            <td class="muted">{{ pay_names.get(o.payment_method, 'Cash') }}{% if o.payment_status == 'paid' %} paid{% elif o.payment_status == 'refund_pending' %} · refund to send{% elif o.payment_status == 'refunded' %} · refunded{% endif %}</td>
             <td><span class="chip {{ status_tint[o.status] }}">{{ o.status|capitalize }}</span></td>
             <td class="text-right">
               {% if step %}

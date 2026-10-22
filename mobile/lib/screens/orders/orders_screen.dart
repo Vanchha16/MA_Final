@@ -395,7 +395,8 @@ class _PastRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final delivered = order.stage == OrderStage.delivered;
-    final color = delivered ? AppTheme.success : scheme.onSurfaceVariant;
+    final color = delivered || order.refunded ? AppTheme.success : (order.refundPending ? AppTheme.amber : scheme.onSurfaceVariant);
+    final pill = delivered ? 'Delivered' : (order.refundPending ? 'Refund pending' : (order.refunded ? 'Refunded' : 'Cancelled'));
     final date = order.createdAt == null ? '' : DateFormat('d MMM, HH:mm').format(order.createdAt!.toLocal());
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -437,10 +438,14 @@ class _PastRow extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(delivered ? Icons.check_circle_rounded : Icons.cancel_rounded, size: 13, color: color),
+                            Icon(
+                              delivered || order.refunded ? Icons.check_circle_rounded : (order.refundPending ? Icons.hourglass_top_rounded : Icons.cancel_rounded),
+                              size: 13,
+                              color: color,
+                            ),
                             const SizedBox(width: 4),
                             Text(
-                              delivered ? 'Delivered' : 'Cancelled',
+                              pill,
                               style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: color),
                             ),
                           ],

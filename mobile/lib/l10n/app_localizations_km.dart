@@ -526,6 +526,20 @@ class AppLocalizationsKm extends AppLocalizations {
   String get actRestock => 'បន្ថែមស្តុក';
 
   @override
+  String get actRefund => 'បានសងប្រាក់វិញ';
+
+  @override
+  String get doneRefunded => 'បានសងប្រាក់វិញ';
+
+  @override
+  String get refundAskTitle => 'កត់ថាបានសងប្រាក់វិញ?';
+
+  @override
+  String refundAskMessage(String order) {
+    return 'ធ្វើតែក្រោយពេលអ្នកបានផ្ញើប្រាក់សម្រាប់ $order ត្រឡប់ទៅអតិថិជនវិញ។ ពួកគេនឹងទទួលបានការជូនដំណឹង។';
+  }
+
+  @override
   String get doneConfirmed => 'បានបញ្ជាក់ · បានប្រាប់អតិថិជន';
 
   @override

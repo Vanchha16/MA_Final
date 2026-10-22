@@ -10,7 +10,7 @@ E-Commerce Mobile Application - Complete Project Documentation
 
 **Course:** Mobile Application (Year 4, SU25) - Final Project\
 **Institute:** SETEC Institute\
-**Date:** 19 October 2026\
+**Date:** 22 October 2026\
 **Source code:** <https://github.com/Vanchha16/MA_Final>
 
 **Lecturer:** Ly Lay
@@ -123,7 +123,7 @@ Anime World Shop is made of three parts that share one database:
 | **Backend REST API + web admin panel** | The mobile app; staff on a computer (`/admin`) | Python Flask, MySQL |
 
 In scope: accounts, catalogue, search and filters, cart, wishlist, checkout, KHQR, ABA PayWay and cash on delivery payment, order tracking, receipts, product reviews and ratings, notifications, contact messages, settings, and the shop management tools.
-Out of scope for version 1.0: delivery-company integration, refunds through the app, multiple shops (marketplace) and loyalty point redemption.
+Out of scope for version 1.0: delivery-company integration, automatic refunds through the payment provider (the shop sends refunds itself and records them in the app), multiple shops (marketplace) and loyalty point redemption.
 
 ### 2.1.4 Definitions
 
@@ -231,6 +231,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | FR-O05 | **Order history** lists the customer's orders, current ones first, with status and photos. | M |
 | FR-O06 | **Order details** show a status tracker (placed, paid, shipped, delivered), items, address, payment and totals. | M |
 | FR-O07 | The customer can **confirm an order was received**, **buy the same items again**, and **view, save or share the receipt** of a paid order. | S |
+| FR-O08 | The customer can **cancel an order** until it ships (pending or confirmed), with an optional reason (changed my mind, ordered by mistake, found a better price, it takes too long). The stock goes back on sale. If it was paid by KHQR or ABA PayWay, the order shows **Refund pending**, then **Refunded** once the shop has sent the money back; each step is a notification. | S |
 
 ### 2.4.5 Additional features (FR-A)
 
@@ -266,6 +267,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | FR-AD08 | A server-rendered **admin panel** at `/admin` (Flask-Admin) offers the same dashboard and one-click actions, as a fallback that needs no JavaScript build. | C |
 | FR-AD09 | The admin can **manage promo codes** (add, edit, switch off, delete) and **remove reviews** (spam, rude words). | C |
 | FR-AD10 | The admin (owner) can **manage staff accounts** in the app and the web admin: add a staff or admin account with a starting password, change the name, phone and role, reset the password and disable / enable the account. A new role, a new password or disabling signs that person out at once. Nobody can change their own role or disable themselves, and the shop always keeps one active admin. | S |
+| FR-AD12 | The shop sees cancelled paid orders as **Refund to send** (filter in Orders, "Refund" in Live activity, a count in the dashboard numbers), sends the money back itself (bank transfer or ABA) and taps **Mark refunded**; the customer is notified. When the shop cancels an order it can give a reason, which the customer sees. | S |
 | FR-AD11 | A **staff** account opens the same admin area but only sees what staff may do: dashboard, orders, products, categories, messages, reviews and customers (view only). Staff, Coupons and Block customer are hidden, and the API refuses them (403). | S |
 
 
@@ -280,7 +282,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | BE-03 | Category management | Public `/api/categories`; admin `/api/admin/categories` create, rename, delete |
 | BE-04 | Customer management | Own profile `/api/profile`, addresses `/api/addresses`, preferences; admin `/api/admin/customers` list, details, block; staff accounts `/api/admin/staff` list, add, change, disable |
 | BE-05 | Shopping cart management | `/api/cart` add, update quantity, remove, clear, coupon; wishlist `/api/wishlist` |
-| BE-06 | Order management | `/api/checkout`, `/api/orders` place, list, details, received, KHQR and ABA PayWay payment, PayWay callback; admin `/api/admin/orders` list, details, status |
+| BE-06 | Order management | `/api/checkout`, `/api/orders` place, list, details, received, cancel, KHQR and ABA PayWay payment, PayWay callback; admin `/api/admin/orders` list, details, status, refund |
 | BE-07 | API for the mobile app | 64 REST endpoints, JSON in and out, documented (section 5.2) |
 
 ### 2.5.2 API requirements
@@ -325,12 +327,13 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | BR-03 | A cart quantity cannot exceed the product's stock; sold-out or hidden products cannot be ordered. |
 | BR-04 | A coupon is valid only if it is active, not expired, and the subtotal reaches its minimum. Percentage coupons can have a maximum discount. |
 | BR-05 | Order numbers are unique and readable, e.g. `AWS-20261016-00042`: the date plus the order's own id, so two orders placed at the same moment never share a number. |
-| BR-06 | Orders move only forward: pending -> confirmed -> shipped -> delivered. Pending and confirmed orders can be cancelled; shipped and delivered orders cannot. |
+| BR-06 | Orders move only forward: pending -> confirmed -> shipped -> delivered. Pending and confirmed orders can be cancelled, by the customer or the shop; shipped and delivered orders cannot. |
 | BR-07 | An unpaid KHQR or ABA PayWay order cannot be confirmed; it waits for payment or is cancelled after 15 minutes, and its stock is returned. |
 | BR-08 | Cancelling an order returns its items to stock. |
 | BR-09 | A category can be deleted only when it has no products. |
 | BR-10 | A blocked customer cannot log in or use an existing token until an admin unblocks them. |
-| BR-11 | A disabled staff account cannot log in or use an existing token. Admins cannot change their own role or disable themselves, and the last active admin cannot be demoted or disabled. |
+| BR-12 | A disabled staff account cannot log in or use an existing token. Admins cannot change their own role or disable themselves, and the last active admin cannot be demoted or disabled. |
+| BR-13 | Cancelling an order that was paid by KHQR or ABA PayWay makes its payment **refund_pending**; only the shop can mark it **refunded**, and refunded or pending money is not counted as revenue. Cash on delivery orders are never paid before delivery, so they need no refund. |
 | BR-11 | A product's sale price must be lower than its normal price; stock is 0 or more. |
 | BR-12 | Each status change and each answer to a message creates a notification for the customer. |
 | BR-13 | Only a customer who received a product (a delivered order containing it) can review it; one review per customer and product, and posting again edits it. A comment has at most 1,000 characters. |
@@ -415,7 +418,7 @@ Each item of the brief, the requirements that cover it and where it is implement
 | Checkout | FR-O01, FR-O02 | `checkout_screen.dart` / `GET /api/checkout`, `POST /api/orders` | Done |
 | Order Confirmation | FR-O03 | `order_placed_screen.dart` | Done |
 | Order History | FR-O05 | `orders_screen.dart` / `GET /api/orders` | Done |
-| Order Details | FR-O06, FR-O07 | `order_details_screen.dart` / `GET /api/orders/<id>` | Done |
+| Order Details | FR-O06, FR-O07, FR-O08 | `order_details_screen.dart` / `GET /api/orders/<id>`, `POST /api/orders/<id>/cancel` | Done |
 | Notifications | FR-A01 | `notifications_screen.dart` / `/api/notifications/*` | Done |
 | Settings | FR-A02 | `settings_screen.dart` / `/api/profile/preferences` | Done |
 | About Application | FR-A03 | `about_screen.dart`, `legal_screen.dart` | Done |
@@ -518,6 +521,7 @@ Each item of the brief, the requirements that cover it and where it is implement
 | UC-15b | Pay with ABA PayWay | Customer, ABA PayWay | FR-O04b | ABA PayWay Payment |
 | UC-16 | View order history and details | Customer | FR-O05, FR-O06 | My Orders, Order Details |
 | UC-17 | Confirm received / buy again / view receipt | Customer | FR-O07 | Order Details, Receipt |
+| UC-17b | Cancel an order | Customer | FR-O08 | Order Details |
 | UC-18 | Read notifications | Customer | FR-A01 | Notifications |
 | UC-19 | Change settings | Customer, Admin | FR-A02 | Settings |
 | UC-20 | Send a message to the shop | Customer | FR-A04 | Contact Us |
@@ -532,6 +536,7 @@ Each item of the brief, the requirements that cover it and where it is implement
 | UC-A6 | View and block / unblock customers | Admin | FR-AD05 | Admin Customers, Customer Details |
 | UC-A7 | Reply to a message | Admin | FR-AD06 | Admin Messages |
 | UC-A8 | Manage staff accounts | Admin | FR-AD10, FR-AD11 | Admin Staff, Add / Edit Staff Member |
+| UC-A9 | Send a refund (mark refunded) | Staff, Admin | FR-AD12 | Admin Orders, Order Details, web admin Orders |
 
 
 ## 3.4 Use case specifications
@@ -735,6 +740,29 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 **Alternative flows**
 - A1 (step 2): no orders yet. Empty state with "Start shopping".
 
+### UC-17b Cancel an order
+
+| | |
+|---|---|
+| **Actor** | Customer |
+| **Extends** | UC-16 View order history and details |
+| **Precondition** | The customer's order is pending or confirmed (not shipped yet). |
+
+**Main flow**
+1. In Order Details the customer taps **Cancel order** (shown only while it can be cancelled).
+2. The app asks "Cancel this order?" and offers optional reasons (Changed my mind, Ordered by mistake, Found a better price, It takes too long).
+3. The customer picks a reason (or none) and taps **Cancel order**.
+4. The system checks the order is still pending or confirmed, cancels it, puts its items back on sale and stops waiting for its payment (`POST /api/orders/<id>/cancel`).
+5. If it was paid by KHQR or ABA PayWay, the payment becomes **Refund pending** and the message says the money comes back within 3 working days.
+6. The customer gets a notification; the order moves to Past orders with "Cancelled" (or "Refund pending").
+
+**Alternative flows**
+- A1 (step 3): the customer taps "Keep my order". Nothing changes.
+- A2 (step 4): the order has shipped in the meantime. `409`, "This order is already on its way, so it can't be cancelled".
+- A3 (later): the shop marks the refund as sent (UC-A9). The order shows **Refunded** and the customer gets a "Refund sent" notification.
+
+**Postcondition** The order is cancelled, its stock is back on sale, and any payment is owed back to the customer.
+
 ### UC-22 Rate a product
 
 | | |
@@ -775,11 +803,29 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 6. The app updates the list, the badge and the dashboard.
 
 **Alternative flows**
-- A1 (step 3): the admin taps Cancel. The app asks "Cancel this order?"; on confirm the order is cancelled, its stock returned and the customer notified.
+- A1 (step 3): the admin taps Cancel. The app asks "Cancel this order?"; on confirm the order is cancelled, its stock returned and the customer notified. A paid KHQR / ABA PayWay order becomes **Refund to send** (UC-A9).
 - A2 (step 4): the step is not allowed (e.g. shipping a pending order, cancelling a shipped one). `409`, "A shipped order cannot be marked cancelled".
 - A3 (step 4): an unpaid KHQR order can only be cancelled, not confirmed.
 
 **Postcondition** The order has its new status and the customer knows.
+
+### UC-A9 Send a refund (mark refunded)
+
+| | |
+|---|---|
+| **Actor** | Staff or Admin (and the Customer who gets the money back) |
+| **Precondition** | A cancelled order that was paid by KHQR or ABA PayWay (payment status *refund_pending*). |
+
+**Main flow**
+1. The shop sees the order in Orders under **Refund to send** (also a "Refund" button in Live activity).
+2. The shop sends the order total back to the customer itself (bank transfer or ABA).
+3. The shop opens the order and taps **Mark refunded**; the app asks to confirm that the money was sent.
+4. The system marks the payment *refunded* with the date (`POST /api/admin/orders/<id>/refund`) and notifies the customer ("Refund sent").
+
+**Alternative flows**
+- A1 (step 4): the order has no refund waiting (already refunded, or never paid). `409`, "This order has no refund waiting".
+
+**Postcondition** The customer sees **Refunded** on the order; the refund is no longer on the shop's list.
 
 ### UC-A3 Add / edit product
 
@@ -1454,6 +1500,7 @@ Checkout, placing orders, order history
 | `GET` | `/api/orders` | My orders, newest first, with their items | yes |
 | `POST` | `/api/orders` | Place an order from the cart | yes |
 | `GET` | `/api/orders/{order_id}` | One of my orders | yes |
+| `POST` | `/api/orders/{order_id}/cancel` | Cancel my order | yes |
 | `POST` | `/api/orders/{order_id}/received` | "Got it": I have the parcel | yes |
 
 #### `GET /api/checkout`
@@ -1507,6 +1554,26 @@ Parameters: `order_id` (path, required).
 Response 200: `data` = `OrderDetail`
 
 Errors: 401, 404
+
+#### `POST /api/orders/{order_id}/cancel`
+
+Cancel my order.
+
+Only before it ships (pending or confirmed; see can_cancel). The stock goes back on sale. A paid KHQR / ABA PayWay order becomes refund_pending and the shop sends the money back.
+
+Parameters: `order_id` (path, required).
+
+Body (application/json): {reason: string}
+
+```json
+{
+  "reason": "Changed my mind"
+}
+```
+
+Response 200: `data` = `OrderDetail`
+
+Errors: 401, 404, 409, 422
 
 #### `POST /api/orders/{order_id}/received`
 
@@ -1782,6 +1849,7 @@ The shop team: a staff or admin account's token. Routes marked (admin only) need
 | `GET` | `/api/admin/orders` | All orders, newest first | admin |
 | `GET` | `/api/admin/orders/{order_id}` | One order with items and customer | admin |
 | `PUT` | `/api/admin/orders/{order_id}/status` | Move an order on | admin |
+| `POST` | `/api/admin/orders/{order_id}/refund` | Mark a cancelled paid order as refunded | admin |
 | `GET` | `/api/admin/contact-messages` | Contact messages, newest first | admin |
 | `POST` | `/api/admin/contact-messages/{message_id}/reply` | Answer a message | admin |
 | `GET` | `/api/admin/coupons` | All promo codes, active first (admin only) | admin |
@@ -2053,7 +2121,7 @@ Errors: 401, 403, 404, 409, 422
 
 All orders, newest first.
 
-Parameters: `status` (query), `q` (query) - Order number, customer name or email, `page` (query) - Page number, from 1, `per_page` (query) - Rows per page (max 100 for admin lists, 50 for products).
+Parameters: `status` (query), `refund` (query) - 1 = cancelled paid orders whose refund is still to send, `q` (query) - Order number, customer name or email, `page` (query) - Page number, from 1, `per_page` (query) - Rows per page (max 100 for admin lists, 50 for products).
 
 Response 200: `data` = {items: list of `AdminOrder`, page: integer, per_page: integer, total: integer, total_pages: integer}
 
@@ -2073,17 +2141,29 @@ Errors: 401, 403, 404
 
 Move an order on.
 
-Steps: pending -> confirmed -> shipped -> delivered, or cancelled from pending/confirmed. An unpaid KHQR order can only be cancelled. Cancelling puts the stock back. The customer gets a notification for each step.
+Steps: pending -> confirmed -> shipped -> delivered, or cancelled from pending/confirmed. An unpaid KHQR order can only be cancelled. Cancelling puts the stock back, and a paid online order becomes refund_pending. The customer gets a notification for each step.
 
 Parameters: `order_id` (path, required).
 
-Body (application/json): {status: `confirmed` \| `shipped` \| `delivered` \| `cancelled`}
+Body (application/json): {status: `confirmed` \| `shipped` \| `delivered` \| `cancelled`, reason: string}
 
 ```json
 {
   "status": "shipped"
 }
 ```
+
+Response 200: `data` = `AdminOrderDetail`
+
+Errors: 401, 403, 404, 409
+
+#### `POST /api/admin/orders/{order_id}/refund`
+
+Mark a cancelled paid order as refunded.
+
+After the shop has sent the money back (bank transfer or ABA). 409 when no refund is waiting. The customer is notified.
+
+Parameters: `order_id` (path, required).
 
 Response 200: `data` = `AdminOrderDetail`
 
@@ -2260,7 +2340,7 @@ Errors: 401, 403, 404
 
 ### Order
 
-{id: integer, order_number: string, status: `pending` \| `confirmed` \| `shipped` \| `delivered` \| `cancelled`, payment_method: `cod` \| `khqr` \| `aba`, payment_status: `unpaid` \| `paid` \| `failed` \| `refunded`, subtotal: number, shipping_fee: number, discount: number, coupon_code: string or null, total: number, delivery_method: `standard` \| `pickup`, item_count: integer, created_at: string}
+{id: integer, order_number: string, status: `pending` \| `confirmed` \| `shipped` \| `delivered` \| `cancelled`, payment_method: `cod` \| `khqr` \| `aba`, payment_status: `unpaid` \| `paid` \| `failed` \| `refund_pending` \| `refunded`, subtotal: number, shipping_fee: number, discount: number, coupon_code: string or null, total: number, delivery_method: `standard` \| `pickup`, item_count: integer, created_at: string, can_cancel: boolean, cancelled_by: `customer` \| `shop` \| `system`, cancel_reason: string or null, cancelled_at: string or null, refunded_at: string or null}
 
 ### OrderDetail
 
@@ -2340,11 +2420,11 @@ Errors: 401, 403, 404
 
 ### Stats
 
-{week: list of {date, revenue}, week_revenue: number, products: integer, low_stock: integer, categories: integer, customers: integer, orders: integer, orders_to_handle: integer, revenue: number, open_messages: integer}
+{week: list of {date, revenue}, week_revenue: number, products: integer, low_stock: integer, categories: integer, customers: integer, orders: integer, orders_to_handle: integer, refunds_to_send: integer, revenue: number, open_messages: integer}
 
 ### ActivityEvent
 
-{id: string, kind: `paid` \| `order` \| `message` \| `review` \| `sold_out`, at: string, title: string, message: string, image_url: string or null, action: `confirm` \| `ship` \| `reply` \| `restock`, status: string or null, order_id: integer or null, order_number: string or null, message_id: integer or null, product_id: integer or null}
+{id: string, kind: `paid` \| `order` \| `cancelled` \| `message` \| `review` \| `sold_out`, at: string, title: string, message: string, image_url: string or null, action: `confirm` \| `ship` \| `reply` \| `restock` \| `refund`, status: string or null, order_id: integer or null, order_number: string or null, message_id: integer or null, product_id: integer or null}
 
 
 ```{=openxml}
@@ -2416,7 +2496,7 @@ All five bonus features in the brief are done.
 | Product reviews and ratings | Star rating, tags and a comment for delivered products; average rating and a full Reviews page | Product Details, Reviews, Rate sheet |
 | Advanced search and filtering | Live suggestions while typing, filters by category, series, brand, price range and stock, sorting, grid / list view | Search, Product List, Filter sheet |
 
-Extra work beyond the brief: a staff role with owner-only staff management, a React web admin,
+Extra work beyond the brief: customers can cancel orders before they ship, with refund tracking for paid ones; a staff role with owner-only staff management, a React web admin,
 live activity on the admin dashboard, promo codes, notifications and contact messages.
 
 
@@ -2430,9 +2510,9 @@ Automated tests run before every merge into `main`:
 
 | Part | Tool | Tests | What they cover |
 |---|---|---|---|
-| Backend API | pytest | 138 | Every route: login and roles, catalogue, cart, checkout, KHQR and PayWay payments, admin and staff rules, validation, API docs up to date |
-| Mobile app | flutter_test | 187 | Every screen's main flows with fake services (login, cart, checkout, payment, orders, admin tabs, staff) |
-| Web admin | Vitest + Testing Library | 13 | Dashboard, order steps, staff page, theme switch |
+| Backend API | pytest | 143 | Every route: login and roles, catalogue, cart, checkout, KHQR and PayWay payments, cancelling and refunds, admin and staff rules, validation, API docs up to date |
+| Mobile app | flutter_test | 193 | Every screen's main flows with fake services (login and address pop-ups, cart, checkout, payment, orders, cancel and refund, admin tabs, staff) |
+| Web admin | Vitest + Testing Library | 15 | Dashboard, order steps, refunds, staff page, theme switch |
 
 `flutter analyze` reports no issues. The test folders (`backend/tests`, `web-admin/src/test`) are kept on
 the `store-info` branch of the repository.
@@ -2620,8 +2700,13 @@ CREATE TABLE orders (
   delivery_method  ENUM('standard','pickup') NOT NULL DEFAULT 'standard',
   status           ENUM('pending','confirmed','shipped','delivered','cancelled') NOT NULL DEFAULT 'pending',
   payment_method   ENUM('cod','khqr','aba','card') NOT NULL DEFAULT 'cod',
-  payment_status   ENUM('unpaid','paid','failed','refunded') NOT NULL DEFAULT 'unpaid',
+  -- refund_pending: a paid online order was cancelled and the shop still has to send the money back
+  payment_status   ENUM('unpaid','paid','failed','refund_pending','refunded') NOT NULL DEFAULT 'unpaid',
   note             VARCHAR(255)  NULL,
+  cancelled_by     VARCHAR(10)   NULL,      -- customer | shop | system (not paid in time)
+  cancel_reason    VARCHAR(200)  NULL,
+  cancelled_at     DATETIME      NULL,
+  refunded_at      DATETIME      NULL,
   created_at       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
