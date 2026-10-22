@@ -136,6 +136,7 @@ void main() {
     await _tap(tester, find.byKey(const Key('details_add')));
     expect(find.text('Log in to add items to your cart.'), findsOneWidget);
     await _tap(tester, find.byKey(const Key('login_required_later')));
+    await tester.pump(const Duration(milliseconds: 400)); // the pop-up animates out
     expect(find.byKey(const Key('login_required')), findsNothing);
     expect(shop.cart, 0);
   });
