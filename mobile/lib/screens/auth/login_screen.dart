@@ -17,7 +17,10 @@ import 'register_screen.dart';
 /// Friendly login (Figma: "03 - Login"): clean solid light background,
 /// logo mascot with a speech bubble, pill fields and a solid pill button.
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  /// Opened from the "Log in to continue" pop-up: go back there (true) instead of to Home.
+  final bool returnOnSuccess;
+
+  const LoginScreen({super.key, this.returnOnSuccess = false});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -77,6 +80,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     if (!mounted) return;
     // Clear the auth screens (and any guest shell underneath) and open the app
     final admin = context.read<AuthProvider>().user?.isStaff ?? false;
+    if (widget.returnOnSuccess && !admin) return Navigator.of(context).pop(true);
     Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => admin ? const AdminShell() : const MainShell()), (_) => false);
   }
 
@@ -198,9 +202,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 Text('New here?', style: text.bodyMedium),
                                 TextButton(
                                   key: const Key('login_to_register'),
-                                  onPressed: () => Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                                  ),
+                                  onPressed: () async {
+                                    final ok = await Navigator.of(context).push<bool>(
+                                      MaterialPageRoute(builder: (_) => RegisterScreen(returnOnSuccess: widget.returnOnSuccess)),
+                                    );
+                                    if (ok == true && context.mounted) Navigator.of(context).pop(true);
+                                  },
                                   child: const Text('Create an account', style: TextStyle(fontWeight: FontWeight.w600)),
                                 ),
                               ],

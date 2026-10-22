@@ -3,6 +3,7 @@ import 'package:ecommerce_app/models/user.dart';
 import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/providers/theme_provider.dart';
+import 'package:ecommerce_app/screens/auth/login_screen.dart';
 import 'package:ecommerce_app/screens/home/home_screen.dart';
 import 'package:ecommerce_app/screens/search/search_screen.dart';
 import 'package:flutter/material.dart';
@@ -111,9 +112,17 @@ void main() {
     await _pump(tester, FakeCatalogService(), shop: shop);
 
     await _tap(tester, find.byKey(const Key('heart_1')));
-    expect(find.text('Log in to save items to your wishlist'), findsOneWidget);
+    expect(find.text('Log in to continue'), findsOneWidget);
+    expect(find.text('Log in to save items to your wishlist.'), findsOneWidget);
+    await _tap(tester, find.byKey(const Key('login_required_later')));
+    expect(find.byKey(const Key('login_required')), findsNothing);
+
     await _tap(tester, find.byKey(const Key('add_1')));
-    expect(find.text('Log in to add items to your cart'), findsOneWidget);
+    expect(find.text('Log in to add items to your cart.'), findsOneWidget);
+    // Log in opens the login screen (it comes back here afterwards)
+    await _tap(tester, find.byKey(const Key('login_required_login')));
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(tester.widget<LoginScreen>(find.byType(LoginScreen)).returnOnSuccess, isTrue);
     expect(shop.wishlist, isEmpty);
     expect(shop.cart, 0);
   });
