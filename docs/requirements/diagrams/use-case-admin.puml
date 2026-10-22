@@ -20,6 +20,7 @@ rectangle "Anime World Shop - admin app and web panel" {
     usecase "View order details" as A_OrderDetail
     usecase "Move order to next step\n(confirm, ship, deliver)" as A_Step
     usecase "Cancel order" as A_Cancel
+    usecase "Mark refund sent" as A_Refund
     usecase "Notify the customer" as A_Notify
   }
   package "Products" {
@@ -47,6 +48,7 @@ Staff --> A_Orders
 Staff --> A_OrderDetail
 Staff --> A_Step
 Staff --> A_Cancel
+Staff --> A_Refund
 A_Step .> A_Notify : <<include>>
 Staff --> A_Product
 A_Photos .> A_Product : <<extend>>

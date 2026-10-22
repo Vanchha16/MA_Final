@@ -30,7 +30,8 @@ class AdminOrdersScreen extends StatefulWidget {
 }
 
 class AdminOrdersScreenState extends State<AdminOrdersScreen> {
-  static const _filters = [null, 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+  /// 'refund' = cancelled paid orders whose money is still to send back.
+  static const _filters = [null, 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'refund'];
   List<AdminOrder>? _orders;
   String? _error;
   int _filter = 0;
@@ -92,7 +93,7 @@ class AdminOrdersScreenState extends State<AdminOrdersScreen> {
     final q = _q.trim().toLowerCase();
     final shown = [
       for (final o in all ?? const <AdminOrder>[])
-        if ((_filters[_filter] == null || o.order.status == _filters[_filter]) &&
+        if ((_filters[_filter] == null || o.order.status == _filters[_filter] || (_filters[_filter] == 'refund' && o.order.refundPending)) &&
             (q.isEmpty || o.order.number.toLowerCase().contains(q) || o.customerName.toLowerCase().contains(q) || o.customerEmail.toLowerCase().contains(q)))
           o,
     ];
@@ -106,7 +107,8 @@ class AdminOrdersScreenState extends State<AdminOrdersScreen> {
           const SizedBox(height: 12),
           AdminFilters(
             keyPrefix: 'admin_orders_filter',
-            items: [('All', count(null)), ('Pending', count('pending')), ('Confirmed', count('confirmed')), ('Shipped', count('shipped')), ('Delivered', count('delivered')), ('Cancelled', count('cancelled'))],
+            items: [('All', count(null)), ('Pending', count('pending')), ('Confirmed', count('confirmed')), ('Shipped', count('shipped')), ('Delivered', count('delivered')), ('Cancelled', count('cancelled')),
+              ('Refund to send', all?.where((o) => o.order.refundPending).length)],
             selected: _filter,
             onSelected: (i) => setState(() => _filter = i),
           ),
@@ -171,16 +173,21 @@ class AdminOrdersScreenState extends State<AdminOrdersScreen> {
   }
 }
 
-String _payText(Order o) => o.paymentMethod.online
-    ? '${o.paymentMethod.shortName} ${o.paymentStatus == 'paid' ? 'paid' : 'unpaid'}'
-    : (o.paymentStatus == 'paid' ? 'Cash paid' : 'Cash');
+String _payText(Order o) => o.refundPending
+    ? '${o.paymentMethod.shortName} · refund to send'
+    : o.refunded
+        ? '${o.paymentMethod.shortName} · refunded'
+        : o.paymentMethod.online
+            ? '${o.paymentMethod.shortName} ${o.paymentStatus == 'paid' ? 'paid' : 'unpaid'}'
+            : (o.paymentStatus == 'paid' ? 'Cash paid' : 'Cash');
 
 Future<bool> confirmCancel(BuildContext context, AdminOrder o) async =>
     await showConfirmDialog(
       context,
       icon: const Icon(Icons.cancel_rounded, color: AppTheme.danger, size: 32),
       title: 'Cancel this order?',
-      message: '${o.order.number} will be cancelled, its items go back on sale and ${o.customerName} gets a notification.',
+      message: '${o.order.number} will be cancelled, its items go back on sale and ${o.customerName} gets a notification.'
+          '${o.order.paymentStatus == 'paid' && o.order.paymentMethod.online ? ' It is paid, so you will need to send ${formatPrice(o.order.total)} back.' : ''}',
       confirmLabel: 'Cancel order',
       confirmKey: const Key('admin_cancel_confirm'),
     ) ??
@@ -221,6 +228,33 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
       }
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
+    }
+  }
+
+  /// After sending the money back (bank transfer / ABA), the shop marks it here.
+  Future<void> _refund() async {
+    final ok = await showConfirmDialog(
+      context,
+      icon: const Icon(Icons.currency_exchange_rounded, color: AppTheme.danger, size: 30),
+      title: 'Mark as refunded?',
+      message: 'Only after you have sent ${formatPrice(_o.order.total)} back to ${_o.customerName}. They get a notification.',
+      confirmLabel: 'Mark refunded',
+      confirmKey: const Key('admin_refund_confirm'),
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      final o = await widget.service.markRefunded(_o.order.id);
+      if (!mounted) return;
+      setState(() {
+        _o = o;
+        _moved = true;
+      });
+      adminSnack(context, 'Marked refunded. ${_o.customerName} was told.');
+    } on ApiException catch (e) {
+      if (mounted) adminSnack(context, e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -270,7 +304,36 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 if (o.status != 'cancelled')
-                  AdminCard(child: OrderTracker(key: ValueKey(o.status), order: o, large: true, fillOnShow: false)),
+                  AdminCard(child: OrderTracker(key: ValueKey(o.status), order: o, large: true, fillOnShow: false))
+                else
+                  AdminCard(
+                    key: const Key('admin_order_cancel_info'),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Icon(
+                        o.refundPending ? Icons.hourglass_top_rounded : (o.refunded ? Icons.check_circle_rounded : Icons.cancel_rounded),
+                        color: o.refundPending ? AppTheme.amber : (o.refunded ? AppTheme.success : scheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(
+                            switch (o.cancelledBy) { 'customer' => 'Cancelled by the customer', 'shop' => 'Cancelled by the shop', 'system' => 'Not paid in time', _ => 'Cancelled' },
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          if (o.cancelReason != null) Text(o.cancelReason!, style: TextStyle(color: scheme.onSurfaceVariant)),
+                          if (o.refundPending || o.refunded) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              o.refundPending
+                                  ? 'Paid by ${o.paymentMethod.shortName}: send ${formatPrice(o.total)} back, then tap Mark refunded.'
+                                  : 'Refunded ${formatPrice(o.total)}.',
+                              style: TextStyle(fontWeight: FontWeight.w600, color: o.refundPending ? AppTheme.amber : AppTheme.success),
+                            ),
+                          ],
+                        ]),
+                      ),
+                    ]),
+                  ),
                 const AdminLabel('CUSTOMER'),
                 AdminCard(
                   child: Column(children: [
@@ -326,14 +389,26 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
                     kv('Subtotal', formatPrice(o.subtotal)),
                     if (o.discount > 0) kv('Promo ${o.couponCode ?? ''}'.trim(), '-${formatPrice(o.discount)}', color: AppTheme.success),
                     kv('Delivery', o.shippingFee == 0 ? 'Free' : formatPrice(o.shippingFee)),
-                    kv('${o.paymentMethod.shortName} · ${o.paymentStatus == 'paid' ? 'paid' : 'not paid yet'}', formatPrice(o.total), bold: true, color: scheme.primary),
+                    kv(o.refundPending || o.refunded ? _payText(o) : '${o.paymentMethod.shortName} · ${o.paymentStatus == 'paid' ? 'paid' : 'not paid yet'}',
+                        formatPrice(o.total), bold: true, color: scheme.primary),
                   ]),
                 ),
               ]),
             ),
           ]),
         ),
-        bottomNavigationBar: next == null && !canCancel
+        bottomNavigationBar: o.refundPending
+            ? Padding(
+                padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.paddingOf(context).bottom),
+                child: PillButton(
+                  key: const Key('admin_order_refund'),
+                  label: 'Mark refunded',
+                  leadingIcon: Icons.currency_exchange_rounded,
+                  loading: _busy,
+                  onPressed: _busy ? null : _refund,
+                ),
+              )
+            : next == null && !canCancel
             ? null
             : Container(
                 padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.paddingOf(context).bottom),

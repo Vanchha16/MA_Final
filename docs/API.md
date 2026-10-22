@@ -529,6 +529,7 @@ Checkout, placing orders, order history
 | `GET` | `/api/orders` | My orders, newest first, with their items | yes |
 | `POST` | `/api/orders` | Place an order from the cart | yes |
 | `GET` | `/api/orders/{order_id}` | One of my orders | yes |
+| `POST` | `/api/orders/{order_id}/cancel` | Cancel my order | yes |
 | `POST` | `/api/orders/{order_id}/received` | "Got it": I have the parcel | yes |
 
 #### `GET /api/checkout`
@@ -582,6 +583,26 @@ Parameters: `order_id` (path, required).
 Response 200: `data` = `OrderDetail`
 
 Errors: 401, 404
+
+#### `POST /api/orders/{order_id}/cancel`
+
+Cancel my order.
+
+Only before it ships (pending or confirmed; see can_cancel). The stock goes back on sale. A paid KHQR / ABA PayWay order becomes refund_pending and the shop sends the money back.
+
+Parameters: `order_id` (path, required).
+
+Body (application/json): {reason: string}
+
+```json
+{
+  "reason": "Changed my mind"
+}
+```
+
+Response 200: `data` = `OrderDetail`
+
+Errors: 401, 404, 409, 422
 
 #### `POST /api/orders/{order_id}/received`
 
@@ -857,6 +878,7 @@ The shop team: a staff or admin account's token. Routes marked (admin only) need
 | `GET` | `/api/admin/orders` | All orders, newest first | admin |
 | `GET` | `/api/admin/orders/{order_id}` | One order with items and customer | admin |
 | `PUT` | `/api/admin/orders/{order_id}/status` | Move an order on | admin |
+| `POST` | `/api/admin/orders/{order_id}/refund` | Mark a cancelled paid order as refunded | admin |
 | `GET` | `/api/admin/contact-messages` | Contact messages, newest first | admin |
 | `POST` | `/api/admin/contact-messages/{message_id}/reply` | Answer a message | admin |
 | `GET` | `/api/admin/coupons` | All promo codes, active first (admin only) | admin |
@@ -1128,7 +1150,7 @@ Errors: 401, 403, 404, 409, 422
 
 All orders, newest first.
 
-Parameters: `status` (query), `q` (query) - Order number, customer name or email, `page` (query) - Page number, from 1, `per_page` (query) - Rows per page (max 100 for admin lists, 50 for products).
+Parameters: `status` (query), `refund` (query) - 1 = cancelled paid orders whose refund is still to send, `q` (query) - Order number, customer name or email, `page` (query) - Page number, from 1, `per_page` (query) - Rows per page (max 100 for admin lists, 50 for products).
 
 Response 200: `data` = {items: list of `AdminOrder`, page: integer, per_page: integer, total: integer, total_pages: integer}
 
@@ -1148,17 +1170,29 @@ Errors: 401, 403, 404
 
 Move an order on.
 
-Steps: pending -> confirmed -> shipped -> delivered, or cancelled from pending/confirmed. An unpaid KHQR order can only be cancelled. Cancelling puts the stock back. The customer gets a notification for each step.
+Steps: pending -> confirmed -> shipped -> delivered, or cancelled from pending/confirmed. An unpaid KHQR order can only be cancelled. Cancelling puts the stock back, and a paid online order becomes refund_pending. The customer gets a notification for each step.
 
 Parameters: `order_id` (path, required).
 
-Body (application/json): {status: `confirmed` \| `shipped` \| `delivered` \| `cancelled`}
+Body (application/json): {status: `confirmed` \| `shipped` \| `delivered` \| `cancelled`, reason: string}
 
 ```json
 {
   "status": "shipped"
 }
 ```
+
+Response 200: `data` = `AdminOrderDetail`
+
+Errors: 401, 403, 404, 409
+
+#### `POST /api/admin/orders/{order_id}/refund`
+
+Mark a cancelled paid order as refunded.
+
+After the shop has sent the money back (bank transfer or ABA). 409 when no refund is waiting. The customer is notified.
+
+Parameters: `order_id` (path, required).
 
 Response 200: `data` = `AdminOrderDetail`
 
@@ -1335,7 +1369,7 @@ Errors: 401, 403, 404
 
 ### Order
 
-{id: integer, order_number: string, status: `pending` \| `confirmed` \| `shipped` \| `delivered` \| `cancelled`, payment_method: `cod` \| `khqr` \| `aba`, payment_status: `unpaid` \| `paid` \| `failed` \| `refunded`, subtotal: number, shipping_fee: number, discount: number, coupon_code: string or null, total: number, delivery_method: `standard` \| `pickup`, item_count: integer, created_at: string}
+{id: integer, order_number: string, status: `pending` \| `confirmed` \| `shipped` \| `delivered` \| `cancelled`, payment_method: `cod` \| `khqr` \| `aba`, payment_status: `unpaid` \| `paid` \| `failed` \| `refund_pending` \| `refunded`, subtotal: number, shipping_fee: number, discount: number, coupon_code: string or null, total: number, delivery_method: `standard` \| `pickup`, item_count: integer, created_at: string, can_cancel: boolean, cancelled_by: `customer` \| `shop` \| `system`, cancel_reason: string or null, cancelled_at: string or null, refunded_at: string or null}
 
 ### OrderDetail
 
@@ -1415,8 +1449,8 @@ Errors: 401, 403, 404
 
 ### Stats
 
-{week: list of {date, revenue}, week_revenue: number, products: integer, low_stock: integer, categories: integer, customers: integer, orders: integer, orders_to_handle: integer, revenue: number, open_messages: integer}
+{week: list of {date, revenue}, week_revenue: number, products: integer, low_stock: integer, categories: integer, customers: integer, orders: integer, orders_to_handle: integer, refunds_to_send: integer, revenue: number, open_messages: integer}
 
 ### ActivityEvent
 
-{id: string, kind: `paid` \| `order` \| `message` \| `review` \| `sold_out`, at: string, title: string, message: string, image_url: string or null, action: `confirm` \| `ship` \| `reply` \| `restock`, status: string or null, order_id: integer or null, order_number: string or null, message_id: integer or null, product_id: integer or null}
+{id: string, kind: `paid` \| `order` \| `cancelled` \| `message` \| `review` \| `sold_out`, at: string, title: string, message: string, image_url: string or null, action: `confirm` \| `ship` \| `reply` \| `restock` \| `refund`, status: string or null, order_id: integer or null, order_number: string or null, message_id: integer or null, product_id: integer or null}

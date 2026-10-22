@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:ecommerce_app/core/theme/app_theme.dart';
+import 'package:ecommerce_app/models/order.dart';
 import 'package:ecommerce_app/models/user.dart';
 import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/screens/admin/admin_more_screen.dart';
@@ -264,5 +265,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(s.staffChanges.last.$1, 1);
     expect(s.staffChanges.last.$2, {'full_name': 'Admin', 'phone': null});
+  });
+
+  testWidgets('Orders: a cancelled paid order waits in Refund to send until it is marked refunded', (tester) async {
+    final s = await _pump(tester, (s) {
+      s.orders_ = [...s.orders_, adminOrder(6, 'cancelled', [], pay: PaymentMethod.khqr, paid: 'refund_pending', total: 60)];
+      return AdminOrdersScreen(service: s);
+    });
+    await _chip(tester, 'admin_orders_filter_6');
+    expect(find.byKey(const Key('admin_order_6')), findsOneWidget);
+    expect(find.byKey(const Key('admin_order_1')), findsNothing);
+    expect(find.text('KHQR · refund to send'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('admin_order_6')));
+    await _steps(tester);
+    await tester.tap(find.byKey(const Key('admin_order_refund')));
+    await tester.pumpAndSettle();
+    expect(find.text('Mark as refunded?'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('admin_refund_confirm')));
+    await _steps(tester);
+    expect(s.refunds, [6]);
+    expect(find.byKey(const Key('admin_order_refund')), findsNothing);
+    expect(find.textContaining('Refunded \$60'), findsOneWidget);
   });
 }

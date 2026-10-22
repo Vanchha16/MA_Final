@@ -11,7 +11,7 @@ from .models import Notification, Order, Payment, Review, User
 
 # table -> columns added after the first release
 NEW_COLUMNS = {
-    Order.__table__: ("discount", "coupon_code", "delivery_method"),
+    Order.__table__: ("discount", "coupon_code", "delivery_method", "cancelled_by", "cancel_reason", "cancelled_at", "refunded_at"),
     Notification.__table__: ("event", "order_id", "promo_code"),
     User.__table__: ("notify_orders", "notify_offers", "notify_news", "token_version", "last_login_at"),
     Review.__table__: ("tags", "updated_at"),
@@ -21,7 +21,7 @@ NEW_COLUMNS = {
 # MySQL ENUM columns that got new values later (SQLite stores them as text)
 WIDER_ENUMS = {
     User.__table__: ("role",),
-    Order.__table__: ("payment_method",),
+    Order.__table__: ("payment_method", "payment_status"),
     Payment.__table__: ("provider",),
 }
 

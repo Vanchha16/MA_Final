@@ -22,6 +22,7 @@ rectangle "Anime World Shop - customer app" {
     usecase "Confirm order received" as C_Received
     usecase "View / save receipt" as C_Receipt
     usecase "Buy again" as C_Again
+    usecase "Cancel order\n(before it ships)" as C_Cancel
     usecase "Rate a product\n(stars, tags, comment)" as C_Rate
   }
 }
@@ -39,6 +40,7 @@ Customer --> C_OrderDetails
 C_Received .> C_OrderDetails : <<extend>>
 C_Receipt .> C_OrderDetails : <<extend>>
 C_Again .> C_OrderDetails : <<extend>>
+C_Cancel .> C_OrderDetails : <<extend>>\n(pending / confirmed)
 Customer --> C_Rate
 C_Rate .> C_OrderDetails : <<extend>>\n(delivered)
 @enduml

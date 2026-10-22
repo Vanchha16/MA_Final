@@ -19,6 +19,9 @@ ORDER_TEXT = {
     "ready": ("Ready to pick up", "Order {number} is waiting for you at our Toul Kork shop."),
     "delivered": ("Delivered! Enjoy your order", "How is it? Tell other collectors about order {number}."),
     "cancelled": ("Order cancelled", "Order {number} was not paid in time, so we put the items back on sale."),
+    "cancelled_customer": ("Order cancelled", "You cancelled order {number}.{refund}"),
+    "cancelled_shop": ("Order cancelled by the shop", "We had to cancel order {number}.{reason}{refund} Sorry about that."),
+    "refunded": ("Refund sent", "We sent {total} for order {number} back to you. It can take a day to show in your bank app."),
 }
 
 
@@ -27,10 +30,13 @@ def order_event(order, key):
     if not _wants(order.user_id, "orders"):
         return
     title, text = ORDER_TEXT[key]
-    event = key.split("_")[0] if key.startswith("placed") else ("shipped" if key == "ready" else key)
+    event = key.split("_")[0] if key.startswith(("placed", "cancelled")) else ("shipped" if key == "ready" else key)
+    total = f"${float(order.total):g}"
+    refund = f" We will send {total} back to you within 3 working days." if order.payment_status == "refund_pending" else ""
+    reason = f" Reason: {order.cancel_reason}." if order.cancel_reason else ""
     db.session.add(Notification(
         user_id=order.user_id, type="order", event=event, order_id=order.id, title=title,
-        message=text.format(number=order.order_number, total=f"${float(order.total):g}",
+        message=text.format(number=order.order_number, total=total, refund=refund, reason=reason,
                             method="ABA PayWay" if order.payment_method == "aba" else "KHQR"),
     ))
 

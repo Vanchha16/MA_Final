@@ -43,7 +43,14 @@ const PAY_NAMES = { khqr: 'KHQR', aba: 'ABA PayWay', cod: 'Cash' };
 
 export const paymentName = (o) => PAY_NAMES[o.payment_method] || 'Cash';
 
-export const paymentText = (o) => `${paymentName(o)}${o.payment_status === 'paid' ? ' paid' : ''}`;
+export const paymentText = (o) =>
+  o.payment_status === 'refund_pending' ? `${paymentName(o)} · refund to send`
+    : o.payment_status === 'refunded' ? `${paymentName(o)} · refunded`
+      : `${paymentName(o)}${o.payment_status === 'paid' ? ' paid' : ''}`;
+
+/** Who cancelled an order, in words. */
+export const cancelledByText = (o) =>
+  ({ customer: 'Cancelled by the customer', shop: 'Cancelled by the shop', system: 'Not paid in time' })[o.cancelled_by] || 'Cancelled';
 
 export const greeting = (date = new Date()) => {
   const h = date.getHours();

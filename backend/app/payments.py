@@ -94,11 +94,9 @@ def expire(order, payment):
     """Cancels the unpaid order and puts its stock back."""
     payment.status = "expired"
     if order.status == "pending":
-        from .admin_ops import restock
+        from .admin_ops import cancel_order
 
-        order.status = "cancelled"
-        restock(order)
-        notify.order_event(order, "cancelled")
+        cancel_order(order, "system")
     db.session.commit()
     return payment
 

@@ -99,6 +99,17 @@ class FakeAdminService extends AdminService {
   @override
   Future<AdminOrder> order(int id) async => orders_.firstWhere((o) => o.order.id == id);
 
+  final refunds = <int>[];
+
+  @override
+  Future<AdminOrder> markRefunded(int orderId) async {
+    refunds.add(orderId);
+    final i = orders_.indexWhere((o) => o.order.id == orderId);
+    final o = orders_[i];
+    return orders_[i] = AdminOrder(order: o.order.copyWith(paymentStatus: 'refunded'), customerId: o.customerId, customerName: o.customerName,
+        customerEmail: o.customerEmail, phone: o.phone, nextStatuses: o.nextStatuses);
+  }
+
   @override
   Future<AdminOrder> setOrderStatus(int orderId, String status) async {
     statuses.add((orderId, status));

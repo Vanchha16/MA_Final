@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../core/theme/app_theme.dart';
 import 'pill_button.dart';
 
-/// The animated "you need X first" pop-up shared by "Log in to continue" and
-/// "Add a delivery address": an icon, a title, a message, a solid primary
-/// button, an optional outlined second button and a "not now" link.
+/// The animated pop-up shared by "Log in to continue", "Add a delivery address"
+/// and "Cancel this order?": an icon, a title, a message, an optional extra
+/// widget (e.g. reason chips), a solid primary button (red when [danger]), an
+/// optional outlined second button and a "not now" link.
 ///
 /// It springs in (fade, scale from 85% with a little overshoot, rises a few
 /// pixels) and shrinks away quickly; the icon pops with a bounce and one ripple,
@@ -21,6 +23,8 @@ Future<String?> showActionPrompt(
   required IconData primaryIcon,
   String? secondaryLabel,
   String laterLabel = 'Not now',
+  Widget? extra,
+  bool danger = false,
 }) {
   final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
   return showGeneralDialog<String>(
@@ -38,6 +42,8 @@ Future<String?> showActionPrompt(
       primaryIcon: primaryIcon,
       secondaryLabel: secondaryLabel,
       laterLabel: laterLabel,
+      extra: extra,
+      danger: danger,
       reduceMotion: reduceMotion,
     ),
     transitionBuilder: (_, animation, _, child) {
@@ -59,6 +65,10 @@ class _ActionPrompt extends StatelessWidget {
   final String keyPrefix, title, message, primaryLabel, laterLabel;
   final String? secondaryLabel;
   final IconData icon, primaryIcon;
+  final Widget? extra;
+
+  /// Red icon and a solid red primary button, for things like cancelling.
+  final bool danger;
   final bool reduceMotion;
 
   const _ActionPrompt({
@@ -70,22 +80,25 @@ class _ActionPrompt extends StatelessWidget {
     required this.primaryIcon,
     required this.secondaryLabel,
     required this.laterLabel,
+    required this.extra,
+    required this.danger,
     required this.reduceMotion,
   });
 
   /// The icon pops in with a bounce and one ring ripples out behind it.
   Widget _icon(ColorScheme scheme) {
+    final tint = danger ? AppTheme.danger : scheme.primary;
     final circle = Container(
       width: 64,
       height: 64,
-      decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.12), shape: BoxShape.circle),
-      child: Icon(icon, color: scheme.primary, size: 30),
+      decoration: BoxDecoration(color: tint.withValues(alpha: 0.12), shape: BoxShape.circle),
+      child: Icon(icon, color: tint, size: 30),
     );
     if (reduceMotion) return circle;
     final ring = Container(
       width: 64,
       height: 64,
-      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: scheme.primary.withValues(alpha: 0.45), width: 2)),
+      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: tint.withValues(alpha: 0.45), width: 2)),
     );
     return Stack(
       alignment: Alignment.center,
@@ -122,17 +135,25 @@ class _ActionPrompt extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8, bottom: 22),
                     child: Text(message, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: scheme.onSurfaceVariant)),
                   ),
+                  if (extra != null) Padding(padding: const EdgeInsets.only(bottom: 20), child: extra),
                 ]
                 .animate(interval: 60.ms, delay: 140.ms)
                 .fadeIn(duration: reduceMotion ? 1.ms : 280.ms)
                 .moveY(begin: reduceMotion ? 0 : 10, end: 0, duration: 320.ms, curve: Curves.easeOutCubic),
             ...[
-                  PillButton(
-                    key: Key('${keyPrefix}_primary'),
-                    label: primaryLabel,
-                    leadingIcon: primaryIcon,
-                    onPressed: () => Navigator.of(context).pop('primary'),
-                  ),
+                  danger
+                      ? PillButton.danger(
+                          key: Key('${keyPrefix}_primary'),
+                          label: primaryLabel,
+                          leadingIcon: primaryIcon,
+                          onPressed: () => Navigator.of(context).pop('primary'),
+                        )
+                      : PillButton(
+                          key: Key('${keyPrefix}_primary'),
+                          label: primaryLabel,
+                          leadingIcon: primaryIcon,
+                          onPressed: () => Navigator.of(context).pop('primary'),
+                        ),
                   if (secondary != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 10),

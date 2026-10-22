@@ -11,8 +11,8 @@ from slugify import slugify
 from sqlalchemy import case, func, or_
 from sqlalchemy.orm import selectinload
 
-from ..admin_ops import (AdminError, activity, delete_category, next_statuses, reply_contact, set_customer_active, set_order_status,
-                         stats, update_staff)
+from ..admin_ops import (AdminError, activity, delete_category, mark_refunded, next_statuses, reply_contact, set_customer_active,
+                         set_order_status, stats, update_staff)
 from ..extensions import bcrypt, db
 from ..models import Category, ContactMessage, Coupon, Order, OrderItem, Product, ProductImage, Review, Series, User
 from ..product_images import add_uploaded_photo, remove_photo
@@ -505,12 +505,14 @@ def _order_dict(o, with_items=False):
 @bp.get("/orders")
 @staff_required
 def list_orders():
-    """Every customer's orders, newest first. Query: status, q (order number or customer), page, per_page."""
+    """Every customer's orders, newest first. Query: status, refund=1 (refunds still to send), q (order number or customer), page, per_page."""
     query = Order.query.join(User, Order.user_id == User.id).options(selectinload(Order.items).selectinload(OrderItem.product).selectinload(Product.images), selectinload(Order.user))
     if status := request.args.get("status"):
         if status not in ("pending", "confirmed", "shipped", "delivered", "cancelled"):
             return error("Validation failed", 422, {"status": "Unknown status"})
         query = query.filter(Order.status == status)
+    if request.args.get("refund") == "1":
+        query = query.filter(Order.payment_status == "refund_pending")
     if q := request.args.get("q", "").strip():
         like = f"%{q}%"
         query = query.filter(or_(Order.order_number.ilike(like), User.full_name.ilike(like), User.email.ilike(like)))
@@ -529,15 +531,35 @@ def get_order(order_id):
 @bp.put("/orders/<int:order_id>/status")
 @staff_required
 def update_order_status(order_id):
-    """Body: {status}. Allowed steps are in the order's next_statuses; the customer is notified."""
+    """Body: {status, reason?}. Allowed steps are in the order's next_statuses; the customer is
+    notified. Cancelling a paid online order leaves a refund to send (payment_status refund_pending)."""
+    order = db.session.get(Order, order_id)
+    if order is None:
+        return error("Order not found", 404)
+    body = _body()
+    reason = body.get("reason")
+    if reason is not None and not isinstance(reason, str):
+        return error("Validation failed", 422, {"reason": "reason must be text"})
+    try:
+        set_order_status(order, body.get("status"), reason)
+    except AdminError as e:
+        return error(str(e), 409)
+    return success(_order_dict(order, with_items=True), f"Order marked {order.status}")
+
+
+@bp.post("/orders/<int:order_id>/refund")
+@staff_required
+def refund_order(order_id):
+    """Marks a cancelled paid order as refunded, after the shop has sent the money back
+    (bank transfer / ABA). The customer is notified."""
     order = db.session.get(Order, order_id)
     if order is None:
         return error("Order not found", 404)
     try:
-        set_order_status(order, _body().get("status"))
+        mark_refunded(order)
     except AdminError as e:
         return error(str(e), 409)
-    return success(_order_dict(order, with_items=True), f"Order marked {order.status}")
+    return success(_order_dict(order, with_items=True), "Marked as refunded")
 
 
 # ---------------------------------------------------------------------------

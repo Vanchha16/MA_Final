@@ -128,4 +128,65 @@ void main() {
     expect(find.text('In progress · 3'), findsOneWidget);
     await _end(tester);
   });
+
+  testWidgets('cancel a paid order: pick a reason, then the refund shows as pending', (tester) async {
+    final (service, _) = await _pump(tester);
+    await tester.tap(find.byKey(const Key('order_2')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    await tester.ensureVisible(find.byKey(const Key('details_cancel')));
+    await tester.tap(find.byKey(const Key('details_cancel')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Cancel this order?'), findsOneWidget);
+    expect(find.textContaining(r'send $50 back to you within 3 working days'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('cancel_reason_0')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('cancel_order_primary')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(service.cancelled, [(2, 'Changed my mind')]);
+    expect(find.byKey(const Key('details_refund')), findsOneWidget);
+    expect(find.text('Refund pending'), findsOneWidget);
+    expect(find.text('You cancelled this order · Changed my mind'), findsOneWidget);
+    expect(find.text('Paid · refund on its way'), findsOneWidget);
+    expect(find.byKey(const Key('details_cancel')), findsNothing);
+    await _end(tester);
+  });
+
+  testWidgets('Keep my order closes the pop-up; shipped orders have no Cancel', (tester) async {
+    final (service, _) = await _pump(tester);
+    await tester.tap(find.byKey(const Key('order_1')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    await tester.ensureVisible(find.byKey(const Key('details_cancel')));
+    await tester.tap(find.byKey(const Key('details_cancel')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.textContaining("This can't be undone"), findsOneWidget); // not paid yet: no refund
+    await tester.tap(find.byKey(const Key('cancel_order_later')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Cancel this order?'), findsNothing);
+    expect(service.cancelled, isEmpty);
+
+    Navigator.of(tester.element(find.text('Order details'))).pop();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.byKey(const Key('order_3'))); // on the way
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.byKey(const Key('details_cancel')), findsNothing);
+    await _end(tester);
+  });
+
+  testWidgets('past orders show Refund pending and Refunded', (tester) async {
+    await _pump(tester, service: FakeOrderService(orders: [
+      fakeOrder(6, 'cancelled', paid: 'refund_pending', cancelledBy: 'customer'),
+      fakeOrder(7, 'cancelled', paid: 'refunded', cancelledBy: 'shop'),
+    ]));
+    expect(_inOrder(6, find.text('Refund pending')), findsOneWidget);
+    expect(_inOrder(7, find.text('Refunded')), findsOneWidget);
+    await _end(tester);
+  });
 }

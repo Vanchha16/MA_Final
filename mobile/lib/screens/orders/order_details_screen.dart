@@ -77,6 +77,23 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     if (mounted) await _refresh();
   }
 
+  Future<void> _cancel() async {
+    final reason = await OrderActions.askToCancel(context, _order);
+    if (reason == null || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      final cancelled = await _service.cancel(_order.id, reason: reason.isEmpty ? null : reason);
+      if (!mounted) return;
+      setState(() => _order = cancelled);
+      OrderActions.snack(context, cancelled.refundPending ? 'Order cancelled. Your refund is on its way.' : 'Order cancelled');
+    } on ApiException catch (e) {
+      if (mounted) OrderActions.snack(context, e.message);
+      await _refresh();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _received() async {
     setState(() => _busy = true);
     try {
@@ -159,6 +176,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         const SizedBox(width: 8),
                         Expanded(child: Text(text, key: const Key('details_status'), style: TextStyle(fontWeight: FontWeight.w600, color: color))),
                       ]),
+                      if (o.stage == OrderStage.cancelled) _CancelInfo(order: o),
                       // Paid orders keep their receipt
                       if (o.paymentStatus == 'paid' && o.stage != OrderStage.cancelled) ...[
                         const SizedBox(height: 14),
@@ -234,6 +252,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       title: o.paymentMethod.label,
                       body: switch ((o.paymentStatus, o.stage)) {
                         ('paid', _) => 'Paid',
+                        ('refund_pending', _) => 'Paid · refund on its way',
+                        ('refunded', _) => 'Refunded',
                         (_, OrderStage.cancelled) => 'Not paid · order cancelled',
                         (_, OrderStage.toPay) => 'Waiting for payment',
                         _ => pickup ? 'Pay at the shop' : 'Pay the rider in USD or riel',
@@ -254,6 +274,25 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       ]),
                     ]),
                   ),
+                  if (o.canCancel) ...[
+                    const SizedBox(height: 18),
+                    OutlinedButton.icon(
+                      key: const Key('details_cancel'),
+                      onPressed: _busy ? null : _cancel,
+                      icon: const Icon(Icons.close_rounded),
+                      label: const Text('Cancel order', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.danger,
+                        side: BorderSide(color: AppTheme.danger.withValues(alpha: 0.5)),
+                        minimumSize: const Size.fromHeight(50),
+                        shape: const StadiumBorder(),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text('You can cancel until your order ships.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant)),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -368,4 +407,55 @@ class _Money extends StatelessWidget {
           Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: color)),
         ]),
       );
+}
+
+/// Who cancelled and why, and where the refund is (paid online orders).
+class _CancelInfo extends StatelessWidget {
+  final Order order;
+
+  const _CancelInfo({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final o = order;
+    final who = switch (o.cancelledBy) {
+      'customer' => 'You cancelled this order',
+      'shop' => 'The shop cancelled this order',
+      'system' => 'Not paid in time, so it was cancelled',
+      _ => 'This order was cancelled',
+    };
+    final refundDate = o.refundedAt == null ? '' : ' on ${DateFormat('d MMM yyyy').format(o.refundedAt!.toLocal())}';
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const SizedBox(height: 6),
+      Text(o.cancelReason == null ? who : '$who · ${o.cancelReason}', key: const Key('details_cancel_info'), style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant)),
+      if (o.refundPending || o.refunded) ...[
+        const SizedBox(height: 12),
+        Container(
+          key: const Key('details_refund'),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: (o.refunded ? AppTheme.success : AppTheme.amber).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(o.refunded ? Icons.check_circle_rounded : Icons.hourglass_top_rounded, size: 20, color: o.refunded ? AppTheme.success : AppTheme.amber),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(o.refunded ? 'Refunded' : 'Refund pending', style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 2),
+                Text(
+                  o.refunded
+                      ? '${formatPrice(o.total)} was sent back to you$refundDate.'
+                      : 'The shop sends ${formatPrice(o.total)} back to your ${o.paymentMethod.shortName} account within 3 working days.',
+                  style: TextStyle(fontSize: 13, height: 1.35, color: scheme.onSurfaceVariant),
+                ),
+              ]),
+            ),
+          ]),
+        ),
+      ],
+    ]);
+  }
 }
