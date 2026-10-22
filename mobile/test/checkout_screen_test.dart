@@ -180,9 +180,10 @@ void main() {
     await _pump(tester, service);
     await _place(tester);
     expect(service.placed, isEmpty);
-    expect(find.text('Add a delivery address first'), findsOneWidget);
+    expect(find.text('Where should we deliver?'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('checkout_add_address')));
+    // The pop-up's Add address opens the form
+    await tester.tap(find.byKey(const Key('address_required_primary')));
     await tester.pumpAndSettle();
     expect(find.text('Demo Customer'), findsOneWidget); // name filled in from the profile
     await tester.enterText(find.byKey(const Key('address_phone')), '12');
@@ -201,6 +202,31 @@ void main() {
     await _place(tester);
     expect(service.placed.single['address'], 100);
     await tester.pumpWidget(const SizedBox()); // stop the KHQR timers
+  });
+
+  testWidgets('without an address: the pop-up can switch to store pickup instead', (tester) async {
+    final service = FakeCheckoutService();
+    await _pump(tester, service);
+    await _place(tester);
+    expect(find.byKey(const Key('address_required')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('address_required_secondary')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('address_required')), findsNothing);
+    expect(find.textContaining('Store pickup chosen'), findsOneWidget);
+
+    await _place(tester);
+    expect(service.placed.single['delivery'], DeliveryMethod.pickup);
+    await tester.pumpWidget(const SizedBox()); // stop the KHQR timers
+  });
+
+  testWidgets('without an address: Not now closes the pop-up and nothing is placed', (tester) async {
+    final service = FakeCheckoutService();
+    await _pump(tester, service);
+    await _place(tester);
+    await tester.tap(find.byKey(const Key('address_required_later')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('address_required')), findsNothing);
+    expect(service.placed, isEmpty);
   });
 
   testWidgets('Change opens the picker; picking Work uses it', (tester) async {

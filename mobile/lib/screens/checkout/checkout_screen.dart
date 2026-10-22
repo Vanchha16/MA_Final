@@ -10,6 +10,7 @@ import '../../models/order.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/checkout_service.dart';
 import '../../services/payment_service.dart';
+import '../../widgets/action_prompt.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
@@ -111,12 +112,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     await _load(); // addresses may have been added or edited
   }
 
-  Future<void> _place() async {
-    final preview = _preview!;
-    if (_delivery == DeliveryMethod.standard && _address == null) {
-      _snack('Add a delivery address first');
+  /// No delivery address yet: the animated pop-up offers to add one, or to pick
+  /// the order up at the shop. The customer then checks the total and taps
+  /// Place order again (the delivery fee can change with the address).
+  Future<void> _askForAddress(CheckoutPreview preview) async {
+    final choice = await showActionPrompt(
+      context,
+      keyPrefix: 'address_required',
+      icon: Icons.add_location_alt_rounded,
+      title: 'Where should we deliver?',
+      message: 'Add a delivery address to place your order, or pick it up for free at ${preview.storeName}.',
+      primaryLabel: 'Add address',
+      primaryIcon: Icons.add_location_alt_rounded,
+      secondaryLabel: 'Pick up at the shop',
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'secondary') {
+      _setDelivery(DeliveryMethod.pickup);
+      _snack('Store pickup chosen. Check your order and tap Place order.');
       return;
     }
+    await _addAddress();
+    if (mounted && _address != null) _snack('Address added. Check your order and tap Place order.');
+  }
+
+  Future<void> _place() async {
+    final preview = _preview!;
+    if (_delivery == DeliveryMethod.standard && _address == null) return _askForAddress(preview);
     setState(() => _placing = true);
     try {
       final order = await _service.placeOrder(

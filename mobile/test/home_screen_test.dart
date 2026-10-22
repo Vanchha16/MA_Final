@@ -121,7 +121,7 @@ void main() {
     await _tap(tester, find.byKey(const Key('add_1')));
     expect(find.text('Log in to add items to your cart.'), findsOneWidget);
     // Log in opens the login screen (it comes back here afterwards)
-    await _tap(tester, find.byKey(const Key('login_required_login')));
+    await _tap(tester, find.byKey(const Key('login_required_primary')));
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(tester.widget<LoginScreen>(find.byType(LoginScreen)).returnOnSuccess, isTrue);
     expect(shop.wishlist, isEmpty);
