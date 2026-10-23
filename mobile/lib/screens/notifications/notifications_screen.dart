@@ -15,6 +15,7 @@ import '../../providers/shop_provider.dart';
 import '../../services/notification_service.dart';
 import '../../services/order_service.dart';
 import '../../services/payment_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/icon_circle.dart';
@@ -124,7 +125,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       _setUnread(await _service.readAll());
     } on ApiException catch (e) {
-      if (mounted) OrderActions.snack(context, e.message);
+      if (mounted) AppToast.error(context, e.message);
       await _load();
     }
   }
@@ -154,7 +155,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (mounted) setState(() => _setUnread(unread));
     } on ApiException catch (e) {
       if (!mounted) return;
-      OrderActions.snack(context, e.message);
+      AppToast.error(context, e.message);
       await _load();
     }
   }
@@ -163,7 +164,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await Clipboard.setData(ClipboardData(text: n.promoCode!));
     if (!mounted) return;
     setState(() => _copied = n.id);
-    OrderActions.snack(context, '${n.promoCode} copied - use it at checkout');
+    AppToast.success(context, '${n.promoCode} copied - use it at checkout');
     _markRead(n);
     await Future.delayed(const Duration(milliseconds: 1400));
     if (mounted && _copied == n.id) setState(() => _copied = null);
@@ -185,7 +186,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             builder: (_) => OrderDetailsScreen(order: order, service: _orders, paymentService: widget.paymentService, rateFirst: rate)));
       }
     } on ApiException catch (e) {
-      if (mounted) OrderActions.snack(context, e.message);
+      if (mounted) AppToast.error(context, e.message);
     }
   }
 

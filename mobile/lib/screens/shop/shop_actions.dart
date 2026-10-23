@@ -8,6 +8,7 @@ import '../../models/cart.dart';
 import '../../models/catalog.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/catalog_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/cart_drive.dart';
 import '../../widgets/product_image.dart';
 import '../../widgets/login_required.dart';
@@ -17,14 +18,8 @@ import '../shell/main_shell.dart';
 
 /// What happens when a product card's heart or plus is tapped, the same on
 /// every screen: guests get the "Log in to continue" pop-up (and the action
-/// goes on once they have logged in), errors show in a SnackBar.
+/// goes on once they have logged in), errors show in an [AppToast].
 class ShopActions {
-  static void _snack(BuildContext context, String message, {SnackBarAction? action}) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message), action: action, persist: false, duration: const Duration(seconds: 4), behavior: SnackBarBehavior.floating));
-  }
-
   /// True once the guest has logged in from the pop-up.
   static Future<bool> askToLogin(BuildContext context, String message, {IconData icon = Icons.lock_rounded}) =>
       showLoginRequired(context, message: message, icon: icon);
@@ -38,11 +33,11 @@ class ShopActions {
     try {
       final added = await shop.toggleWishlist(product.id);
       if (added == null || !context.mounted) return; // a second tap while the first was still saving
-      if (!added) return _snack(context, 'Removed from your wishlist');
+      if (!added) return AppToast.removed(context, 'Removed from your wishlist');
       WishlistFx.play();
       _savedToast(context, product);
     } on ApiException catch (e) {
-      if (context.mounted) _snack(context, e.message);
+      if (context.mounted) AppToast.error(context, e.message);
     }
   }
 
@@ -60,7 +55,7 @@ class ShopActions {
       if (toast && context.mounted) _addedToast(context, product, quantity);
       return cart;
     } on ApiException catch (e) {
-      if (context.mounted) _snack(context, e.message);
+      if (context.mounted) AppToast.error(context, e.message);
       rethrow;
     }
   }

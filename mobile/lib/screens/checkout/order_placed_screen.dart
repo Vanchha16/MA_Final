@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/format.dart';
 import '../../models/order.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/pill_button.dart';
 import '../orders/orders_screen.dart';
 import '../shell/main_shell.dart';
@@ -122,12 +123,7 @@ class OrderPlacedScreen extends StatelessWidget {
                   ),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: order.number));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Order number copied'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
+                    AppToast.success(context, 'Order number copied');
                   },
                 ),
               ),

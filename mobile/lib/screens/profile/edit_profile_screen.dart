@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/network/api_client.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/profile_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/fade_slide_in.dart';
@@ -62,11 +63,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return '$prefix${local.substring(0, head)} ${local.substring(head, head + 3)} ${local.substring(head + 3)}';
   }
 
-  void _toast(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
 
   Future<void> _changePhoto() async {
     final source = await showModalBottomSheet<ImageSource>(
@@ -100,9 +96,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final user = await _service.uploadAvatar(file);
       if (!mounted) return;
       context.read<AuthProvider>().updateUser(user);
-      _toast('Photo updated');
+      AppToast.success(context, 'Photo updated');
     } on ApiException catch (e) {
-      if (mounted) _toast(e.errors?['file'] as String? ?? e.message);
+      if (mounted) AppToast.error(context, e.errors?['file'] as String? ?? e.message);
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -122,7 +118,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final user = await _service.update(fullName: _name.text.trim(), phone: phone.isEmpty ? null : phone);
       if (!mounted) return;
       context.read<AuthProvider>().updateUser(user);
-      _toast('Profile updated');
+      AppToast.success(context, 'Profile updated');
       Navigator.of(context).pop();
     } on ApiException catch (e) {
       if (!mounted) return;

@@ -10,6 +10,7 @@ import '../../models/catalog.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/catalog_service.dart';
 import '../../services/shop_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/icon_circle.dart';
 import '../../widgets/pill_button.dart';
@@ -121,11 +122,6 @@ class _WishlistScreenState extends State<WishlistScreen> {
     }
   }
 
-  void _snack(String message, {SnackBarAction? action}) => ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    // Undo/View snacks still go away by themselves, so they never sit over the buttons
-    ..showSnackBar(SnackBar(content: Text(message), action: action, persist: false, duration: const Duration(seconds: 4), behavior: SnackBarBehavior.floating));
-
   List<int> _ids(List<Product> products) => [for (final p in products) p.id];
 
   /// Removes right away and offers Undo. [onUndo] lets the swipe view bring its card back.
@@ -136,12 +132,15 @@ class _WishlistScreenState extends State<WishlistScreen> {
     setState(() => _items = _items!.where((p) => !ids.contains(p.id)).toList());
     try {
       await shop.removeManyFromWishlist(ids);
-      _snack(
+      if (!mounted) return;
+      AppToast.removed(
+        context,
         products.length == 1 ? 'Removed ${products.first.name}' : 'Removed ${products.length} items',
-        action: SnackBarAction(label: 'Undo', onPressed: () => _restore(products, onUndo)),
+        onUndo: () => _restore(products, onUndo),
       );
     } on ApiException catch (e) {
-      _snack(e.message);
+      if (!mounted) return;
+      AppToast.error(context, e.message);
       _busy = false;
       await _load(newDeck: false);
     } finally {
@@ -153,9 +152,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
     try {
       await context.read<ShopProvider>().restoreWishlist(_ids(products));
       onUndo?.call();
-      await _load(newDeck: false);
+      if (mounted) await _load(newDeck: false);
     } on ApiException catch (e) {
-      _snack(e.message);
+      if (mounted) AppToast.error(context, e.message);
     }
   }
 
@@ -169,10 +168,14 @@ class _WishlistScreenState extends State<WishlistScreen> {
       final result = await shop.moveToCart(_ids(products));
       if (!mounted) return false;
       setState(() => _items = _items!.where((p) => !result.moved.contains(p.id)).toList());
-      _snack(_movedMessage(products, result), action: result.moved.isEmpty ? null : SnackBarAction(label: 'View', onPressed: () => ShopActions.openCart(navigator)));
+      if (result.moved.isEmpty) {
+        AppToast.warning(context, _movedMessage(products, result));
+      } else {
+        AppToast.success(context, _movedMessage(products, result), action: 'View', onAction: () => ShopActions.openCart(navigator));
+      }
       return result.moved.isNotEmpty;
     } on ApiException catch (e) {
-      _snack(e.message);
+      AppToast.error(context, e.message);
       return false;
     } finally {
       _busy = false;

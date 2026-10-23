@@ -3,25 +3,22 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/order.dart';
 import '../../services/receipt_export.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/order_receipt.dart';
 
 /// Saves or shares the receipt as an image and says how it went.
 Future<void> exportReceipt(BuildContext context, ReceiptExport export, Order order, {DateTime? paidAt, required bool share}) async {
-  final messenger = ScaffoldMessenger.of(context);
-  void say(String text) => messenger
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text), behavior: SnackBarBehavior.floating));
   try {
     final png = await export.image(context, order, paidAt: paidAt);
     if (share) {
       await export.share(png, order);
     } else {
       await export.save(png, order);
-      say('Receipt saved as ${ReceiptExport.fileName(order)}.png');
+      if (context.mounted) AppToast.success(context, 'Receipt saved as ${ReceiptExport.fileName(order)}.png');
     }
   } catch (_) {
-    say(share ? 'Could not share the receipt. Please try again.' : 'Could not save the receipt. Please try again.');
+    if (context.mounted) AppToast.error(context, share ? 'Could not share the receipt. Please try again.' : 'Could not save the receipt. Please try again.');
   }
 }
 

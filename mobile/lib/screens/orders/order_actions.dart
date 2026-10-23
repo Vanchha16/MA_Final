@@ -5,6 +5,7 @@ import '../../core/network/api_client.dart';
 import '../../core/utils/format.dart';
 import '../../models/order.dart';
 import '../../providers/shop_provider.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/action_prompt.dart';
 import '../shop/shop_actions.dart';
 
@@ -36,10 +37,6 @@ class OrderActions {
     return choice == 'primary' ? (picked ?? '') : null;
   }
 
-  static void snack(BuildContext context, String message, {SnackBarAction? action}) => ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message), action: action, persist: false, behavior: SnackBarBehavior.floating));
-
   /// Puts every product of [order] back in the cart (same amounts). Items that
   /// are sold out or no longer sold are skipped and counted in the message.
   static Future<void> buyAgain(BuildContext context, Order order) async {
@@ -60,14 +57,12 @@ class OrderActions {
     }
     if (!context.mounted) return;
     final what = added == 1 ? '1 item' : '$added items';
-    snack(
+    if (added == 0) return AppToast.warning(context, 'These items are not available right now');
+    AppToast.success(
       context,
-      added == 0
-          ? 'These items are not available right now'
-          : skipped == 0
-              ? 'Added $what to your cart'
-              : 'Added $what to your cart. $skipped no longer available.',
-      action: added == 0 ? null : SnackBarAction(label: 'View', onPressed: () => ShopActions.openCart(navigator)),
+      skipped == 0 ? 'Added $what to your cart' : 'Added $what to your cart. $skipped no longer available.',
+      action: 'View',
+      onAction: () => ShopActions.openCart(navigator),
     );
   }
 }

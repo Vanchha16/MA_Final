@@ -6,6 +6,7 @@ import '../../models/catalog.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/catalog_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/cart_button.dart';
 import '../../widgets/product_feed.dart';
 import '../../widgets/notification_bell.dart';
@@ -108,9 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Banner tap: show that category's products, or the slide's info.
   Future<void> _openPromo(PromoSlide slide) async {
     if (slide.categorySlug == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(slide.info ?? slide.title), behavior: SnackBarBehavior.floating));
+      AppToast.info(context, slide.info ?? slide.title);
       return;
     }
     if (_categories.isEmpty) await _loadExtras();

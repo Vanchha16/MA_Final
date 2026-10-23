@@ -47,6 +47,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byKey(const Key('aba_missing')), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 500)); // the island grows out of a dot first
     await tester.tap(find.text('Get ABA'));
     await tester.pump();
     expect(opened.last.host, 'play.google.com');

@@ -10,6 +10,7 @@ import '../../core/utils/format.dart';
 import '../../models/order.dart';
 import '../../services/payment_service.dart';
 import '../../services/receipt_export.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/order_receipt.dart';
 import '../../widgets/pill_button.dart';
@@ -146,17 +147,15 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
     if (link != null && await widget.openLink(Uri.parse(link))) return;
     if (!mounted) return;
     final ios = Theme.of(context).platform == TargetPlatform.iOS;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    AppToast.show(
+      context,
+      'ABA Mobile is not on this phone. Scan the QR with any bank app, or get ABA Mobile.',
       key: const Key('aba_missing'),
-      behavior: SnackBarBehavior.floating,
-      persist: false,
+      kind: ToastKind.info,
       duration: const Duration(seconds: 6),
-      content: const Text('ABA Mobile is not on this phone. Scan the QR with any bank app, or get ABA Mobile.'),
-      action: SnackBarAction(
-        label: 'Get ABA',
-        onPressed: () => widget.openLink(Uri.parse(ios ? 'https://apps.apple.com/app/id968860649' : 'https://play.google.com/store/apps/details?id=com.paygo24.ibank')),
-      ),
-    ));
+      action: 'Get ABA',
+      onAction: () => widget.openLink(Uri.parse(ios ? 'https://apps.apple.com/app/id968860649' : 'https://play.google.com/store/apps/details?id=com.paygo24.ibank')),
+    );
   }
 
   Duration get _left {
