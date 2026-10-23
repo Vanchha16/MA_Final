@@ -5,6 +5,7 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../models/catalog.dart';
+import '../../../widgets/app_toast.dart';
 import '../../../widgets/pill_button.dart';
 import '../../../widgets/product_image.dart';
 import 'wishlist_parts.dart';
@@ -59,9 +60,7 @@ class _WishlistSwipeViewState extends State<WishlistSwipeView> {
     final p = _deck[previous];
     if (direction == CardSwiperDirection.right) {
       if (p.soldOut) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(const SnackBar(content: Text('Sold out - it stays in your wishlist'), behavior: SnackBarBehavior.floating));
+        AppToast.warning(context, 'Sold out - it stays in your wishlist');
         return false;
       }
       _moved++;

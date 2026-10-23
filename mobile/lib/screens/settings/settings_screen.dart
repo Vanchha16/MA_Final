@@ -12,6 +12,7 @@ import '../../providers/theme_provider.dart';
 import '../../services/catalog_service.dart';
 import '../../services/checkout_service.dart';
 import '../../services/preferences_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/theme_reveal.dart';
 import '../auth/login_screen.dart';
@@ -80,9 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _prefs = before);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(e.message), behavior: SnackBarBehavior.floating));
+      AppToast.error(context, e.message);
     }
   }
 

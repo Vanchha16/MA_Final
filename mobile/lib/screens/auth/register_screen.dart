@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
@@ -102,9 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   }
 
   void _comingSoon(String feature) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('$feature is coming in the next update')));
+    AppToast.info(context, '$feature is coming in the next update');
   }
 
   @override

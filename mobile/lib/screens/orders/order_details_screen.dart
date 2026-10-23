@@ -10,6 +10,7 @@ import '../../models/order.dart';
 import '../../services/order_service.dart';
 import '../../services/payment_service.dart';
 import '../../services/review_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/pill_button.dart';
 import '../../widgets/product_image.dart';
@@ -60,7 +61,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     setState(() => _order = _order.copyWith(lines: [
           for (final l in _order.lines) l.productId == line.productId ? l.withRating(outcome.review?.rating) : l,
         ]));
-    OrderActions.snack(context, outcome.deleted ? 'Review deleted' : 'Review posted');
+    if (outcome.deleted) {
+      AppToast.removed(context, 'Review deleted');
+    } else {
+      AppToast.success(context, 'Review posted');
+    }
   }
 
   Future<void> _refresh() async {
@@ -68,7 +73,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       final fresh = await _service.get(_order.id);
       if (mounted) setState(() => _order = fresh);
     } on ApiException catch (e) {
-      if (mounted) OrderActions.snack(context, e.message);
+      if (mounted) AppToast.error(context, e.message);
     }
   }
 
@@ -85,9 +90,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       final cancelled = await _service.cancel(_order.id, reason: reason.isEmpty ? null : reason);
       if (!mounted) return;
       setState(() => _order = cancelled);
-      OrderActions.snack(context, cancelled.refundPending ? 'Order cancelled. Your refund is on its way.' : 'Order cancelled');
+      AppToast.success(context, cancelled.refundPending ? 'Order cancelled. Your refund is on its way.' : 'Order cancelled');
     } on ApiException catch (e) {
-      if (mounted) OrderActions.snack(context, e.message);
+      if (mounted) AppToast.error(context, e.message);
       await _refresh();
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -100,9 +105,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       final delivered = await _service.received(_order.id);
       if (!mounted) return;
       setState(() => _order = delivered);
-      OrderActions.snack(context, 'Enjoy your order!');
+      AppToast.success(context, 'Enjoy your order!');
     } on ApiException catch (e) {
-      if (mounted) OrderActions.snack(context, e.message);
+      if (mounted) AppToast.error(context, e.message);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -152,7 +157,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             GestureDetector(
                               onTap: () {
                                 Clipboard.setData(ClipboardData(text: o.number));
-                                OrderActions.snack(context, 'Order number copied');
+                                AppToast.success(context, 'Order number copied');
                               },
                               child: Row(mainAxisSize: MainAxisSize.min, children: [
                                 Flexible(

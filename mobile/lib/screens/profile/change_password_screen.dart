@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/network/api_client.dart';
 import '../../services/profile_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/fade_slide_in.dart';
@@ -51,9 +52,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     try {
       await _service.changePassword(_current.text, _next.text);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Password changed')));
+      AppToast.success(context, 'Password changed');
       Navigator.of(context).pop();
     } on ApiException catch (e) {
       if (!mounted) return;

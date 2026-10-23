@@ -5,6 +5,7 @@ import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/catalog.dart';
 import '../../services/review_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/review_card.dart';
@@ -110,9 +111,11 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     _changed = true;
     await _load();
     if (mounted) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(outcome.deleted ? 'Review deleted' : (existing == null ? 'Review posted' : 'Review updated')), behavior: SnackBarBehavior.floating));
+      if (outcome.deleted) {
+        AppToast.removed(context, 'Review deleted');
+      } else {
+        AppToast.success(context, existing == null ? 'Review posted' : 'Review updated');
+      }
     }
   }
 
