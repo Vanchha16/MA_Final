@@ -203,6 +203,17 @@ def test_khqr_for_an_order_already_paid_is_refused(client, user):
     assert client.post(f"/api/orders/{order['id']}/khqr", headers=h).status_code == 409
 
 
+def test_khqr_without_bakong_keys_says_so_instead_of_crashing(client, user, app):
+    from app.models import Payment
+
+    app.config["BAKONG_ACCOUNT_ID"] = ""  # a fresh clone with an empty .env
+    h = _auth(client)
+    _, order = _khqr_order(client, h)
+    r = client.post(f"/api/orders/{order['id']}/khqr", headers=h)
+    assert r.status_code == 503 and "not set up" in r.get_json()["message"]
+    assert Payment.query.count() == 0
+
+
 def test_orders_list_has_items_and_got_it_marks_delivered(client, user):
     h = _auth(client)
     p = _product(stock=5, price=30)
