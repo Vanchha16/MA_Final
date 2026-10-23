@@ -233,6 +233,7 @@ void main() {
     expect(find.text('Cart emptied'), findsOneWidget);
     expect(_shop.cartCount, 0);
 
+    await tester.pump(const Duration(milliseconds: 500)); // the island grows out of a dot first
     await tester.tap(find.text('Undo'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));

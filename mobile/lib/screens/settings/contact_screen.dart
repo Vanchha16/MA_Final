@@ -12,6 +12,7 @@ import '../../models/order.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/contact_service.dart';
 import '../../services/order_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
@@ -81,9 +82,7 @@ class _ContactScreenState extends State<ContactScreen> {
     // No app for it (e.g. no phone app on the web): copy the value instead
     await Clipboard.setData(ClipboardData(text: value));
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(context.l10n.couldNotOpen(value)), behavior: SnackBarBehavior.floating));
+    AppToast.error(context, context.l10n.couldNotOpen(value));
   }
 
   void _pickTopic(ContactTopic topic) {

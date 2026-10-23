@@ -11,6 +11,7 @@ import '../../providers/shop_provider.dart';
 import '../../services/checkout_service.dart';
 import '../../services/payment_service.dart';
 import '../../widgets/action_prompt.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
@@ -79,7 +80,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
       final reason = preview.cart.couponError;
       if (reason != null) {
-        _snack('$reason. The promo code was removed.');
+        AppToast.warning(context, '$reason. The promo code was removed.');
         _coupon = null;
         await _load();
       }
@@ -87,10 +88,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (mounted) setState(() => _error = e.message);
     }
   }
-
-  void _snack(String message) => ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message), behavior: SnackBarBehavior.floating));
 
   void _setDelivery(DeliveryMethod method) {
     if (method == _delivery) return;
@@ -129,11 +126,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (!mounted || choice == null) return;
     if (choice == 'secondary') {
       _setDelivery(DeliveryMethod.pickup);
-      _snack('Store pickup chosen. Check your order and tap Place order.');
+      AppToast.success(context, 'Store pickup chosen. Check your order and tap Place order.');
       return;
     }
     await _addAddress();
-    if (mounted && _address != null) _snack('Address added. Check your order and tap Place order.');
+    if (mounted && _address != null) AppToast.success(context, 'Address added. Check your order and tap Place order.');
   }
 
   Future<void> _place() async {
@@ -160,7 +157,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!mounted) return;
       final couponProblem = e.errors?['coupon'] as String?;
       if (couponProblem != null) _coupon = null;
-      _snack(couponProblem ?? e.message);
+      if (couponProblem != null) {
+        AppToast.warning(context, couponProblem);
+      } else {
+        AppToast.error(context, e.message);
+      }
       await _load(); // stock or prices may have changed
     } finally {
       if (mounted) setState(() => _placing = false);
