@@ -20,7 +20,7 @@ class ShopActions {
   static void _snack(BuildContext context, String message, {SnackBarAction? action}) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message), action: action, behavior: SnackBarBehavior.floating));
+      ..showSnackBar(SnackBar(content: Text(message), action: action, persist: false, duration: const Duration(seconds: 4), behavior: SnackBarBehavior.floating));
   }
 
   /// True once the guest has logged in from the pop-up.
