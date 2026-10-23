@@ -15,6 +15,9 @@ class ShopProvider extends ChangeNotifier {
 
   bool _signedIn = false;
   Set<int> _wishlist = {};
+
+  /// Products whose heart request is still on its way; more taps on them wait.
+  final _heartBusy = <int>{};
   int _cartCount = 0;
   int _unread = 0;
 
@@ -54,9 +57,12 @@ class ShopProvider extends ChangeNotifier {
     }
   }
 
-  /// Returns true when the product is now in the wishlist.
+  /// Returns true when the product is now in the wishlist, false when it was
+  /// taken off, and null when a request for it is still on its way (a quick
+  /// second tap is ignored, so an "add" and a "remove" can't race on the server).
   /// Rolls back and rethrows [ApiException] if the server says no.
-  Future<bool> toggleWishlist(int productId) async {
+  Future<bool?> toggleWishlist(int productId) async {
+    if (!_heartBusy.add(productId)) return null;
     final adding = !_wishlist.contains(productId);
     _set(productId, adding);
     try {
@@ -65,6 +71,8 @@ class ShopProvider extends ChangeNotifier {
     } on ApiException {
       _set(productId, !adding);
       rethrow;
+    } finally {
+      _heartBusy.remove(productId);
     }
   }
 
