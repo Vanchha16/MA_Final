@@ -141,15 +141,16 @@ void main() {
     expect(find.text('Back to shop'), findsOneWidget);
   });
 
-  testWidgets("I've paid - check now asks the server straight away", (tester) async {
+  testWidgets("no I've paid button: the payment is found by the automatic check", (tester) async {
     final payments = FakePaymentService();
     await _pump(tester, FakeCheckoutService(addresses: [FakeCheckoutService.home]), payments: payments);
     await _place(tester);
     expect(find.byKey(const Key('khqr_card')), findsOneWidget);
+    expect(find.textContaining("I've paid"), findsNothing);
     payments.state = KhqrStatus.paid;
-    await tester.tap(find.byKey(const Key('khqr_check')));
+    await tester.pump(KhqrPaymentScreen.pollEvery);
     await tester.pumpAndSettle();
-    expect(payments.checks, 1);
+    expect(payments.checks, greaterThanOrEqualTo(1));
     expect(find.byKey(const Key('khqr_paid_stamp')), findsOneWidget);
   });
 
