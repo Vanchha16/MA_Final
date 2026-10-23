@@ -13,6 +13,7 @@ import '../../models/cart.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/cart_service.dart';
 import '../../services/catalog_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/coupon_applied_toast.dart';
 import '../../widgets/error_banner.dart';
@@ -116,11 +117,6 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
-  // persist: false - a SnackBar with an action (Undo) would otherwise stay until tapped
-  void _snack(String message, {SnackBarAction? action}) => ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message), action: action, persist: false, duration: const Duration(seconds: 4), behavior: SnackBarBehavior.floating));
-
   /// The quantity chip sends one change after the customer stops tapping or typing.
   Future<void> _setQuantity(CartLine line, int quantity) async {
     try {
@@ -128,7 +124,7 @@ class _CartScreenState extends State<CartScreen> {
       if (mounted) _show(cart);
     } on ApiException catch (e) {
       if (!mounted) return;
-      _snack(e.message);
+      AppToast.error(context, e.message);
       await _load(); // put the chip back to what the server has
     }
   }
@@ -137,22 +133,24 @@ class _CartScreenState extends State<CartScreen> {
     // Hide it right away; the server answer replaces the list
     setState(() => _cart = _withoutLine(line));
     try {
-      _show(await _service.remove(line.id, coupon: _coupon));
-      _snack(
+      final cart = await _service.remove(line.id, coupon: _coupon);
+      if (!mounted) return;
+      _show(cart);
+      AppToast.removed(
+        context,
         'Removed ${line.product.name}',
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () async {
-            try {
-              _show(await _service.add(line.product.id, quantity: line.quantity, coupon: _coupon));
-            } on ApiException catch (e) {
-              _snack(e.message);
-            }
-          },
-        ),
+        onUndo: () async {
+          try {
+            final cart = await _service.add(line.product.id, quantity: line.quantity, coupon: _coupon);
+            if (mounted) _show(cart);
+          } on ApiException catch (e) {
+            if (mounted) AppToast.error(context, e.message);
+          }
+        },
       );
     } on ApiException catch (e) {
-      _snack(e.message);
+      if (!mounted) return;
+      AppToast.error(context, e.message);
       await _load();
     }
   }
@@ -180,14 +178,13 @@ class _CartScreenState extends State<CartScreen> {
     final removed = cart.lines; // for Undo
     final coupon = _coupon;
     try {
-      _show(await _service.clear());
+      final empty = await _service.clear();
       await _saveCoupon(null);
-      _snack(
-        'Cart emptied',
-        action: SnackBarAction(label: 'Undo', onPressed: () => _restore(removed, coupon)),
-      );
+      if (!mounted) return;
+      _show(empty);
+      AppToast.removed(context, 'Cart emptied', onUndo: () => _restore(removed, coupon));
     } on ApiException catch (e) {
-      _snack(e.message);
+      if (mounted) AppToast.error(context, e.message);
     }
   }
 
@@ -199,9 +196,10 @@ class _CartScreenState extends State<CartScreen> {
         cart = await _service.add(line.product.id, quantity: line.quantity, coupon: coupon);
       }
       await _saveCoupon(coupon);
-      if (cart != null) _show(cart);
+      if (cart != null && mounted) _show(cart);
     } on ApiException catch (e) {
-      _snack(e.message);
+      if (!mounted) return;
+      AppToast.error(context, e.message);
       await _load();
     }
   }
@@ -278,7 +276,7 @@ class _CartScreenState extends State<CartScreen> {
                 key: ValueKey('line_${line.id}'),
                 line: line,
                 onQuantity: (q) => _setQuantity(line, q),
-                onTooMany: (max) => _snack('Only $max available for this item'),
+                onTooMany: (max) => AppToast.warning(context, 'Only $max available for this item'),
                 onRemove: () => _remove(line),
                 onOpen: () => ShopActions.openProduct(context, line.product, catalog: widget.catalogService),
               ),

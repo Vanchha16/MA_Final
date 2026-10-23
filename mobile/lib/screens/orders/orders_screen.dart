@@ -9,6 +9,7 @@ import '../../core/utils/format.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 import '../../services/payment_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/icon_circle.dart';
@@ -123,7 +124,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _busy.remove(order.id));
-      OrderActions.snack(context, e.message);
+      AppToast.error(context, e.message);
       await _load();
     }
   }

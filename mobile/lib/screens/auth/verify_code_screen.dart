@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/network/api_client.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/fade_slide_in.dart';
 import '../../widgets/icon_circle.dart';
@@ -90,9 +91,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       _code.clear();
       setState(() => _devCode = request.devCode);
       _startCountdown(request.resendAfter);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('We sent you a new code')));
+      AppToast.success(context, 'We sent you a new code');
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {
