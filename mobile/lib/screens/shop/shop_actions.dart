@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/network/api_client.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/cart.dart';
 import '../../models/catalog.dart';
 import '../../providers/shop_provider.dart';
@@ -10,6 +11,7 @@ import '../../services/catalog_service.dart';
 import '../../widgets/cart_drive.dart';
 import '../../widgets/product_image.dart';
 import '../../widgets/login_required.dart';
+import '../../widgets/wishlist_fx.dart';
 import '../catalog/product_details_screen.dart';
 import '../shell/main_shell.dart';
 
@@ -35,7 +37,10 @@ class ShopActions {
     }
     try {
       final added = await shop.toggleWishlist(product.id);
-      if (context.mounted) _snack(context, added ? 'Saved to your wishlist' : 'Removed from your wishlist');
+      if (!context.mounted) return;
+      if (!added) return _snack(context, 'Removed from your wishlist');
+      WishlistFx.play();
+      _savedToast(context, product);
     } on ApiException catch (e) {
       if (context.mounted) _snack(context, e.message);
     }
@@ -123,6 +128,51 @@ class ShopActions {
     SchedulerBinding.instance.addPostFrameCallback((_) => CartDrive.whenIdle(() {
           if (messenger.mounted) show();
         }));
+  }
+
+  /// Dark toast with the photo and a View button that opens the Wishlist tab.
+  static void _savedToast(BuildContext context, Product product) {
+    final navigator = Navigator.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        key: const Key('saved_toast'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: dark ? scheme.surfaceContainerHighest : const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        padding: const EdgeInsets.all(10),
+        duration: const Duration(seconds: 3),
+        content: Row(children: [
+          SizedBox.square(
+            dimension: 48,
+            child: Stack(clipBehavior: Clip.none, children: [
+              Positioned.fill(child: ProductImage(url: product.imageUrl, kind: product.category.kind, iconSize: 22, borderRadius: BorderRadius.circular(12))),
+              const Positioned(right: -4, bottom: -4, child: Icon(Icons.favorite_rounded, size: 20, color: AppTheme.coral)),
+            ]),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Saved to your wishlist', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 2),
+              Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12)),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            key: const Key('saved_toast_view'),
+            onPressed: () {
+              ScaffoldMessenger.maybeOf(navigator.context)?.hideCurrentSnackBar();
+              navigator.popUntil((route) => route.isFirst);
+              MainShell.requestedTab.value = MainShell.wishlistTab;
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.coral, foregroundColor: Colors.white, minimumSize: const Size(64, 40), shape: const StadiumBorder()),
+            child: const Text('View', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ]),
+      ));
   }
 
   /// Goes back to the main tabs and shows the Cart tab.
