@@ -72,7 +72,7 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
   KhqrPayment? _payment;
   String? _error;
   Timer? _poll, _tick;
-  bool _checking = false, _checkingByHand = false;
+  bool _checking = false;
 
   @override
   void initState() {
@@ -138,13 +138,6 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
     } finally {
       _checking = false;
     }
-  }
-
-  /// "I've paid - check now": the same check, with a spinner on the button.
-  Future<void> _checkByHand() async {
-    setState(() => _checkingByHand = true);
-    await _check();
-    if (mounted) setState(() => _checkingByHand = false);
   }
 
   /// Opens ABA Mobile with the payment filled in; without the app, offers to get it.
@@ -239,15 +232,11 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
                         ),
                     },
                   ),
-                  if (!paid)
+                  // No "I've paid" button: the payment is checked every few seconds by itself
+                  if (!paid && expired)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-                      child: _BottomButton(
-                        showDone: expired,
-                        checking: _checkingByHand,
-                        onCheck: payment == null ? null : _checkByHand,
-                        onDone: _continue,
-                      ),
+                      child: PillButton(key: const Key('khqr_done'), label: 'Back to shop', leadingIcon: Icons.storefront_outlined, onPressed: _continue),
                     ),
                 ],
               );
@@ -610,27 +599,3 @@ class _ErrorState extends StatelessWidget {
       );
 }
 
-class _BottomButton extends StatelessWidget {
-  final bool showDone, checking;
-  final VoidCallback? onCheck;
-  final VoidCallback onDone;
-
-  const _BottomButton({required this.showDone, required this.checking, required this.onCheck, required this.onDone});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    if (showDone) {
-      return PillButton(key: const Key('khqr_done'), label: 'Back to shop', leadingIcon: Icons.storefront_outlined, onPressed: onDone);
-    }
-    return PillButton(
-      key: const Key('khqr_check'),
-      label: "I've paid - check now",
-      leadingIcon: Icons.refresh_rounded,
-      loading: checking,
-      color: Theme.of(context).brightness == Brightness.dark ? scheme.surfaceContainerHighest : AppTheme.skyTint,
-      foregroundColor: scheme.primary,
-      onPressed: onCheck,
-    );
-  }
-}

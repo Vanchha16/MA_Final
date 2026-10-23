@@ -10,7 +10,7 @@ E-Commerce Mobile Application - Complete Project Documentation
 
 **Course:** Mobile Application (Year 4, SU25) - Final Project\
 **Institute:** SETEC Institute\
-**Date:** 22 October 2026\
+**Date:** 23 October 2026\
 **Source code:** <https://github.com/Vanchha16/MA_Final>
 
 **Lecturer:** Ly Lay
@@ -696,7 +696,6 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 
 **Alternative flows**
 - A1 (step 5): 15 minutes pass without payment. The order is cancelled and its stock returned; the app shows "This QR code expired" and a Try again button.
-- A2 (step 5): the customer taps "I've paid - check now" to check straight away instead of waiting for the next automatic check.
 
 **Postcondition** The order is *paid* and waits for the shop to confirm it.
 
