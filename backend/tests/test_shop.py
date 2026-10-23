@@ -1,7 +1,7 @@
 from conftest import login_token
 
 from app.extensions import db
-from app.models import Category, Product
+from app.models import Category, Favorite, Product
 
 
 def _auth(client):
@@ -33,6 +33,23 @@ def test_wishlist_add_is_idempotent_and_remove_works(client, user):
 
     assert client.delete(f"/api/wishlist/{p.id}", headers=h).status_code == 200
     assert client.get("/api/wishlist", headers=h).get_json()["data"]["ids"] == []
+
+
+def test_wishlist_add_at_the_same_moment_is_not_an_error(client, user, monkeypatch):
+    """Two taps arrive together: both see "not saved yet", the second insert hits the
+    unique key and is treated as already saved instead of a 500."""
+    from sqlalchemy.orm import Query
+
+    p = _product()
+    h = _auth(client)
+    db.session.add(Favorite(user_id=user.id, product_id=p.id))  # the other request just saved it
+    db.session.commit()
+    real_first = Query.first
+    monkeypatch.setattr(Query, "first", lambda q: None if q.column_descriptions[0]["entity"] is Favorite else real_first(q))
+    res = client.post(f"/api/wishlist/{p.id}", headers=h)
+    assert res.status_code == 200 and res.get_json()["data"]["in_wishlist"] is True
+    monkeypatch.undo()
+    assert client.get("/api/wishlist", headers=h).get_json()["data"]["ids"] == [p.id]
 
 
 def test_wishlist_unknown_product_is_404(client, user):
