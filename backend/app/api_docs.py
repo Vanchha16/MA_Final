@@ -552,7 +552,7 @@ SWAGGER_PAGE = """<!doctype html>
   <script src="{{ url_for('api_docs.swagger_files', filename='swagger-ui-bundle.js') }}"></script>
   <script>
     SwaggerUIBundle({ url: "{{ url_for('api_docs.openapi_json') }}", dom_id: "#swagger-ui",
-                      persistAuthorization: true, docExpansion: "none", tryItOutEnabled: true });
+                      persistAuthorization: true, docExpansion: "list", filter: true, tryItOutEnabled: true });
   </script>
 </body>
 </html>"""
