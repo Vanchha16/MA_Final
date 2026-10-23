@@ -5,10 +5,12 @@ import '../../core/network/api_client.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/error_banner.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/l10n.dart';
 import '../../widgets/pill_button.dart';
 import '../../widgets/icon_title.dart';
 import '../../widgets/mascot_greeting.dart';
 import '../../widgets/pill_text_field.dart';
+import '../../widgets/server_address_sheet.dart';
 import '../admin/admin_shell.dart';
 import '../shell/main_shell.dart';
 import 'forgot_password_screen.dart';
@@ -217,6 +219,21 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                     ),
                   ),
+                ),
+              ),
+            ),
+          ),
+          // An installed APK has to be told where the backend runs (the PC's Wi-Fi IP)
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: IconButton(
+                  key: const Key('login_server'),
+                  tooltip: context.l10n.serverAddress,
+                  icon: Icon(Icons.dns_rounded, color: scheme.onSurfaceVariant),
+                  onPressed: () => showServerAddressSheet(context),
                 ),
               ),
             ),

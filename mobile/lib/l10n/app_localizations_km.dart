@@ -86,6 +86,35 @@ class AppLocalizationsKm extends AppLocalizations {
   String get helpContact => 'ជំនួយ និងទំនាក់ទំនង';
 
   @override
+  String get serverAddress => 'អាសយដ្ឋានម៉ាស៊ីនមេ';
+
+  @override
+  String get serverAddressHelp =>
+      'កុំព្យូទ័រដែលដំណើរការ backend របស់ហាង។ នៅលើ Wi-Fi តែមួយ សូមវាយអាសយដ្ឋាន IP របស់វា ឧទាហរណ៍ 192.168.1.10។';
+
+  @override
+  String get serverAddressInvalid => 'សូមបញ្ចូលអាសយដ្ឋានដូចជា 192.168.1.10';
+
+  @override
+  String get serverUnreachable =>
+      'មិនអាចភ្ជាប់ម៉ាស៊ីនមេនេះបានទេ។ សូមពិនិត្យថា backend កំពុងដំណើរការ ហើយទូរស័ព្ទនៅលើ Wi-Fi តែមួយ។';
+
+  @override
+  String get serverTestSave => 'សាកល្បង និងរក្សាទុក';
+
+  @override
+  String get serverChecking => 'កំពុងពិនិត្យ...';
+
+  @override
+  String get serverSaveAnyway => 'រក្សាទុកទោះយ៉ាងណា';
+
+  @override
+  String get serverReset => 'ប្រើលំនាំដើម';
+
+  @override
+  String get serverSaved => 'បានរក្សាទុកម៉ាស៊ីនមេ';
+
+  @override
   String get about => 'អំពី';
 
   @override

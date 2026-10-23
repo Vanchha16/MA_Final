@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/network/api_client.dart';
 import 'core/theme/app_theme.dart';
 import 'l10n/l10n.dart';
 import 'providers/auth_provider.dart';
@@ -12,7 +13,10 @@ import 'providers/theme_provider.dart';
 import 'screens/splash/splash_screen.dart';
 import 'widgets/theme_reveal.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // The server picked in Server address (an installed APK on a phone)
+  await ApiClient.instance.loadServer();
   runApp(
     // Device preview: on the web the app is shown inside a real phone frame
     // (Pixel, iPhone, Samsung...). It is turned off on real phones.

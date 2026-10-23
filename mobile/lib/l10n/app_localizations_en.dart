@@ -88,6 +88,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helpContact => 'Help & contact';
 
   @override
+  String get serverAddress => 'Server address';
+
+  @override
+  String get serverAddressHelp =>
+      'The computer running the shop\'s backend. On the same Wi-Fi, type its IP address, for example 192.168.1.10.';
+
+  @override
+  String get serverAddressInvalid => 'Enter an address like 192.168.1.10';
+
+  @override
+  String get serverUnreachable =>
+      'Can\'t reach this server. Check that the backend is running and the phone is on the same Wi-Fi.';
+
+  @override
+  String get serverTestSave => 'Test and save';
+
+  @override
+  String get serverChecking => 'Checking...';
+
+  @override
+  String get serverSaveAnyway => 'Save anyway';
+
+  @override
+  String get serverReset => 'Use the default';
+
+  @override
+  String get serverSaved => 'Server saved';
+
+  @override
   String get about => 'About';
 
   @override

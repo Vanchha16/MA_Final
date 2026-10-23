@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-import '../../core/constants/api_constants.dart';
 import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/format.dart';
@@ -68,7 +67,7 @@ class AdminMoreScreen extends StatelessWidget {
         );
     final owner = context.watch<AuthProvider>().user?.isAdmin ?? false;
     // The Flask-Admin panel is for the owner; staff use the web admin
-    final panel = ApiConstants.baseUrl.replaceFirst(RegExp(r'/api/?$'), owner ? '/admin' : '/dashboard');
+    final panel = ApiClient.instance.baseUrl.replaceFirst(RegExp(r'/api/?$'), owner ? '/admin' : '/dashboard');
     return SafeArea(
       bottom: false,
       child: ListView(padding: const EdgeInsets.fromLTRB(20, 0, 20, 96), children: [

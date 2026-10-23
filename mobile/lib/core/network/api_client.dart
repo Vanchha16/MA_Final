@@ -40,6 +40,41 @@ class ApiClient {
     headers: {'Accept': 'application/json'},
   ));
 
+  static const serverKey = 'server_url';
+
+  /// The server the app talks to: the one saved in Server address, else the build's default.
+  String get baseUrl => _dio.options.baseUrl;
+
+  bool get usesDefaultServer => baseUrl == ApiConstants.baseUrl;
+
+  /// Called once at start-up, before the first request.
+  Future<void> loadServer() async {
+    final saved = (await SharedPreferences.getInstance()).getString(serverKey);
+    if (saved != null) _dio.options.baseUrl = saved;
+  }
+
+  /// Saves [url] (from [ApiConstants.serverUrl]); null goes back to the default.
+  Future<void> setServer(String? url) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (url == null || url == ApiConstants.baseUrl) {
+      await prefs.remove(serverKey);
+    } else {
+      await prefs.setString(serverKey, url);
+    }
+    _dio.options.baseUrl = url ?? ApiConstants.baseUrl;
+  }
+
+  /// True when the backend at [url] answers its health check.
+  static Future<bool> ping(String url) async {
+    try {
+      final res = await Dio(BaseOptions(connectTimeout: const Duration(seconds: 5), receiveTimeout: const Duration(seconds: 5)))
+          .get('$url/health');
+      return res.data is Map && res.data['success'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       _send(() => _dio.get(path, queryParameters: query));
 

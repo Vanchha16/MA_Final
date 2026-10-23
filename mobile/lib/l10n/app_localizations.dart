@@ -236,6 +236,60 @@ abstract class AppLocalizations {
   /// **'Help & contact'**
   String get helpContact;
 
+  /// No description provided for @serverAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Server address'**
+  String get serverAddress;
+
+  /// No description provided for @serverAddressHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The computer running the shop\'s backend. On the same Wi-Fi, type its IP address, for example 192.168.1.10.'**
+  String get serverAddressHelp;
+
+  /// No description provided for @serverAddressInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an address like 192.168.1.10'**
+  String get serverAddressInvalid;
+
+  /// No description provided for @serverUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach this server. Check that the backend is running and the phone is on the same Wi-Fi.'**
+  String get serverUnreachable;
+
+  /// No description provided for @serverTestSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Test and save'**
+  String get serverTestSave;
+
+  /// No description provided for @serverChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking...'**
+  String get serverChecking;
+
+  /// No description provided for @serverSaveAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Save anyway'**
+  String get serverSaveAnyway;
+
+  /// No description provided for @serverReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the default'**
+  String get serverReset;
+
+  /// No description provided for @serverSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Server saved'**
+  String get serverSaved;
+
   /// No description provided for @about.
   ///
   /// In en, this message translates to:

@@ -13,6 +13,7 @@ import '../../services/catalog_service.dart';
 import '../../services/checkout_service.dart';
 import '../../services/preferences_service.dart';
 import '../../widgets/circle_back_button.dart';
+import '../../widgets/server_address_sheet.dart';
 import '../../widgets/theme_reveal.dart';
 import '../auth/login_screen.dart';
 import 'about_screen.dart';
@@ -200,6 +201,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: AppTheme.success,
                         title: l.helpContact,
                         onTap: () => _push(const HelpScreen()),
+                      ),
+                      const _Divider(),
+                      _Row(
+                        key: const Key('settings_server'),
+                        icon: Icons.dns_rounded,
+                        color: AppTheme.abaNavy,
+                        title: l.serverAddress,
+                        subtitle: serverLabel(ApiClient.instance.baseUrl),
+                        onTap: () async {
+                          if (await showServerAddressSheet(context) == true && mounted) setState(() {});
+                        },
                       ),
                       const _Divider(),
                       _Row(
