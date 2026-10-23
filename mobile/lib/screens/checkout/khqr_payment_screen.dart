@@ -156,6 +156,8 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       key: const Key('aba_missing'),
       behavior: SnackBarBehavior.floating,
+      persist: false,
+      duration: const Duration(seconds: 6),
       content: const Text('ABA Mobile is not on this phone. Scan the QR with any bank app, or get ABA Mobile.'),
       action: SnackBarAction(
         label: 'Get ABA',

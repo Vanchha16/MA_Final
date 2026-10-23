@@ -115,9 +115,10 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
+  // persist: false - a SnackBar with an action (Undo) would otherwise stay until tapped
   void _snack(String message, {SnackBarAction? action}) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message), action: action, behavior: SnackBarBehavior.floating));
+    ..showSnackBar(SnackBar(content: Text(message), action: action, persist: false, duration: const Duration(seconds: 4), behavior: SnackBarBehavior.floating));
 
   /// The quantity chip sends one change after the customer stops tapping or typing.
   Future<void> _setQuantity(CartLine line, int quantity) async {
