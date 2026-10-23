@@ -14,6 +14,7 @@ import '../../providers/shop_provider.dart';
 import '../../services/cart_service.dart';
 import '../../services/catalog_service.dart';
 import '../../widgets/confirm_dialog.dart';
+import '../../widgets/coupon_applied_toast.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/icon_circle.dart';
 import '../../widgets/pill_button.dart';
@@ -218,7 +219,7 @@ class _CartScreenState extends State<CartScreen> {
       await _saveCoupon(cart.coupon?.code);
       _promo.clear();
       _show(cart);
-      _snack('${cart.coupon?.code} applied: you save ${formatPrice(cart.discount)}');
+      if (mounted) showCouponApplied(context, code: cart.coupon?.code ?? code, saved: cart.discount);
     } on ApiException catch (e) {
       if (mounted) setState(() => _promoError = e.errors?['code'] as String? ?? e.message);
     } finally {
