@@ -2509,8 +2509,8 @@ Automated tests run before every merge into `main`:
 
 | Part | Tool | Tests | What they cover |
 |---|---|---|---|
-| Backend API | pytest | 143 | Every route: login and roles, catalogue, cart, checkout, KHQR and PayWay payments, cancelling and refunds, admin and staff rules, validation, API docs up to date |
-| Mobile app | flutter_test | 193 | Every screen's main flows with fake services (login and address pop-ups, cart, checkout, payment, orders, cancel and refund, admin tabs, staff) |
+| Backend API | pytest | 144 | Every route: login and roles, catalogue, cart, checkout, KHQR and PayWay payments, cancelling and refunds, admin and staff rules, validation, API docs up to date |
+| Mobile app | flutter_test | 196 | Every screen's main flows with fake services (login and address pop-ups, cart, checkout, payment, orders, cancel and refund, admin tabs, staff) |
 | Web admin | Vitest + Testing Library | 15 | Dashboard, order steps, refunds, staff page, theme switch |
 
 `flutter analyze` reports no issues. The test folders (`backend/tests`, `web-admin/src/test`) are kept on
