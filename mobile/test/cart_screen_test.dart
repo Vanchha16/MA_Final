@@ -129,6 +129,10 @@ void main() {
     expect(find.byKey(const ValueKey('line_1')), findsNothing);
     expect(find.textContaining('Removed'), findsOneWidget);
     expect(_shop.cartCount, 2);
+    // It hides by itself (a SnackBar with Undo would otherwise stay until tapped)
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Removed'), findsNothing);
   });
 
   testWidgets('swipe left removes an item and Undo brings it back', (tester) async {
