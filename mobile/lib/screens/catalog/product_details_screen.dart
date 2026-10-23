@@ -9,6 +9,7 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/wishlist_fx.dart';
 import '../../core/utils/format.dart';
 import '../../models/catalog.dart';
 import '../../providers/shop_provider.dart';
@@ -337,12 +338,17 @@ class _GalleryState extends State<_Gallery> {
                       const Spacer(),
                       CartButton(onPressed: widget.onCart),
                       const SizedBox(width: 10),
-                      _CircleAction(
-                        key: const Key('details_wishlist'),
-                        tooltip: widget.wishlisted ? 'Remove from wishlist' : 'Add to wishlist',
-                        icon: widget.wishlisted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: AppTheme.coral,
-                        onPressed: widget.onWishlist,
+                      Builder(
+                        builder: (heart) => _CircleAction(
+                          key: const Key('details_wishlist'),
+                          tooltip: widget.wishlisted ? 'Remove from wishlist' : 'Add to wishlist',
+                          icon: widget.wishlisted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          color: AppTheme.coral,
+                          onPressed: () {
+                            WishlistFx.tapped(heart);
+                            widget.onWishlist();
+                          },
+                        ),
                       ),
                     ],
                   ),

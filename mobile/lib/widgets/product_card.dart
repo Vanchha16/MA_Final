@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../core/theme/app_theme.dart';
+import 'wishlist_fx.dart';
 import '../core/utils/format.dart';
 import '../models/catalog.dart';
 import 'cart_drive.dart';
@@ -237,7 +238,12 @@ class _HeartButton extends StatelessWidget {
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
-        onTap: onTap,
+        onTap: onTap == null
+            ? null
+            : () {
+                WishlistFx.tapped(context);
+                onTap!();
+              },
         child: Tooltip(
           message: on ? 'Remove from wishlist' : 'Add to wishlist',
           child: SizedBox.square(

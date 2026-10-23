@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 import '../core/theme/app_theme.dart';
+import 'wishlist_fx.dart';
 import '../core/utils/format.dart';
 import '../models/catalog.dart';
 import 'cart_drive.dart';
@@ -17,14 +18,7 @@ class ProductTile extends StatefulWidget {
   final VoidCallback? onToggleWishlist;
   final Future<void> Function()? onAddToCart;
 
-  const ProductTile({
-    super.key,
-    required this.product,
-    this.wishlisted = false,
-    this.onTap,
-    this.onToggleWishlist,
-    this.onAddToCart,
-  });
+  const ProductTile({super.key, required this.product, this.wishlisted = false, this.onTap, this.onToggleWishlist, this.onAddToCart});
 
   @override
   State<ProductTile> createState() => _ProductTileState();
@@ -66,12 +60,18 @@ class _ProductTileState extends State<ProductTile> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Hero(tag: ProductCard.heroTag(p.id), child: ProductImage(url: p.imageUrl, kind: p.category.kind, iconSize: 40, borderRadius: BorderRadius.circular(14))),
+                      Hero(
+                        tag: ProductCard.heroTag(p.id),
+                        child: ProductImage(url: p.imageUrl, kind: p.category.kind, iconSize: 40, borderRadius: BorderRadius.circular(14)),
+                      ),
                       if (p.soldOut)
                         DecoratedBox(
                           decoration: BoxDecoration(color: const Color(0x730F172A), borderRadius: BorderRadius.circular(14)),
                           child: const Center(
-                            child: Text('Sold out', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              'Sold out',
+                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       if (p.onSale && !p.soldOut)
@@ -81,7 +81,10 @@ class _ProductTileState extends State<ProductTile> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(color: AppTheme.coral, borderRadius: BorderRadius.circular(8)),
-                            child: Text('-${p.discountPercent}%', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              '-${p.discountPercent}%',
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                     ],
@@ -102,24 +105,36 @@ class _ProductTileState extends State<ProductTile> {
                               style: TextStyle(fontSize: 10, letterSpacing: 1, fontWeight: FontWeight.bold, color: accent),
                             ),
                           ),
-                          InkWell(
-                            key: Key('heart_${p.id}'),
-                            customBorder: const CircleBorder(),
-                            onTap: widget.onToggleWishlist,
-                            child: Padding(
-                              padding: const EdgeInsets.all(2),
-                              child: Icon(
-                                wishlisted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                size: 20,
-                                color: AppTheme.coral,
-                                semanticLabel: wishlisted ? 'Remove from wishlist' : 'Add to wishlist',
+                          Builder(
+                            builder: (heart) => InkWell(
+                              key: Key('heart_${p.id}'),
+                              customBorder: const CircleBorder(),
+                              onTap: widget.onToggleWishlist == null
+                                  ? null
+                                  : () {
+                                      WishlistFx.tapped(heart);
+                                      widget.onToggleWishlist!();
+                                    },
+                              child: Padding(
+                                padding: const EdgeInsets.all(2),
+                                child: Icon(
+                                  wishlisted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                  size: 20,
+                                  color: AppTheme.coral,
+                                  semanticLabel: wishlisted ? 'Remove from wishlist' : 'Add to wishlist',
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(p.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, height: 1.3, fontWeight: FontWeight.w600)),
+                      Text(
+                        p.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 14, height: 1.3, fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
@@ -142,7 +157,10 @@ class _ProductTileState extends State<ProductTile> {
                               crossAxisAlignment: WrapCrossAlignment.center,
                               spacing: 6,
                               children: [
-                                Text(formatPrice(p.finalPrice), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: accent)),
+                                Text(
+                                  formatPrice(p.finalPrice),
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: accent),
+                                ),
                                 if (p.onSale)
                                   Text(
                                     formatPrice(p.price),
