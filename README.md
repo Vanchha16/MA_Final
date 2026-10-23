@@ -41,15 +41,21 @@ cd backend
 python -m venv .venv
 .venv\Scripts\activate          # Windows  (macOS/Linux: source .venv/bin/activate)
 pip install -r requirements.txt
-copy .env.example .env          # then put your MySQL password in .env
+copy .env.example .env          # then check DATABASE_URL in .env
 ```
 
-Create the database - either run `docs/database/schema.sql` in MySQL Workbench, or:
+`DATABASE_URL` is `mysql+pymysql://USER:PASSWORD@localhost:3306/ecommerce_db`. WAMP's `root` has no
+password, so leave it empty but keep the colon: `mysql+pymysql://root:@localhost:3306/ecommerce_db`.
+
+Create an empty database named `ecommerce_db` (charset `utf8mb4`) in Navicat, phpMyAdmin or MySQL Workbench,
+then make the tables:
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE ecommerce_db CHARACTER SET utf8mb4"
 flask --app run init-db
 ```
+
+(Command line instead: WAMP does not put `mysql` on the PATH, so use its full path, for example
+`C:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe -u root -e "CREATE DATABASE ecommerce_db CHARACTER SET utf8mb4"`.)
 
 All tables are InnoDB so the foreign keys (the relationships in the ERD) are kept. WAMP's MySQL makes
 MyISAM tables by default, which silently drops every foreign key; if an older database shows no
@@ -73,8 +79,9 @@ set `MAIL_MODE=smtp` and the `MAIL_*` values in `.env` (see `.env.example`).
 
 Online payments: Bakong KHQR needs `BAKONG_TOKEN` and `BAKONG_ACCOUNT_ID`; ABA PayWay needs
 `PAYWAY_MERCHANT_ID` and `PAYWAY_API_KEY` (sandbox by default, `PAYWAY_BASE` switches to live).
-Ask the team for the values; they are never committed. After pulling, run `flask --app run init-db`
-once so the database gets the new payment columns.
+Ask the team for the values; they are never committed. Without them the app still runs: cash orders work,
+and choosing KHQR or ABA at payment shows "This payment method is not set up on the server yet".
+After pulling, run `flask --app run init-db` once so the database gets the new payment columns.
 
 Start the API:
 
@@ -190,8 +197,15 @@ Example: `/api/products?category_id=6&series_id=1&max_price=50&sort=price_asc`
 
 ## Product photos
 
-Photos are not on `main` (`backend/uploads/` is ignored). Get the `backend/uploads` folder from the
-`store-info` branch (or the team drive), put it in `backend/uploads/`, then run `flask --app run import-images`.
+Photos are not on `main` (`backend/uploads/` is ignored), so a fresh clone shows placeholder tiles.
+To get them, copy the folder from the `store-info` branch (nothing gets staged) and import it:
+
+```bash
+git fetch origin store-info                               # in the project folder
+git restore --source origin/store-info -- backend/uploads
+cd backend
+flask --app run import-images     # "Imported photos for 35 product(s)"
+```
 The `store-info` branch also has `docs/product-photos.md` with the folder list and the source of every photo.
 
 Product images belong to their respective owners and are used for educational purposes only.
