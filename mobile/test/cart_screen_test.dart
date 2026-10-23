@@ -167,6 +167,25 @@ void main() {
     expect((await SharedPreferences.getInstance()).getString(CartScreen.couponPrefKey), isNull);
   });
 
+  testWidgets('applying a code celebrates: the saving counts up, then the card hides', (tester) async {
+    await _pump(tester, FakeCartService(items: items));
+
+    await tester.enterText(find.byKey(const Key('promo_field')), 'WELCOME10');
+    await _tap(tester, find.byKey(const Key('promo_apply')));
+    expect(find.byKey(const Key('coupon_applied_toast')), findsOneWidget);
+    expect(find.text('Nice! Promo code applied'), findsOneWidget);
+    expect(find.text(r'You saved $17.90'), findsNothing); // still counting up
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text(r'You saved $17.90'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('coupon_applied_toast')), matching: find.text('WELCOME10')), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byKey(const Key('coupon_applied_toast')), findsNothing);
+  });
+
   testWidgets('a bad promo code shows why', (tester) async {
     await _pump(tester, FakeCartService(items: {3: 2}));
     await tester.enterText(find.byKey(const Key('promo_field')), 'ANIME5');
