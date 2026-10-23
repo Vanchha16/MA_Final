@@ -331,6 +331,8 @@ def _start_payment(order_id, method):
         return error("This order is already paid", 409)
     if order.status == "cancelled" and (existing is None or existing.status != "paid"):
         return error("This order was cancelled", 409)
+    if existing is None and not payments.is_set_up(method):
+        return error("This payment method is not set up on the server yet. Please pay in cash instead.", 503)
     try:
         return _payment_response(order, payments.start(order))
     except PaywayError as exc:

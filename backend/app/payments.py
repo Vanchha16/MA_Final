@@ -20,6 +20,14 @@ def _khqr():
     return KHQR(current_app.config["BAKONG_TOKEN"] or None)
 
 
+def is_set_up(method):
+    """True when the server has the keys for "khqr" (Bakong) or "aba" (PayWay)."""
+    cfg = current_app.config
+    if method == "aba":
+        return bool(cfg["PAYWAY_MERCHANT_ID"] and cfg["PAYWAY_API_KEY"])
+    return bool(cfg["BAKONG_ACCOUNT_ID"])
+
+
 def active_payment(order):
     return Payment.query.filter_by(order_id=order.id).order_by(Payment.id.desc()).first()
 
