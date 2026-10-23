@@ -1,5 +1,6 @@
 from flask import Blueprint, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from ..extensions import db
@@ -73,7 +74,11 @@ def add_to_wishlist(product_id):
     user_id = _user_id()
     if not Favorite.query.filter_by(user_id=user_id, product_id=product_id).first():
         db.session.add(Favorite(user_id=user_id, product_id=product_id))
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # Two taps at the same moment: the other request saved it already
+            db.session.rollback()
     return success({"product_id": product_id, "in_wishlist": True}, "Added to wishlist")
 
 

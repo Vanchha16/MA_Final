@@ -37,7 +37,7 @@ class ShopActions {
     }
     try {
       final added = await shop.toggleWishlist(product.id);
-      if (!context.mounted) return;
+      if (added == null || !context.mounted) return; // a second tap while the first was still saving
       if (!added) return _snack(context, 'Removed from your wishlist');
       WishlistFx.play();
       _savedToast(context, product);
