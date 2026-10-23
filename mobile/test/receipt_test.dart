@@ -119,11 +119,10 @@ void main() {
     final payments = FakePaymentService();
     await _pump(tester, KhqrPaymentScreen(order: FakePaymentService.order, service: payments, export: export), settle: false);
     payments.state = KhqrStatus.paid;
-    await tester.tap(find.byKey(const Key('khqr_check')));
-    await tester.pump();
+    await tester.pump(KhqrPaymentScreen.pollEvery); // the automatic check finds it
     await tester.pump(KhqrPaymentScreen.printDuration);
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byKey(const Key('khqr_check')), findsNothing); // no button pinned to the bottom any more
+    expect(find.textContaining("I've paid"), findsNothing); // no button pinned to the bottom
     final receiptBottom = tester.getBottomLeft(find.byType(OrderReceipt)).dy;
     expect(tester.getTopLeft(find.byKey(const Key('khqr_confirmed'))).dy, greaterThan(receiptBottom));
 
