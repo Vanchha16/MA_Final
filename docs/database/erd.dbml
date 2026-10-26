@@ -201,3 +201,9 @@ Table coupons {
   is_active bool [not null, default: true]
   created_at datetime
 }
+
+Table payment_methods {
+  code varchar(10) [pk, note: 'khqr | aba | cod']
+  is_enabled bool [not null, default: true, note: 'off = hidden at checkout']
+  updated_at datetime
+}

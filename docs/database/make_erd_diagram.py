@@ -38,6 +38,7 @@ POS = {
     "payments": (XC, 40), "notifications": (XC, 380), "cart_items": (XC, 640), "favorites": (XC, 820), "reviews": (XC, 990),
     "order_items": (XD, 300), "products": (XD, 640),
     "categories": (XE, 640), "series": (XE, 820), "product_images": (XE, 990),
+    "payment_methods": (XE, 330),
 }
 
 
@@ -176,7 +177,7 @@ doc = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{HEIGH
 </style>
 <rect width="100%" height="100%" fill="#ffffff"/>
 <text x="{legend_x}" y="{legend_y+10}" class="ttl">Anime World Shop - ER Diagram</text>
-<text x="{legend_x}" y="{legend_y+36}" class="sub">MySQL database ecommerce_db (InnoDB) · 16 tables · 19 foreign keys</text>
+<text x="{legend_x}" y="{legend_y+36}" class="sub">MySQL database ecommerce_db (InnoDB) · 17 tables · 19 foreign keys</text>
 <g transform="translate({legend_x} {legend_y+66})">
  <g transform="translate(0 -9)"><circle cx="4.5" cy="4.5" r="4" class="key"/><path d="M7.5 7 L14 13.5 M11 10.5 l-2 2 M13 12.5 l-2 2" class="keyl"/></g>
  <text x="22" y="4" class="leg">primary key</text>
