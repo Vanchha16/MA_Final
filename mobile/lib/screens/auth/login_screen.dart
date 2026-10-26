@@ -14,6 +14,9 @@ import '../shell/main_shell.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
+/// The "Just browsing" (guest) button is hidden for now; set to true to bring it back.
+const _showJustBrowsing = false;
+
 /// Friendly login (Figma: "03 - Login"): clean solid light background,
 /// logo mascot with a speech bubble, pill fields and a solid pill button.
 class LoginScreen extends StatefulWidget {
@@ -183,16 +186,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               loading: loading,
                               onPressed: _submit,
                             ),
-                            const SizedBox(height: 16),
-                            OutlinedButton.icon(
-                              onPressed: loading ? null : _goHome,
-                              style: OutlinedButton.styleFrom(
-                                shape: const StadiumBorder(),
-                                backgroundColor: dark ? scheme.surfaceContainerHigh : Colors.white,
+                            if (_showJustBrowsing) ...[
+                              const SizedBox(height: 16),
+                              OutlinedButton.icon(
+                                onPressed: loading ? null : _goHome,
+                                style: OutlinedButton.styleFrom(
+                                  shape: const StadiumBorder(),
+                                  backgroundColor: dark ? scheme.surfaceContainerHigh : Colors.white,
+                                ),
+                                icon: const Icon(Icons.storefront_outlined),
+                                label: const Text('Just browsing'),
                               ),
-                              icon: const Icon(Icons.storefront_outlined),
-                              label: const Text('Just browsing'),
-                            ),
+                            ],
                             const SizedBox(height: 12),
                             Wrap(
                               // Wrap (not Row) so the link drops to a new line with large text instead of overflowing
