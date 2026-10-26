@@ -207,6 +207,26 @@ class FakeAdminService extends AdminService {
         role: changes['role'] ?? s.role, isActive: changes['is_active'] ?? s.isActive);
   }
 
+  List<PaymentMethodSetting> payMethods_ = [
+    const PaymentMethodSetting(method: PaymentMethod.khqr),
+    const PaymentMethodSetting(method: PaymentMethod.aba, setUp: false),
+    const PaymentMethodSetting(method: PaymentMethod.cod),
+  ];
+  final payChanges = <(PaymentMethod, bool)>[];
+
+  @override
+  Future<List<PaymentMethodSetting>> paymentMethods() async => [...payMethods_];
+
+  @override
+  Future<List<PaymentMethodSetting>> setPaymentMethod(PaymentMethod method, bool enabled) async {
+    final on = [for (final m in payMethods_) if (m.enabled) m.method];
+    if (!enabled && on.length == 1 && on.single == method) {
+      throw ApiException('Keep at least one payment method on', statusCode: 409);
+    }
+    payChanges.add((method, enabled));
+    return payMethods_ = [for (final m in payMethods_) m.method == method ? m.copyWith(enabled: enabled) : m];
+  }
+
   @override
   Future<List<AdminMessage>> messages() async => [...messages_];
 

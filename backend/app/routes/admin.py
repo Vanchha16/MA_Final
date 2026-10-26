@@ -1,6 +1,6 @@
 """Admin API: the shop team manages products, categories, customers, orders and
-Contact messages. Staff and admin accounts can use it; promo codes, blocking customers
-and managing staff are for the owner (admin) only."""
+Contact messages. Staff and admin accounts can use it; promo codes, payment methods,
+blocking customers and managing staff are for the owner (admin) only."""
 from datetime import datetime
 from functools import wraps
 
@@ -11,6 +11,7 @@ from slugify import slugify
 from sqlalchemy import case, func, or_
 from sqlalchemy.orm import selectinload
 
+from .. import payments
 from ..admin_ops import (AdminError, activity, delete_category, mark_refunded, next_statuses, reply_contact, set_customer_active,
                          set_order_status, stats, update_staff)
 from ..extensions import bcrypt, db
@@ -705,6 +706,37 @@ def delete_coupon(coupon_id):
     db.session.delete(coupon)
     db.session.commit()
     return success(None, "Coupon deleted")
+
+
+def _payment_methods():
+    on = payments.enabled_methods()
+    return [{"id": code, "label": label, "enabled": code in on, "set_up": code == "cod" or payments.is_set_up(code)}
+            for code, label in payments.METHODS.items()]
+
+
+@bp.get("/payment-methods")
+@admin_required
+def list_payment_methods():
+    return success(_payment_methods())
+
+
+@bp.put("/payment-methods/<method>")
+@admin_required
+def update_payment_method(method):
+    """Body: {"enabled": false}. Turned-off methods are hidden at checkout; orders
+    already placed with one can still be paid."""
+    if method not in payments.METHODS:
+        return error("Payment method not found", 404)
+    f = Fields(_body())
+    enabled = f.boolean("enabled", label="enabled")
+    if f.errors:
+        return error("Validation failed", 422, f.errors)
+    try:
+        payments.set_enabled(method, enabled)
+    except ValueError as e:
+        return error(str(e), 409)
+    label = payments.METHODS[method]
+    return success(_payment_methods(), f"{label} turned {'on' if enabled else 'off'}")
 
 
 @bp.get("/reviews")

@@ -265,3 +265,11 @@ CREATE TABLE coupons (
   is_active     BOOLEAN       NOT NULL DEFAULT TRUE,
   created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+
+-- Ways to pay the owner can turn off (More > Payment methods). Turned-off
+-- methods are hidden at checkout; a method with no row here is on.
+CREATE TABLE payment_methods (
+  code          VARCHAR(10)   PRIMARY KEY,              -- khqr, aba or cod
+  is_enabled    BOOLEAN       NOT NULL DEFAULT TRUE,
+  updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;

@@ -180,6 +180,9 @@ SCHEMAS = {
                        used={**I, "description": "Orders that used it"}),
     "CouponInput": obj(code=S, description=S, discount_type={"type": "string", "enum": ["percent", "fixed"]}, value=N,
                        min_subtotal=N, max_discount=nullable(N), expires_at=nullable(DT), is_active=B),
+    "AdminPaymentMethod": obj(id={"type": "string", "enum": ["khqr", "aba", "cod"]}, label={**S, "example": "ABA PayWay"},
+                              enabled={**B, "description": "Shown at checkout"},
+                              set_up={**B, "description": "The server has this bank's keys (always true for cash)"}),
     "AdminReview": {"allOf": [ref("Review"), obj(product=obj(id=I, name=S, image_url=nullable(S)),
                                                  customer=obj(id=I, full_name=S, email=S))]},
     "Stats": obj(week=arr(obj(date={"type": "string", "format": "date"}, revenue=N)), week_revenue=N, products=I, low_stock={**I, "description": "In the shop with 3 or fewer left"}, categories=I, customers=I,
@@ -323,13 +326,16 @@ PATHS = {
     # Orders
     "/api/checkout": {"get": op(ORDERS, "Everything the Checkout screen shows",
                                 ok({"allOf": [ref("Cart"), obj(delivery_method=S, delivery_options=arr(obj(id=S, label=S, detail=S, fee=N)),
+                                                               payment_methods=arr({"type": "string", "enum": ["khqr", "aba", "cod"],
+                                                                                    "description": "Ways to pay the owner has not turned off, in checkout order"}),
                                                                addresses=arr(ref("Address")), store=obj(name=S, address=S, hours=S))]}),
                                 params=[CART_COUPON, query("delivery", {"type": "string", "enum": ["standard", "pickup"]})])},
     "/api/orders": {
         "get": op(ORDERS, "My orders, newest first, with their items", ok(arr(ref("OrderDetail"))),
                   description="Unpaid KHQR / ABA PayWay orders past their 15 minutes are cancelled first (stock goes back)."),
         "post": op(ORDERS, "Place an order from the cart", ok(ref("OrderDetail"), "Placed", "201", "Order placed"), errors=(409, 422),
-                   description="Lowers stock and empties the cart. Store pickup is free and needs no address. 409 if an item sold out meanwhile.",
+                   description="Lowers stock and empties the cart. Store pickup is free and needs no address. 409 if an item sold out meanwhile "
+                               "or the payment method was turned off by the shop.",
                    request_body=body(obj(["payment_method"], address_id=I, delivery_method={"type": "string", "enum": ["standard", "pickup"]},
                                          payment_method={"type": "string", "enum": ["khqr", "aba", "cod"]}, coupon=S, note=S),
                                      {"address_id": 1, "delivery_method": "standard", "payment_method": "khqr", "coupon": "WELCOME10", "note": ""})),
@@ -484,6 +490,14 @@ PATHS = {
         "put": op(ADMIN, "Change a promo code (admin only; send only what changes)", ok(ref("AdminCoupon"), message="Coupon saved"),
                   params=[path("coupon_id")], errors=(403, 404, 422), request_body=body(ref("CouponInput"), {"is_active": False})),
         "delete": op(ADMIN, "Delete a promo code (admin only)", ok({"nullable": True}, message="Coupon deleted"), params=[path("coupon_id")], errors=(403, 404)),
+    },
+    "/api/admin/payment-methods": {"get": op(ADMIN, "KHQR, ABA PayWay and cash: on or off (admin only)", ok(arr(ref("AdminPaymentMethod"))), errors=(403,))},
+    "/api/admin/payment-methods/{method}": {
+        "put": op(ADMIN, "Turn a payment method on or off (admin only)", ok(arr(ref("AdminPaymentMethod")), message="ABA PayWay turned off"),
+                  params=[{**path("method"), "schema": {"type": "string", "enum": ["khqr", "aba", "cod"]}}], errors=(403, 404, 409, 422),
+                  description="Turned-off methods are hidden at checkout and refused by Place order; orders already placed with one can "
+                              "still be paid. 409 when it is the last method still on.",
+                  request_body=body(obj(["enabled"], enabled=B), {"enabled": False})),
     },
     "/api/admin/reviews": {"get": op(ADMIN, "All reviews, newest first", ok(page_of(ref("AdminReview"))), errors=(403,),
                                      params=[query("rating", I, "Only this many stars"), query("q", S, "Product or customer name"), *PAGE_PARAMS])},

@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Messages from './pages/Messages';
 import Orders from './pages/Orders';
+import PaymentMethods from './pages/PaymentMethods';
 import ProductForm from './pages/ProductForm';
 import Products from './pages/Products';
 import Reviews from './pages/Reviews';
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="reviews" element={<Reviews />} />
           {isAdmin && <Route path="coupons" element={<Coupons />} />}
           {isAdmin && <Route path="staff" element={<Staff />} />}
+          {isAdmin && <Route path="payment-methods" element={<PaymentMethods />} />}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
