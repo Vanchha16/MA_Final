@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../auth';
 import { Button, Card, Field, Icon } from '../components/ui';
-import { ThemeSwitch } from '../theme';
 
 export default function Login() {
   const { login, notice } = useAuth();
@@ -44,7 +43,6 @@ export default function Login() {
           <Field label="Password" type="password" autoComplete="current-password" value={password} maxLength={200} onChange={(e) => setPassword(e.target.value)} error={fieldErrors.password} required />
           <Button type="submit" icon="login" loading={busy} className="mt-1 w-full">Sign in</Button>
         </form>
-        <ThemeSwitch className="mt-6" />
       </Card>
     </div>
   );
