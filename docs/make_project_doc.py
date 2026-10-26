@@ -125,7 +125,7 @@ talks to one Flask REST API backed by a MySQL database.
 | REST API | The app and the web admin | Python Flask, SQLAlchemy, Flask-JWT-Extended, bcrypt |
 | Web admin | Shop owner and staff on a computer | React 18, Vite, Tailwind CSS, Recharts (at `/dashboard`) |
 | Admin panel (fallback) | Shop owner | Flask-Admin (at `/admin`) |
-| Database | All of the above | MySQL 8 (InnoDB, 16 tables, 19 foreign keys) |
+| Database | All of the above | MySQL 8 (InnoDB, 17 tables, 19 foreign keys) |
 | Payments | Customers | Bakong KHQR (bakong-khqr) and ABA PayWay (signed REST calls) |
 | Source control | The team | Git and GitHub ({REPO}) |
 
@@ -156,7 +156,7 @@ object that says which field is wrong. Logged-in calls send `Authorization: Bear
 
 erd = read("database/ERD.md")
 erd = re.sub(r"\]\((erd[^)]*\.(png|pdf|dbml|svg))\)", r"](database/\1)", erd)
-erd_ch = chapter(erd, 4, "Database Design and ER Diagram", drop=("All 16 tables", "image [", "(GitHub draws", "Files:", "[`erd", "`python docs"))
+erd_ch = chapter(erd, 4, "Database Design and ER Diagram", drop=("All 17 tables", "image [", "(GitHub draws", "Files:", "[`erd", "`python docs"))
 erd_ch = erd_ch.replace("![ERD](database/erd.png)", "## Overview diagram\n\n![Overview ER diagram](database/erd.png)")
 erd_ch += """
 ## Tables
@@ -208,7 +208,7 @@ python -m venv .venv
 pip install -r requirements.txt
 copy .env.example .env              (then set the MySQL URL and the keys in .env)
 mysql -u root -p -e "CREATE DATABASE ecommerce_db CHARACTER SET utf8mb4"
-flask --app run init-db             (creates the 16 tables, InnoDB with foreign keys)
+flask --app run init-db             (creates the 17 tables, InnoDB with foreign keys)
 flask --app run seed                (categories, series, 35 products, demo accounts)
 python run.py                       (http://localhost:5000/api/health)
 ```

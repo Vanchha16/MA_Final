@@ -64,7 +64,7 @@ talks to one Flask REST API backed by a MySQL database.
 | REST API | The app and the web admin | Python Flask, SQLAlchemy, Flask-JWT-Extended, bcrypt |
 | Web admin | Shop owner and staff on a computer | React 18, Vite, Tailwind CSS, Recharts (at `/dashboard`) |
 | Admin panel (fallback) | Shop owner | Flask-Admin (at `/admin`) |
-| Database | All of the above | MySQL 8 (InnoDB, 16 tables, 19 foreign keys) |
+| Database | All of the above | MySQL 8 (InnoDB, 17 tables, 19 foreign keys) |
 | Payments | Customers | Bakong KHQR (bakong-khqr) and ABA PayWay (signed REST calls) |
 | Source control | The team | Git and GitHub (https://github.com/Vanchha16/MA_Final) |
 
@@ -2446,7 +2446,7 @@ python -m venv .venv
 pip install -r requirements.txt
 copy .env.example .env              (then set the MySQL URL and the keys in .env)
 mysql -u root -p -e "CREATE DATABASE ecommerce_db CHARACTER SET utf8mb4"
-flask --app run init-db             (creates the 16 tables, InnoDB with foreign keys)
+flask --app run init-db             (creates the 17 tables, InnoDB with foreign keys)
 flask --app run seed                (categories, series, 35 products, demo accounts)
 python run.py                       (http://localhost:5000/api/health)
 ```
