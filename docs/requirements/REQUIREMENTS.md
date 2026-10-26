@@ -269,18 +269,37 @@ Order items copy the product name and unit price at the time of purchase, so old
 
 ### 8.1 Data flow
 
-How data moves between the people, the system and its stores. Circles are processes, rectangles are outside parties, open boxes are data stores (Yourdon/DeMarco notation). Source: [make_dfd.py](diagrams/make_dfd.py).
+How data moves between the people, the system and its stores. Rectangles are outside parties (external entities), numbered circles are processes, open boxes are data stores (Yourdon/DeMarco notation). Source: [make_dfd.py](diagrams/make_dfd.py).
 
-**Level 0 (context):** the whole system as one process, with everyone it exchanges data with.
+**Level 0 (main system):** the whole shop as one process, with everyone it exchanges data with.
 
 ![Data flow diagram, level 0](diagrams/dfd-level-0.png)
 
-**Level 1:** the system split into its seven main processes and seven data stores. Customer is drawn twice (the copy has a corner stroke) to keep the lines short.
+**Level 1 (main functions):** the system split into six processes and seven data stores.
 
 ![Data flow diagram, level 1](diagrams/dfd-level-1.png)
 
 | Process | What it does | Data stores |
 |---|---|---|
+| 1.0 User & Profile Management | Register, log in, edit the profile, reset a forgotten password by email code | D1 Users |
+| 2.0 Catalog Browsing & Search | Home, categories, search with suggestions, filters | D2 Products & Categories |
+| 3.0 Cart & Checkout | Cart lines, promo code, stock check, save the order | D3 Cart & Favorites, D7 Coupons & Pay Methods, D4 Orders |
+| 4.0 Payment Processing | Ask Bakong or ABA PayWay for a QR, watch for the payment, mark the order paid | D5 Payments, D4 Orders |
+| 5.0 Order Tracking & Notifications | Order tracker and a notification at every step | D4 Orders, D6 Notifications |
+| 6.0 Shop Administration | Staff and owner: products, stock, order steps, staff accounts, promo codes, payment methods | D2, D4, D7 |
+
+**Level 2 (process 3.0 Cart & Checkout):** the busiest process, split into its four steps.
+
+![Data flow diagram, level 2: 3.0 Cart and Checkout](diagrams/dfd-level-2.png)
+
+| Step | What it does |
+|---|---|
+| 3.1 Manage Cart | Add, change the quantity or remove items; says when stock runs short |
+| 3.2 Price & Promo Code | Subtotal, promo discount and delivery fee; only payment methods that are on are offered |
+| 3.3 Check Stock & Save Order | Checks the stock again, takes it and saves the order, so nothing is sold twice |
+| 3.4 Choose Payment | KHQR or ABA goes to 4.0 Payment Processing; cash is confirmed straight away and goes to 5.0 Order Tracking |
+
+---|---|---|
 | 1.0 Manage accounts | Register, log in, reset a forgotten password by email code | D1 Users |
 | 2.0 Browse products | Home, categories, search and filters | D2 Products |
 | 3.0 Cart and wishlist | Add, update and remove cart lines; save favorites | D3 Cart and favorites |
