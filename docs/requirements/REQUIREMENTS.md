@@ -251,7 +251,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 
 ## 8. Data requirements
 
-The system stores 16 entities. The nine suggested in the brief are all present:
+The system stores 17 entities. The nine suggested in the brief are all present:
 
 | Brief entity | Table | Extra tables we needed |
 |---|---|---|
@@ -262,10 +262,32 @@ The system stores 16 entities. The nine suggested in the brief are all present:
 | Cart | `cart_items` | `notifications` |
 | Orders | `orders` | `contact_messages` |
 | Order Items | `order_items` | `reviews` - star ratings, tags and comments |
-| Addresses | `addresses` | |
+| Addresses | `addresses` | `payment_methods` - KHQR, ABA PayWay or cash turned off by the owner |
 | Favorites / Wishlist | `favorites` | |
 
 Order items copy the product name and unit price at the time of purchase, so old orders stay correct after a price change. Full diagram: [ERD](../database/ERD.md) ([PNG](../database/erd.png), [PDF](../database/erd.pdf)); full definitions: [schema.sql](../database/schema.sql).
+
+### 8.1 Data flow
+
+How data moves between the people, the system and its stores. Circles are processes, rectangles are outside parties, open boxes are data stores (Yourdon/DeMarco notation). Source: [make_dfd.py](diagrams/make_dfd.py).
+
+**Level 0 (context):** the whole system as one process, with everyone it exchanges data with.
+
+![Data flow diagram, level 0](diagrams/dfd-level-0.png)
+
+**Level 1:** the system split into its seven main processes and seven data stores. Customer is drawn twice (the copy has a corner stroke) to keep the lines short.
+
+![Data flow diagram, level 1](diagrams/dfd-level-1.png)
+
+| Process | What it does | Data stores |
+|---|---|---|
+| 1.0 Manage accounts | Register, log in, reset a forgotten password by email code | D1 Users |
+| 2.0 Browse products | Home, categories, search and filters | D2 Products |
+| 3.0 Cart and wishlist | Add, update and remove cart lines; save favorites | D3 Cart and favorites |
+| 4.0 Place order | Check stock and the promo code, take the stock, save the order | D2, D3, D4 Orders, D7 Coupons and payment methods |
+| 5.0 Pay for order | Ask Bakong or ABA PayWay for a QR, watch for the payment, mark the order paid | D4, D5 Payments |
+| 6.0 Track and notify | Order tracker and notifications at every step | D4, D6 Notifications |
+| 7.0 Run the shop | Staff and owner: products, stock, order steps, staff accounts, promo codes, payment methods | D1, D2, D4, D7 |
 
 ---
 
