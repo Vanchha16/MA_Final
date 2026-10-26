@@ -5,9 +5,10 @@ import '../core/constants/api_constants.dart';
 import '../core/network/api_client.dart';
 import '../models/admin.dart';
 import '../models/catalog.dart';
+import '../models/order.dart';
 
 /// The shop team's calls (/api/admin). Every one needs a staff or admin login;
-/// staff, promo codes and blocking customers need the owner's admin login.
+/// staff, promo codes, payment methods and blocking customers need the owner's admin login.
 /// Lists ask for up to 100 rows, plenty for this shop.
 class AdminService {
   final _api = ApiClient.instance;
@@ -89,6 +90,16 @@ class AdminService {
 
   /// Send only what changes. A new role, a new password or disabling signs them out.
   Future<StaffMember> updateStaff(int id, Map<String, dynamic> changes) async => StaffMember.fromJson(await _api.put('$_base/staff/$id', data: changes));
+
+  // ---------- Payment methods (owner only) ----------
+
+  Future<List<PaymentMethodSetting>> paymentMethods() async =>
+      [for (final m in await _api.get('$_base/payment-methods') as List) PaymentMethodSetting.fromJson(m)];
+
+  /// Turns a way to pay on or off; returns all of them again. The server refuses
+  /// to turn off the last one that is on.
+  Future<List<PaymentMethodSetting>> setPaymentMethod(PaymentMethod method, bool enabled) async =>
+      [for (final m in await _api.put('$_base/payment-methods/${method.apiValue}', data: {'enabled': enabled}) as List) PaymentMethodSetting.fromJson(m)];
 
   // ---------- Contact messages ----------
 

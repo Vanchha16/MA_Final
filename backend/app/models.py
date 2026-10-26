@@ -501,6 +501,16 @@ class Coupon(TimestampMixin, db.Model):
         return round(min(off, subtotal), 2)
 
 
+class PaymentMethod(db.Model):
+    """A way to pay that the owner can turn off (More > Payment methods). Turned-off
+    methods are hidden at checkout; a method with no row here is on."""
+    __tablename__ = "payment_methods"
+
+    code = db.Column(db.String(10), primary_key=True)  # khqr, aba or cod
+    is_enabled = db.Column(db.Boolean, nullable=False, default=True)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+
+
 # WAMP's MySQL makes MyISAM tables by default, and MyISAM silently drops every
 # foreign key. InnoDB keeps them (and the relationships show in the ERD tools).
 for _table in db.metadata.tables.values():

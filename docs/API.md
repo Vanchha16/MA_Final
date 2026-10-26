@@ -538,7 +538,7 @@ Everything the Checkout screen shows.
 
 Parameters: `coupon` (query) - Promo code to preview, e.g. WELCOME10, `delivery` (query).
 
-Response 200: `data` = `Cart` + {delivery_method: string, delivery_options: list of {id, label, detail, fee}, addresses: list of `Address`, store: {name, address, hours}}
+Response 200: `data` = `Cart` + {delivery_method: string, delivery_options: list of {id, label, detail, fee}, payment_methods: list of `khqr` \| `aba` \| `cod`, addresses: list of `Address`, store: {name, address, hours}}
 
 Errors: 401
 
@@ -556,7 +556,7 @@ Errors: 401
 
 Place an order from the cart.
 
-Lowers stock and empties the cart. Store pickup is free and needs no address. 409 if an item sold out meanwhile.
+Lowers stock and empties the cart. Store pickup is free and needs no address. 409 if an item sold out meanwhile or the payment method was turned off by the shop.
 
 Body (application/json): {address_id: integer, delivery_method: `standard` \| `pickup`, payment_method: `khqr` \| `aba` \| `cod`, coupon: string, note: string}
 
@@ -885,6 +885,8 @@ The shop team: a staff or admin account's token. Routes marked (admin only) need
 | `POST` | `/api/admin/coupons` | Add a promo code (admin only) | admin |
 | `PUT` | `/api/admin/coupons/{coupon_id}` | Change a promo code (admin only; send only what changes) | admin |
 | `DELETE` | `/api/admin/coupons/{coupon_id}` | Delete a promo code (admin only) | admin |
+| `GET` | `/api/admin/payment-methods` | KHQR, ABA PayWay and cash: on or off (admin only) | admin |
+| `PUT` | `/api/admin/payment-methods/{method}` | Turn a payment method on or off (admin only) | admin |
 | `GET` | `/api/admin/reviews` | All reviews, newest first | admin |
 | `DELETE` | `/api/admin/reviews/{review_id}` | Remove a review (spam, rude words) | admin |
 
@@ -1285,6 +1287,34 @@ Response 200: `data` = any or null
 
 Errors: 401, 403, 404
 
+#### `GET /api/admin/payment-methods`
+
+KHQR, ABA PayWay and cash: on or off (admin only).
+
+Response 200: `data` = list of `AdminPaymentMethod`
+
+Errors: 401, 403
+
+#### `PUT /api/admin/payment-methods/{method}`
+
+Turn a payment method on or off (admin only).
+
+Turned-off methods are hidden at checkout and refused by Place order; orders already placed with one can still be paid. 409 when it is the last method still on.
+
+Parameters: `method` (path, required).
+
+Body (application/json): {enabled: boolean}
+
+```json
+{
+  "enabled": false
+}
+```
+
+Response 200: `data` = list of `AdminPaymentMethod`
+
+Errors: 401, 403, 404, 409, 422
+
 #### `GET /api/admin/reviews`
 
 All reviews, newest first.
@@ -1442,6 +1472,10 @@ Errors: 401, 403, 404
 ### CouponInput
 
 {code: string, description: string, discount_type: `percent` \| `fixed`, value: number, min_subtotal: number, max_discount: number or null, expires_at: string or null, is_active: boolean}
+
+### AdminPaymentMethod
+
+{id: `khqr` \| `aba` \| `cod`, label: string, enabled: boolean, set_up: boolean}
 
 ### AdminReview
 

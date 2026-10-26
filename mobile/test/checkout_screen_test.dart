@@ -277,4 +277,14 @@ void main() {
     expect(find.byKey(const Key('pay_logo_aba')), findsOneWidget);
     expect(find.bySemanticsLabel('ABA Bank'), findsOneWidget);
   });
+
+  testWidgets('a method the shop turned off is not offered; KHQR off picks the next one', (tester) async {
+    final service = FakeCheckoutService(addresses: [FakeCheckoutService.home])..payMethods = [PaymentMethod.aba, PaymentMethod.cod];
+    await _pump(tester, service);
+    expect(find.byKey(const Key('pay_khqr')), findsNothing);
+    expect(find.byKey(const Key('pay_aba')), findsOneWidget);
+    expect(find.byKey(const Key('pay_cod')), findsOneWidget);
+    await _place(tester);
+    expect(service.placed.single['payment'], PaymentMethod.aba);
+  });
 }

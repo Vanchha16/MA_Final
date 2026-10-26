@@ -6,6 +6,7 @@ import 'package:ecommerce_app/models/user.dart';
 import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/screens/admin/admin_more_screen.dart';
 import 'package:ecommerce_app/screens/admin/admin_orders_screen.dart';
+import 'package:ecommerce_app/screens/admin/admin_payment_methods_screen.dart';
 import 'package:ecommerce_app/screens/admin/admin_products_screen.dart';
 import 'package:ecommerce_app/screens/admin/admin_staff_screen.dart';
 import 'package:flutter/material.dart';
@@ -201,9 +202,39 @@ void main() {
     expect(find.byType(AdminStaffScreen), findsOneWidget);
   });
 
+  testWidgets('Payment methods: turn ABA PayWay off and on; the last one cannot go off', (tester) async {
+    final s = await _pump(tester, (s) => AdminMoreScreen(service: s, onShop: () {}));
+    await tester.tap(find.byKey(const Key('admin_more_payments')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdminPaymentMethodsScreen), findsOneWidget);
+    expect(find.byKey(const Key('pay_logo_khqr')), findsOneWidget);
+    String status(String id) => tester.widget<Text>(find.byKey(Key('admin_pay_status_$id'))).data!;
+    expect(status('khqr'), 'On · customers can choose it');
+    expect(status('aba'), 'On · the server has no bank keys for it yet');
+
+    await tester.tap(find.byKey(const Key('admin_pay_aba')));
+    await tester.pumpAndSettle();
+    expect(s.payChanges, [(PaymentMethod.aba, false)]);
+    expect(status('aba'), 'Off · hidden at checkout');
+    expect(find.text('ABA PayWay is now hidden at checkout.'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('admin_pay_khqr')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('admin_pay_cod')));
+    await tester.pumpAndSettle();
+    expect(find.text('Keep at least one payment method on'), findsOneWidget);
+    expect(tester.widget<Switch>(find.byKey(const Key('admin_pay_cod'))).value, isTrue); // flipped back
+
+    await tester.tap(find.byKey(const Key('admin_pay_aba')));
+    await tester.pumpAndSettle();
+    expect(s.payChanges.last, (PaymentMethod.aba, true));
+    expect(find.text('ABA PayWay is back at checkout.'), findsOneWidget);
+  });
+
   testWidgets('Staff role: no Staff row, and Customers has no Block button', (tester) async {
     await _pump(tester, (s) => AdminMoreScreen(service: s, onShop: () {}), role: 'staff');
     expect(find.byKey(const Key('admin_more_staff')), findsNothing);
+    expect(find.byKey(const Key('admin_more_payments')), findsNothing);
     expect(find.textContaining('/dashboard'), findsOneWidget);
     await tester.tap(find.byKey(const Key('admin_more_customers')));
     await tester.pumpAndSettle();

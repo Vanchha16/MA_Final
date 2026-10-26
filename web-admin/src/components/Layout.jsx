@@ -18,7 +18,7 @@ export default function Layout() {
     ['/customers', 'group', 'Customers'],
     ['/messages', 'forum', 'Messages', stats?.open_messages],
     ['/reviews', 'star', 'Reviews'],
-    ...(isAdmin ? [['/coupons', 'sell', 'Coupons'], ['/staff', 'badge', 'Staff']] : []),
+    ...(isAdmin ? [['/coupons', 'sell', 'Coupons'], ['/staff', 'badge', 'Staff'], ['/payment-methods', 'payments', 'Payment methods']] : []),
   ];
   return (
     <div className="flex min-h-screen">

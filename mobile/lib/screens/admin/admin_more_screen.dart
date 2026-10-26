@@ -16,13 +16,15 @@ import '../../widgets/pill_button.dart';
 import '../auth/login_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
+import 'admin_payment_methods_screen.dart';
 import 'admin_staff_screen.dart';
 import 'admin_widgets.dart';
 
 const _violet = Color(0xFF7C3AED);
 const _cyan = Color(0xFF06B6D4);
 
-/// Admin More tab: Messages, Customers, Categories, Staff (owner only), then the
+/// Admin More tab: Messages, Customers, Categories, Staff and Payment methods
+/// (owner only), then the
 /// shop, the web admin, Settings and Log out.
 class AdminMoreScreen extends StatelessWidget {
   final AdminService service;
@@ -78,6 +80,7 @@ class AdminMoreScreen extends StatelessWidget {
           row('customers', Icons.people_rounded, AppTheme.success, 'Customers', owner ? 'Orders, spending, block or unblock' : 'Orders and spending', () => push(AdminCustomersScreen(service: service))),
           row('categories', Icons.category_rounded, _violet, 'Categories', 'Add, rename or delete', () => push(AdminCategoriesScreen(service: service))),
           if (owner) row('staff', Icons.badge_rounded, AppTheme.abaNavy, 'Staff', 'Add staff, roles, passwords', () => push(AdminStaffScreen(service: service))),
+          if (owner) row('payments', Icons.payments_rounded, AppTheme.success, 'Payment methods', 'Turn KHQR, ABA PayWay or cash on or off', () => push(AdminPaymentMethodsScreen(service: service))),
         ]),
         const SizedBox(height: 12),
         group([

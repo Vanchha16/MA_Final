@@ -15,6 +15,9 @@ class FakeCheckoutService extends CheckoutService {
 
   /// Thrown by the next placeOrder, if set.
   ApiException? placeError;
+
+  /// The ways to pay the shop has not turned off.
+  List<PaymentMethod> payMethods = PaymentMethod.values;
   int _nextId = 100;
 
   FakeCheckoutService({List<Address>? addresses, Map<int, int> cart = const {1: 1, 3: 2}})
@@ -56,6 +59,7 @@ class FakeCheckoutService extends CheckoutService {
       addresses: [...saved.where((a) => a.isDefault), ...saved.where((a) => !a.isDefault)],
       storeName: 'Anime World Shop',
       storeAddress: '#88 St. 315, Toul Kork, Phnom Penh',
+      paymentMethods: payMethods,
     );
   }
 

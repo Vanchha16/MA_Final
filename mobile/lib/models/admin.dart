@@ -192,6 +192,22 @@ class StaffMember {
       );
 }
 
+/// A way to pay and whether customers see it at checkout (GET /api/admin/payment-methods, owner only).
+class PaymentMethodSetting {
+  final PaymentMethod method;
+  final bool enabled;
+
+  /// The server has this bank's keys (always true for cash).
+  final bool setUp;
+
+  const PaymentMethodSetting({required this.method, this.enabled = true, this.setUp = true});
+
+  PaymentMethodSetting copyWith({bool? enabled}) => PaymentMethodSetting(method: method, enabled: enabled ?? this.enabled, setUp: setUp);
+
+  factory PaymentMethodSetting.fromJson(Map<String, dynamic> json) =>
+      PaymentMethodSetting(method: PaymentMethod.fromApi(json['id']), enabled: json['enabled'] ?? true, setUp: json['set_up'] ?? true);
+}
+
 /// A Contact message (GET /api/admin/contact-messages).
 class AdminMessage {
   final int id;

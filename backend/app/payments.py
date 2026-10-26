@@ -12,8 +12,27 @@ from flask import current_app, url_for
 
 from . import notify, payway
 from .extensions import db
-from .models import Payment
+from .models import Payment, PaymentMethod
 from .utils.clock import utcnow
+
+# Every way to pay, in checkout order
+METHODS = {"khqr": "Bakong KHQR", "aba": "ABA PayWay", "cod": "Cash on delivery"}
+
+
+def enabled_methods():
+    """The methods customers can choose at checkout (all of them unless the owner turned some off)."""
+    off = {m.code for m in PaymentMethod.query.filter_by(is_enabled=False)}
+    return [code for code in METHODS if code not in off]
+
+
+def set_enabled(code, enabled):
+    """Turns a method on or off. Raises ValueError when it would leave no way to pay."""
+    if not enabled and enabled_methods() == [code]:
+        raise ValueError("Keep at least one payment method on")
+    method = db.session.get(PaymentMethod, code) or PaymentMethod(code=code)
+    method.is_enabled = enabled
+    db.session.add(method)
+    db.session.commit()
 
 
 def _khqr():

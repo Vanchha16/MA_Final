@@ -97,7 +97,10 @@ class CheckoutPreview {
   final List<Address> addresses;
   final String storeName, storeAddress;
 
-  const CheckoutPreview({required this.cart, required this.deliveryOptions, required this.addresses, required this.storeName, required this.storeAddress});
+  /// Ways to pay the shop has not turned off, in checkout order.
+  final List<PaymentMethod> paymentMethods;
+
+  const CheckoutPreview({required this.cart, required this.deliveryOptions, required this.addresses, required this.storeName, required this.storeAddress, this.paymentMethods = PaymentMethod.values});
 
   factory CheckoutPreview.fromJson(Map<String, dynamic> json) => CheckoutPreview(
         cart: Cart.fromJson(json),
@@ -105,6 +108,7 @@ class CheckoutPreview {
         addresses: [for (final a in json['addresses'] as List) Address.fromJson(a)],
         storeName: json['store']['name'],
         storeAddress: json['store']['address'],
+        paymentMethods: json['payment_methods'] == null ? PaymentMethod.values : [for (final m in json['payment_methods'] as List) PaymentMethod.fromApi(m)],
       );
 }
 

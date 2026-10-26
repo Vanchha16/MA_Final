@@ -17,7 +17,6 @@ from ..utils.validators import Fields, json_body
 
 bp = Blueprint("orders", __name__, url_prefix="/api")
 
-PAYMENT_METHODS = ("cod", "khqr", "aba")
 STORE = {"name": "Anime World Shop", "address": "#88 St. 315, Boeung Kak 2, Toul Kork, Phnom Penh", "hours": "9:00 - 20:00"}
 
 
@@ -149,6 +148,7 @@ def checkout_preview():
         **summary,
         "delivery_method": delivery,
         "delivery_options": _delivery_options(summary["subtotal"]),
+        "payment_methods": payments.enabled_methods(),
         "addresses": [a.to_dict() for a in _addresses(user_id)],
         "store": STORE,
     })
@@ -169,7 +169,7 @@ def place_order():
     user_id = _user_id()
     f = Fields(data)
     delivery = f.choice("delivery_method", DELIVERY_METHODS, default="standard", message="Choose Standard or Store pickup")
-    payment = f.choice("payment_method", PAYMENT_METHODS, required=True, message="Choose KHQR, ABA PayWay or Cash on delivery")
+    payment = f.choice("payment_method", tuple(payments.METHODS), required=True, message="Choose KHQR, ABA PayWay or Cash on delivery")
     code = f.text("coupon", max_len=30, label="Promo code")
     note = f.text("note", max_len=255, label="The note")
     address_id = data.get("address_id")
@@ -178,6 +178,9 @@ def place_order():
         f.errors["address_id"] = "Choose a delivery address"
     if f.errors:
         return error("Validation failed", 422, f.errors)
+    if payment not in payments.enabled_methods():
+        problem = f"{payments.METHODS[payment]} is turned off right now. Please choose another way to pay."
+        return error(problem, 409, {"payment_method": problem})
 
     items = _cart_items(user_id)
     if not items:
