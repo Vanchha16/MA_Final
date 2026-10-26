@@ -63,7 +63,7 @@ void main() {
     expect(find.text('Welcome back!'), findsOneWidget);
     expect(find.byIcon(Icons.waving_hand_rounded), findsOneWidget);
     expect(find.text('Login'), findsOneWidget);
-    expect(find.text('Just browsing'), findsOneWidget);
+    expect(find.text('Just browsing'), findsNothing); // hidden for now
     expect(find.bySemanticsLabel('Login'), findsOneWidget);
   });
 
