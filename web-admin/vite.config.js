@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // Served by Flask at /dashboard (npm run build writes into the backend's static folder).
-// npm run dev serves it at http://localhost:5173/dashboard/ and forwards /api and /uploads to Flask.
+// npm run dev serves it at http://localhost:5173/dashboard/ and forwards /api, /uploads and
+// /static (the logo and payment logos) to Flask.
 export default defineConfig({
   base: '/dashboard/',
   plugins: [react()],
@@ -15,6 +16,7 @@ export default defineConfig({
     proxy: {
       '/api': 'http://127.0.0.1:5000',
       '/uploads': 'http://127.0.0.1:5000',
+      '/static': 'http://127.0.0.1:5000',
     },
   },
   test: { environment: 'jsdom', setupFiles: './src/test/setup.js', globals: true },
