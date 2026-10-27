@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';

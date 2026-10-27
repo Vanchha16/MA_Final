@@ -2464,7 +2464,7 @@ flutter run
 ```
 
 The app calls `http://10.0.2.2:5000/api` (the Android emulator's address for the computer). On a real
-phone, set `baseUrl` in `mobile/lib/core/constants/api_constants.dart` to the computer's Wi-Fi IP.
+phone, set `baseUrl` in `mobile/lib/api/api_domain.dart` to the computer's Wi-Fi IP.
 
 ## 6.4 Web admin
 

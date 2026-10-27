@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/admin.dart';
 import '../../models/order.dart';

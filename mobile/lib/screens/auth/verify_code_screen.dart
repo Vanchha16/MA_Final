@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';

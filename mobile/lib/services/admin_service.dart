@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../core/constants/api_constants.dart';
-import '../core/network/api_client.dart';
+import '../api/api_end_point.dart';
+import '../api/api_client.dart';
 import '../models/admin.dart';
 import '../models/catalog.dart';
 import '../models/order.dart';
@@ -12,7 +12,7 @@ import '../models/order.dart';
 /// Lists ask for up to 100 rows, plenty for this shop.
 class AdminService {
   final _api = ApiClient.instance;
-  static const _base = ApiConstants.admin;
+  static const _base = ApiEndPoint.admin;
 
   Future<AdminStats> stats() async => AdminStats.fromJson(await _api.get('$_base/stats'));
 
@@ -58,7 +58,7 @@ class AdminService {
   Future<AdminProduct> deletePhoto(int productId, int imageId) async =>
       AdminProduct.fromJson(await _api.delete('$_base/products/$productId/images/$imageId'));
 
-  Future<List<Series>> series() async => [for (final s in await _api.get(ApiConstants.series) as List) Series.fromJson(s)];
+  Future<List<Series>> series() async => [for (final s in await _api.get(ApiEndPoint.series) as List) Series.fromJson(s)];
 
   // ---------- Categories ----------
 

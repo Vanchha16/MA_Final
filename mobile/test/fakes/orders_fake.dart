@@ -1,4 +1,4 @@
-import 'package:ecommerce_app/core/network/api_client.dart';
+import 'package:ecommerce_app/api/api_client.dart';
 import 'package:ecommerce_app/models/order.dart';
 import 'package:ecommerce_app/services/order_service.dart';
 

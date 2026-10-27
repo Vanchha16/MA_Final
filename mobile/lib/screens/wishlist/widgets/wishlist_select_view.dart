@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/format.dart';
+import '../../../helpers/format.dart';
 import '../../../models/catalog.dart';
 import '../../../widgets/pill_button.dart';
 import '../../../widgets/product_image.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../models/order.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/checkout_service.dart';

@@ -1,4 +1,4 @@
-import 'package:ecommerce_app/core/network/api_client.dart';
+import 'package:ecommerce_app/api/api_client.dart';
 import 'package:ecommerce_app/core/theme/app_theme.dart';
 import 'package:ecommerce_app/l10n/l10n.dart';
 import 'package:ecommerce_app/models/user.dart';

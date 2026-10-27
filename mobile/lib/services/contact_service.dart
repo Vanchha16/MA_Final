@@ -1,5 +1,5 @@
-import '../core/constants/api_constants.dart';
-import '../core/network/api_client.dart';
+import '../api/api_end_point.dart';
+import '../api/api_client.dart';
 
 /// What a Contact message is about (the API's topic values).
 enum ContactTopic {
@@ -17,7 +17,7 @@ class ContactService {
 
   /// Sends a message from the Contact screen; the reply comes back as a notification.
   Future<void> send({required ContactTopic topic, required String message, int? orderId}) async {
-    await _api.post(ApiConstants.contact, data: {
+    await _api.post(ApiEndPoint.contact, data: {
       'topic': topic.name,
       'message': message,
       if (orderId != null && topic.aboutAnOrder) 'order_id': orderId,

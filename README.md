@@ -138,7 +138,7 @@ flutter run
 ```
 
 The app calls `http://10.0.2.2:5000/api` (Android emulator -> your PC).
-On a real phone, change `baseUrl` in `mobile/lib/core/constants/api_constants.dart` to your PC's Wi-Fi IP.
+On a real phone, change `baseUrl` in `mobile/lib/api/api_domain.dart` to your PC's Wi-Fi IP.
 
 ## Git workflow (one branch per screen)
 
