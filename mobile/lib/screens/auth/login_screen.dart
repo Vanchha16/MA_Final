@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/error_banner.dart';
 import '../../core/theme/app_theme.dart';

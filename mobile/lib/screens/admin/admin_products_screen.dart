@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/utils/format.dart';
+import '../../helpers/format.dart';
 import '../../models/admin.dart';
 import '../../models/catalog.dart';
 import '../../services/admin_service.dart';

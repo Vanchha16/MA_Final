@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/network/api_client.dart';
-import '../../core/utils/format.dart';
+import '../../api/api_client.dart';
+import '../../helpers/format.dart';
 import '../../models/order.dart';
 import '../../providers/shop_provider.dart';
 import '../../widgets/app_toast.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/catalog.dart';
 import '../../services/review_service.dart';

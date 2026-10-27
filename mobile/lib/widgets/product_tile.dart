@@ -3,7 +3,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 import '../core/theme/app_theme.dart';
 import 'wishlist_fx.dart';
-import '../core/utils/format.dart';
+import '../helpers/format.dart';
 import '../models/catalog.dart';
 import 'cart_drive.dart';
 import 'product_card.dart';

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/catalog.dart';
 import '../../providers/shop_provider.dart';

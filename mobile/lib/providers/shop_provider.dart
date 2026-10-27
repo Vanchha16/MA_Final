@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../core/network/api_client.dart';
+import '../api/api_client.dart';
 import '../models/cart.dart';
 import '../models/catalog.dart';
 import '../services/shop_service.dart';

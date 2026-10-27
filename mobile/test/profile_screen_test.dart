@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:ecommerce_app/core/network/api_client.dart';
+import 'package:ecommerce_app/api/api_client.dart';
 import 'package:ecommerce_app/models/profile_summary.dart';
 import 'package:ecommerce_app/models/user.dart';
 import 'package:ecommerce_app/providers/auth_provider.dart';

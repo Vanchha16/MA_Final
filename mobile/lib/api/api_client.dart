@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../constants/api_constants.dart';
+import 'api_domain.dart';
 
 /// Thrown for any failed API call. [errors] holds per-field validation messages.
 class ApiException implements Exception {
@@ -34,7 +34,7 @@ class ApiClient {
   static final ApiClient instance = ApiClient._();
 
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: ApiConstants.baseUrl,
+    baseUrl: ApiDomain.baseUrl,
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 15),
     headers: {'Accept': 'application/json'},

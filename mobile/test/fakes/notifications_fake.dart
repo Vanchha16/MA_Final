@@ -1,4 +1,4 @@
-import 'package:ecommerce_app/core/network/api_client.dart';
+import 'package:ecommerce_app/api/api_client.dart';
 import 'package:ecommerce_app/models/shop_notification.dart';
 import 'package:ecommerce_app/services/notification_service.dart';
 

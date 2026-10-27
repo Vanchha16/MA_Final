@@ -6,9 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/utils/format.dart';
+import '../../helpers/format.dart';
 import '../../models/cart.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/cart_service.dart';

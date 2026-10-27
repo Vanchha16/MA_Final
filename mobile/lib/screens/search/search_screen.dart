@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/utils/format.dart';
-import '../../core/utils/recent_searches.dart';
+import '../../helpers/format.dart';
+import '../../helpers/recent_searches.dart';
 import '../../models/catalog.dart';
 import '../../services/catalog_service.dart';
 import '../../widgets/circle_back_button.dart';

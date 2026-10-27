@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../core/theme/app_theme.dart';
-import '../core/utils/format.dart';
+import '../helpers/format.dart';
 import '../models/order.dart';
 
 /// A till receipt for a paid order: shop name, lines, total, how it was paid,

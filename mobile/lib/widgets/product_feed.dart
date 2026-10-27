@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
 
-import '../core/network/api_client.dart';
+import '../api/api_client.dart';
 import '../models/catalog.dart';
 import '../providers/shop_provider.dart';
 import '../services/catalog_service.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/format.dart';
+import '../../../helpers/format.dart';
 import '../../../models/catalog.dart';
 
 /// Small pieces shared by the three wishlist views.

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../core/theme/app_theme.dart';
-import '../core/utils/format.dart';
+import '../helpers/format.dart';
 import '../models/cart.dart';
 import '../models/catalog.dart';
 import 'pill_button.dart';

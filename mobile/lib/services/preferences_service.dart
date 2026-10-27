@@ -1,4 +1,4 @@
-import '../core/network/api_client.dart';
+import '../api/api_client.dart';
 
 /// Settings > Notify me about (saved on the account, so the server skips those messages).
 class NotifyPrefs {

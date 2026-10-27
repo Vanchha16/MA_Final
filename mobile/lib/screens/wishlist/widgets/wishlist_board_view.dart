@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/format.dart';
+import '../../../helpers/format.dart';
 import '../../../models/catalog.dart';
 import '../../../widgets/product_image.dart';
 import '../../shop/shop_actions.dart';

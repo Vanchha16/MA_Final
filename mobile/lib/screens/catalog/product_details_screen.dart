@@ -7,10 +7,10 @@ import 'package:provider/provider.dart';
 import 'package:readmore/readmore.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
-import '../../core/network/api_client.dart';
+import '../../api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/wishlist_fx.dart';
-import '../../core/utils/format.dart';
+import '../../helpers/format.dart';
 import '../../models/catalog.dart';
 import '../../providers/shop_provider.dart';
 import '../../services/catalog_service.dart';
