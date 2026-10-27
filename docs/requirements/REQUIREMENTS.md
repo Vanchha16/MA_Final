@@ -299,15 +299,6 @@ How data moves between the people, the system and its stores. Rectangles are out
 | 3.3 Check Stock & Save Order | Checks the stock again, takes it and saves the order, so nothing is sold twice |
 | 3.4 Choose Payment | KHQR or ABA goes to 4.0 Payment Processing; cash is confirmed straight away and goes to 5.0 Order Tracking |
 
----|---|---|
-| 1.0 Manage accounts | Register, log in, reset a forgotten password by email code | D1 Users |
-| 2.0 Browse products | Home, categories, search and filters | D2 Products |
-| 3.0 Cart and wishlist | Add, update and remove cart lines; save favorites | D3 Cart and favorites |
-| 4.0 Place order | Check stock and the promo code, take the stock, save the order | D2, D3, D4 Orders, D7 Coupons and payment methods |
-| 5.0 Pay for order | Ask Bakong or ABA PayWay for a QR, watch for the payment, mark the order paid | D4, D5 Payments |
-| 6.0 Track and notify | Order tracker and notifications at every step | D4, D6 Notifications |
-| 7.0 Run the shop | Staff and owner: products, stock, order steps, staff accounts, promo codes, payment methods | D1, D2, D4, D7 |
-
 ---
 
 ## 9. Screen inventory

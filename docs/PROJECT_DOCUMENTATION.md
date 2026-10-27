@@ -10,7 +10,7 @@ E-Commerce Mobile Application - Complete Project Documentation
 
 **Course:** Mobile Application (Year 4, SU25) - Final Project\
 **Institute:** SETEC Institute\
-**Date:** 23 October 2026\
+**Date:** 27 October 2026\
 **Source code:** <https://github.com/Vanchha16/MA_Final>
 
 **Lecturer:** Ly Lay
@@ -341,7 +341,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 
 ## 2.8 Data requirements
 
-The system stores 16 entities. The nine suggested in the brief are all present:
+The system stores 17 entities. The nine suggested in the brief are all present:
 
 | Brief entity | Table | Extra tables we needed |
 |---|---|---|
@@ -352,10 +352,42 @@ The system stores 16 entities. The nine suggested in the brief are all present:
 | Cart | `cart_items` | `notifications` |
 | Orders | `orders` | `contact_messages` |
 | Order Items | `order_items` | `reviews` - star ratings, tags and comments |
-| Addresses | `addresses` | |
+| Addresses | `addresses` | `payment_methods` - KHQR, ABA PayWay or cash turned off by the owner |
 | Favorites / Wishlist | `favorites` | |
 
 Order items copy the product name and unit price at the time of purchase, so old orders stay correct after a price change. Full diagram: ERD (PNG, PDF); full definitions: schema.sql.
+
+### 2.8.1 Data flow
+
+How data moves between the people, the system and its stores. Rectangles are outside parties (external entities), numbered circles are processes, open boxes are data stores (Yourdon/DeMarco notation). Source: make_dfd.py.
+
+**Level 0 (main system):** the whole shop as one process, with everyone it exchanges data with.
+
+![Data flow diagram, level 0](diagrams/dfd-level-0.png)
+
+**Level 1 (main functions):** the system split into six processes and seven data stores.
+
+![Data flow diagram, level 1](diagrams/dfd-level-1.png)
+
+| Process | What it does | Data stores |
+|---|---|---|
+| 1.0 User & Profile Management | Register, log in, edit the profile, reset a forgotten password by email code | D1 Users |
+| 2.0 Catalog Browsing & Search | Home, categories, search with suggestions, filters | D2 Products & Categories |
+| 3.0 Cart & Checkout | Cart lines, promo code, stock check, save the order | D3 Cart & Favorites, D7 Coupons & Pay Methods, D4 Orders |
+| 4.0 Payment Processing | Ask Bakong or ABA PayWay for a QR, watch for the payment, mark the order paid | D5 Payments, D4 Orders |
+| 5.0 Order Tracking & Notifications | Order tracker and a notification at every step | D4 Orders, D6 Notifications |
+| 6.0 Shop Administration | Staff and owner: products, stock, order steps, staff accounts, promo codes, payment methods | D2, D4, D7 |
+
+**Level 2 (process 3.0 Cart & Checkout):** the busiest process, split into its four steps.
+
+![Data flow diagram, level 2: 3.0 Cart and Checkout](diagrams/dfd-level-2.png)
+
+| Step | What it does |
+|---|---|
+| 3.1 Manage Cart | Add, change the quantity or remove items; says when stock runs short |
+| 3.2 Price & Promo Code | Subtotal, promo discount and delivery fee; only payment methods that are on are offered |
+| 3.3 Check Stock & Save Order | Checks the stock again, takes it and saves the order, so nothing is sold twice |
+| 3.4 Choose Payment | KHQR or ABA goes to 4.0 Payment Processing; cash is confirmed straight away and goes to 5.0 Order Tracking |
 
 
 ## 2.9 Screen inventory
@@ -1508,7 +1540,7 @@ Everything the Checkout screen shows.
 
 Parameters: `coupon` (query) - Promo code to preview, e.g. WELCOME10, `delivery` (query).
 
-Response 200: `data` = `Cart` + {delivery_method: string, delivery_options: list of {id, label, detail, fee}, addresses: list of `Address`, store: {name, address, hours}}
+Response 200: `data` = `Cart` + {delivery_method: string, delivery_options: list of {id, label, detail, fee}, payment_methods: list of `khqr` \| `aba` \| `cod`, addresses: list of `Address`, store: {name, address, hours}}
 
 Errors: 401
 
@@ -1526,7 +1558,7 @@ Errors: 401
 
 Place an order from the cart.
 
-Lowers stock and empties the cart. Store pickup is free and needs no address. 409 if an item sold out meanwhile.
+Lowers stock and empties the cart. Store pickup is free and needs no address. 409 if an item sold out meanwhile or the payment method was turned off by the shop.
 
 Body (application/json): {address_id: integer, delivery_method: `standard` \| `pickup`, payment_method: `khqr` \| `aba` \| `cod`, coupon: string, note: string}
 
@@ -1855,6 +1887,8 @@ The shop team: a staff or admin account's token. Routes marked (admin only) need
 | `POST` | `/api/admin/coupons` | Add a promo code (admin only) | admin |
 | `PUT` | `/api/admin/coupons/{coupon_id}` | Change a promo code (admin only; send only what changes) | admin |
 | `DELETE` | `/api/admin/coupons/{coupon_id}` | Delete a promo code (admin only) | admin |
+| `GET` | `/api/admin/payment-methods` | KHQR, ABA PayWay and cash: on or off (admin only) | admin |
+| `PUT` | `/api/admin/payment-methods/{method}` | Turn a payment method on or off (admin only) | admin |
 | `GET` | `/api/admin/reviews` | All reviews, newest first | admin |
 | `DELETE` | `/api/admin/reviews/{review_id}` | Remove a review (spam, rude words) | admin |
 
@@ -2255,6 +2289,34 @@ Response 200: `data` = any or null
 
 Errors: 401, 403, 404
 
+#### `GET /api/admin/payment-methods`
+
+KHQR, ABA PayWay and cash: on or off (admin only).
+
+Response 200: `data` = list of `AdminPaymentMethod`
+
+Errors: 401, 403
+
+#### `PUT /api/admin/payment-methods/{method}`
+
+Turn a payment method on or off (admin only).
+
+Turned-off methods are hidden at checkout and refused by Place order; orders already placed with one can still be paid. 409 when it is the last method still on.
+
+Parameters: `method` (path, required).
+
+Body (application/json): {enabled: boolean}
+
+```json
+{
+  "enabled": false
+}
+```
+
+Response 200: `data` = list of `AdminPaymentMethod`
+
+Errors: 401, 403, 404, 409, 422
+
 #### `GET /api/admin/reviews`
 
 All reviews, newest first.
@@ -2412,6 +2474,10 @@ Errors: 401, 403, 404
 ### CouponInput
 
 {code: string, description: string, discount_type: `percent` \| `fixed`, value: number, min_subtotal: number, max_discount: number or null, expires_at: string or null, is_active: boolean}
+
+### AdminPaymentMethod
+
+{id: `khqr` \| `aba` \| `cod`, label: string, enabled: boolean, set_up: boolean}
 
 ### AdminReview
 
@@ -2809,5 +2875,13 @@ CREATE TABLE coupons (
   expires_at    DATETIME      NULL,
   is_active     BOOLEAN       NOT NULL DEFAULT TRUE,
   created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Ways to pay the owner can turn off (More > Payment methods). Turned-off
+-- methods are hidden at checkout; a method with no row here is on.
+CREATE TABLE payment_methods (
+  code          VARCHAR(10)   PRIMARY KEY,              -- khqr, aba or cod
+  is_enabled    BOOLEAN       NOT NULL DEFAULT TRUE,
+  updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 ```
