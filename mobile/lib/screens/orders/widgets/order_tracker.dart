@@ -195,7 +195,7 @@ class _Steps extends StatelessWidget {
   final primary = Theme.of(context).colorScheme.primary;
   const violet = Color(0xFF7C3AED);
   return switch (order.stage) {
-    OrderStage.toPay => ('Waiting for your KHQR payment', dark ? AppTheme.amber : const Color(0xFFB45309), Icons.qr_code_2_rounded),
+    OrderStage.toPay => ('Waiting for your ${order.paymentMethod.shortName} payment', dark ? AppTheme.amber : const Color(0xFFB45309), Icons.qr_code_2_rounded),
     OrderStage.waitingConfirm => ('Waiting for the shop to confirm', primary, Icons.hourglass_top_rounded),
     OrderStage.packing => (pickup ? 'Packing your order · ready soon' : 'Packing your order · ships soon', primary, Icons.inventory_2_rounded),
     OrderStage.onTheWay => (
