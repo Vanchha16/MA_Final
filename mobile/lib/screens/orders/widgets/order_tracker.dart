@@ -203,7 +203,7 @@ class _Steps extends StatelessWidget {
       dark ? const Color(0xFFA78BFA) : violet,
       pickup ? Icons.storefront_rounded : Icons.local_shipping_rounded,
     ),
-    OrderStage.delivered => ('Delivered · enjoy your order!', AppTheme.success, Icons.celebration_rounded),
+    OrderStage.delivered => (pickup ? 'Picked up · enjoy your order!' : 'Delivered · enjoy your order!', AppTheme.success, Icons.celebration_rounded),
     OrderStage.cancelled => ('Cancelled', Theme.of(context).colorScheme.onSurfaceVariant, Icons.cancel_rounded),
   };
 }

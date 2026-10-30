@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { STATUS } from '../lib/format';
+import { PICKUP_STATUS, STATUS, isPickup } from '../lib/format';
 
 /** Material Symbols icon (no emoji anywhere). */
 export const Icon = ({ name, className = '', size = 20, title }) => (
@@ -16,9 +16,9 @@ export const Chip = ({ className = 'bg-brand-tint text-brand', children }) => (
   <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11.5px] font-bold whitespace-nowrap ${className}`}>{children}</span>
 );
 
-export const StatusChip = ({ status }) => {
+export const StatusChip = ({ status, order }) => {
   const s = STATUS[status] || STATUS.pending;
-  return <Chip className={s.cls}>{s.label}</Chip>;
+  return <Chip className={s.cls}>{(isPickup(order) && PICKUP_STATUS[status]) || s.label}</Chip>;
 };
 
 export const Spinner = ({ className = '' }) => (

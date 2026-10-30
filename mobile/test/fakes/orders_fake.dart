@@ -4,12 +4,13 @@ import 'package:ecommerce_app/services/order_service.dart';
 
 import 'shop_fakes.dart';
 
-Order fakeOrder(int id, String status, {PaymentMethod pay = PaymentMethod.khqr, String paid = 'paid', List<OrderLine>? lines, double total = 50, String? cancelledBy}) => Order(
+Order fakeOrder(int id, String status, {PaymentMethod pay = PaymentMethod.khqr, String paid = 'paid', List<OrderLine>? lines, double total = 50, String? cancelledBy, DeliveryMethod delivery = DeliveryMethod.standard}) => Order(
       id: id,
       number: 'AWS-2026101$id-000$id',
       status: status,
       paymentMethod: pay,
       paymentStatus: paid,
+      deliveryMethod: delivery,
       subtotal: total,
       total: total,
       itemCount: (lines ?? const [OrderLine(productId: 3, name: 'One Piece Booster Pack #3', unitPrice: 5, quantity: 2)]).fold(0, (s, l) => s + l.quantity),
@@ -35,7 +36,7 @@ class FakeOrderService extends OrderService {
                 OrderLine(productId: 1, name: demoProducts[0].name, unitPrice: 169, quantity: 1),
               ]),
               fakeOrder(2, 'confirmed'),
-              fakeOrder(3, 'shipped', pay: PaymentMethod.cod, paid: 'unpaid'),
+              fakeOrder(3, 'shipped'),
               fakeOrder(4, 'delivered', lines: const [
                 OrderLine(productId: 3, name: 'One Piece Booster Pack #3', unitPrice: 5, quantity: 1),
                 OrderLine(name: 'A figure we no longer sell', unitPrice: 20, quantity: 1),

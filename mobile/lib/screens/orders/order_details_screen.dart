@@ -124,7 +124,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     Widget? bottom;
     if (o.stage == OrderStage.toPay) {
       bottom = PillButton(key: const Key('details_pay'), label: 'Pay ${formatPrice(o.total)} with KHQR', leadingIcon: Icons.qr_code_2_rounded, onPressed: _pay);
-    } else if (o.stage == OrderStage.onTheWay) {
+    } else if (o.canMarkReceived) {
       bottom = PillButton(key: const Key('details_received'), label: 'Got it', leadingIcon: Icons.check_rounded, loading: _busy, onPressed: _busy ? null : _received);
     } else if (!o.stage.active) {
       bottom = PillButton(key: const Key('details_again'), label: 'Buy again', leadingIcon: Icons.replay_rounded, onPressed: () => OrderActions.buyAgain(context, o));

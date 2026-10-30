@@ -460,6 +460,12 @@ class AppLocalizationsKm extends AppLocalizations {
   String get stageDelivered => 'បានដឹកដល់';
 
   @override
+  String get stageReady => 'រួចរាល់សម្រាប់មកយក';
+
+  @override
+  String get stagePickedUp => 'បានមកយកហើយ';
+
+  @override
   String get stageCancelled => 'បានលុបចោល';
 
   @override
@@ -520,6 +526,9 @@ class AppLocalizationsKm extends AppLocalizations {
   String get actShip => 'ដឹកចេញ';
 
   @override
+  String get actReady => 'រួចរាល់';
+
+  @override
   String get actReply => 'ឆ្លើយតប';
 
   @override
@@ -544,6 +553,9 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get doneShipped => 'បានដឹកចេញ · បានប្រាប់អតិថិជន';
+
+  @override
+  String get doneReady => 'រួចរាល់ · បានប្រាប់អតិថិជន';
 
   @override
   String get doneReplied => 'បានឆ្លើយតប';

@@ -288,7 +288,7 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 1. The customer opens My Orders from Profile.
 2. The app shows orders in progress (with an animated tracker) and past orders (`GET /api/orders`).
 3. The customer opens an order; the app shows the tracker (placed, paid, shipped, delivered), the items with photos, the address, the payment and the totals.
-4. Optional (UC-17): when the order is on the way the customer taps "Got it" to confirm it was received; for a finished order they can tap "Buy again" (the items go back into the cart); for a paid order they can view, save or share the receipt.
+4. Optional (UC-17): when a paid KHQR or ABA PayWay order is on the way the customer taps "Got it" to confirm it was received (the shop finishes store pickup and cash orders, because it hands them over or takes the money); for a finished order they can tap "Buy again" (the items go back into the cart); for a paid order they can view, save or share the receipt.
 
 **Alternative flows**
 - A1 (step 2): no orders yet. Empty state with "Start shopping".

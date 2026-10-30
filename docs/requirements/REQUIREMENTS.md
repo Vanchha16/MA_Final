@@ -136,7 +136,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | FR-O04b | For **ABA PayWay** orders the app shows PayWay's KHQR with a countdown and an **Open ABA Mobile** button (or a link to get the app); the payment is detected the same way and a receipt is printed. | C (bonus: online payment) |
 | FR-O05 | **Order history** lists the customer's orders, current ones first, with status and photos. | M |
 | FR-O06 | **Order details** show a status tracker (placed, paid, shipped, delivered), items, address, payment and totals. | M |
-| FR-O07 | The customer can **confirm an order was received**, **buy the same items again**, and **view, save or share the receipt** of a paid order. | S |
+| FR-O07 | The customer can **confirm a paid delivery was received** (the shop finishes store pickup and cash orders), **buy the same items again**, and **view, save or share the receipt** of a paid order. | S |
 | FR-O08 | The customer can **cancel an order** until it ships (pending or confirmed), with an optional reason (changed my mind, ordered by mistake, found a better price, it takes too long). The stock goes back on sale. If it was paid by KHQR or ABA PayWay, the order shows **Refund pending**, then **Refunded** once the shop has sent the money back; each step is a notification. | S |
 
 ### 4.5 Additional features (FR-A)

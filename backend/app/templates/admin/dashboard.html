@@ -89,7 +89,7 @@
               {% if step %}
               <form method="post" action="{{ url_for('.quick_order', order_id=o.id) }}" class="m-0">
                 {{ quick.csrf_token }}<input type="hidden" name="status" value="{{ step }}">
-                <button class="btn btn-sm btn-primary py-0 px-3">{{ step_label[step] }}</button>
+                <button class="btn btn-sm btn-primary py-0 px-3">{{ step_label(o, step) }}</button>
               </form>
               {% else %}<span class="chip t-amber">Waiting for {{ pay_names.get(o.payment_method, 'KHQR') }}</span>{% endif %}
             </td>
@@ -112,7 +112,7 @@
           {% if e.action in ('confirm', 'ship') %}
             <form method="post" action="{{ url_for('.quick_order', order_id=e.order_id) }}" class="m-0">
               {{ quick.csrf_token }}<input type="hidden" name="status" value="{{ 'confirmed' if e.action == 'confirm' else 'shipped' }}">
-              <button class="btn btn-sm btn-primary py-0 px-3">{{ 'Confirm' if e.action == 'confirm' else 'Ship it' }}</button>
+              <button class="btn btn-sm btn-primary py-0 px-3">{{ 'Confirm' if e.action == 'confirm' else ('Mark ready' if e.pickup else 'Ship it') }}</button>
             </form>
           {% elif e.action == 'restock' %}
             <form method="post" action="{{ url_for('.quick_restock', product_id=e.product_id) }}" class="m-0">

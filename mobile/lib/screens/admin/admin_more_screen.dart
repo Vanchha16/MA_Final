@@ -482,7 +482,7 @@ class _AdminCustomerScreenState extends State<AdminCustomerScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 5),
                           child: Row(children: [
                             Expanded(child: Text(o.number, style: const TextStyle(fontWeight: FontWeight.w600))),
-                            AdminChip(orderStatusLook(o.status).$1, orderStatusLook(o.status).$2),
+                            AdminChip(orderStatusLook(o.status, pickup: o.isPickup).$1, orderStatusLook(o.status).$2),
                             const SizedBox(width: 10),
                             Text(formatPrice(o.total), style: const TextStyle(fontWeight: FontWeight.bold)),
                           ]),

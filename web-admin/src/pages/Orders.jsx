@@ -4,7 +4,7 @@ import { api } from '../api';
 import OrderDrawer from '../components/OrderDrawer';
 import { useToast } from '../components/toast';
 import { Button, Card, Chip, Empty, ErrorBox, FilterChips, Icon, PageTitle, Photo, SearchBox, StatusChip } from '../components/ui';
-import { STEP_DONE, STEP_LABEL, dateTime, money, nextStep, paymentName, paymentText } from '../lib/format';
+import { dateTime, money, nextStep, paymentName, paymentText, stepDone, stepLabel } from '../lib/format';
 import { useStats } from '../stats';
 
 const FILTERS = [
@@ -56,7 +56,7 @@ export default function Orders() {
     setBusy(o.id);
     try {
       const updated = await api.put(`/admin/orders/${o.id}/status`, { status });
-      toast(`${updated.order_number} ${STEP_DONE[status]} · the customer was told`);
+      toast(`${updated.order_number} ${stepDone(status, updated)} · the customer was told`);
       await Promise.all([load(), refresh()]);
     } catch (e) {
       toast(e.message, { error: true });
@@ -93,10 +93,10 @@ export default function Orders() {
                     <td><div className="flex items-center gap-2"><Photo src={o.image_url} size={32} /><span className="text-muted">{o.item_count}</span></div></td>
                     <td className="font-bold">{money(o.total)}</td>
                     <td className="text-muted">{paymentText(o)}</td>
-                    <td><StatusChip status={o.status} /></td>
+                    <td><StatusChip status={o.status} order={o} /></td>
                     <td className="text-right" onClick={(ev) => ev.stopPropagation()}>
                       {step ? (
-                        <Button small loading={busy === o.id} onClick={() => move(o, step)} data-testid={`orders-step-${o.id}`}>{STEP_LABEL[step]}</Button>
+                        <Button small loading={busy === o.id} onClick={() => move(o, step)} data-testid={`orders-step-${o.id}`}>{stepLabel(step, o)}</Button>
                       ) : o.payment_status === 'refund_pending' ? <Chip className="bg-amber-100 text-amber-700"><Icon name="currency_exchange" size={13} />Refund to send</Chip>
                         : o.status === 'pending' ? <Chip className="bg-amber-100 text-amber-700">Waiting for {paymentName(o)}</Chip> : null}
                     </td>

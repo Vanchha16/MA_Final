@@ -608,7 +608,7 @@ Errors: 401, 404, 409, 422
 
 "Got it": I have the parcel.
 
-Only for shipped orders. Cash orders count as paid.
+Only for a paid online order being delivered. 409 for store pickup and cash orders: the shop finishes those.
 
 Parameters: `order_id` (path, required).
 

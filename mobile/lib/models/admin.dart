@@ -46,6 +46,9 @@ class ActivityEvent {
   final ActivityAction? action;
   final int? orderId, messageId, productId;
 
+  /// A store pickup order: the shop gets it ready instead of shipping it.
+  final bool pickup;
+
   const ActivityEvent({
     required this.id,
     required this.kind,
@@ -59,6 +62,7 @@ class ActivityEvent {
     this.orderId,
     this.messageId,
     this.productId,
+    this.pickup = false,
   });
 
   factory ActivityEvent.fromJson(Map<String, dynamic> json) => ActivityEvent(
@@ -71,6 +75,7 @@ class ActivityEvent {
         status: json['status'],
         orderNumber: json['order_number'],
         action: ActivityAction.values.asNameMap()[json['action']],
+        pickup: json['pickup'] == true,
         orderId: json['order_id'],
         messageId: json['message_id'],
         productId: json['product_id'],
