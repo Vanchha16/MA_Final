@@ -106,6 +106,17 @@ void main() {
     await _end(tester);
   });
 
+  testWidgets('an unpaid ABA order talks about ABA PayWay, not KHQR', (tester) async {
+    await _pump(tester, service: FakeOrderService(orders: [fakeOrder(9, 'pending', pay: PaymentMethod.aba, paid: 'unpaid')]));
+    expect(_inOrder(9, find.text('Waiting for your ABA PayWay payment')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('order_9')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.textContaining('with ABA PayWay'), findsOneWidget);
+    expect(find.textContaining('KHQR'), findsNothing);
+    await _end(tester);
+  });
+
   testWidgets('order details: tracker, items, totals, and Got it', (tester) async {
     await _pump(tester);
     await tester.tap(find.byKey(const Key('order_3')));
