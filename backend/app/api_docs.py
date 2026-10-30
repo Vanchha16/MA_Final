@@ -348,7 +348,7 @@ PATHS = {
                                                  request_body=body(obj(reason=S), {"reason": "Changed my mind"}))},
     "/api/orders/{order_id}/received": {"post": op(ORDERS, '"Got it": I have the parcel', ok(ref("OrderDetail"), message="Enjoy your order!"),
                                                    params=[path("order_id")], errors=(404, 409),
-                                                   description="Only for shipped orders. Cash orders count as paid.")},
+                                                   description="Only for a paid online order being delivered. 409 for store pickup and cash orders: the shop finishes those.")},
 
     # Online payment
     "/api/orders/{order_id}/khqr": {"post": op(PAY, "Make (once) the order's Bakong KHQR code", ok(ref("PaymentState")), params=[path("order_id")],

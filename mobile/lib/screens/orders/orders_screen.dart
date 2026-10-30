@@ -305,7 +305,7 @@ class _ActiveCard extends StatelessWidget {
     Widget? action;
     if (order.stage == OrderStage.toPay) {
       action = _SmallButton(key: Key('order_pay_${order.id}'), label: 'Pay now', icon: Icons.qr_code_2_rounded, onTap: onPay);
-    } else if (order.stage == OrderStage.onTheWay) {
+    } else if (order.canMarkReceived) {
       action = _SmallButton(key: Key('order_received_${order.id}'), label: 'Got it', icon: Icons.check_rounded, busy: busy, onTap: onReceived);
     }
     return Padding(
@@ -397,7 +397,7 @@ class _PastRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final delivered = order.stage == OrderStage.delivered;
     final color = delivered || order.refunded ? AppTheme.success : (order.refundPending ? AppTheme.amber : scheme.onSurfaceVariant);
-    final pill = delivered ? 'Delivered' : (order.refundPending ? 'Refund pending' : (order.refunded ? 'Refunded' : 'Cancelled'));
+    final pill = delivered ? (order.isPickup ? 'Picked up' : 'Delivered') : (order.refundPending ? 'Refund pending' : (order.refunded ? 'Refunded' : 'Cancelled'));
     final date = order.createdAt == null ? '' : DateFormat('d MMM, HH:mm').format(order.createdAt!.toLocal());
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),

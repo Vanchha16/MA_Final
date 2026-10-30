@@ -118,7 +118,7 @@ export default function Customers() {
                 <h3 className="mb-2 text-[11px] font-bold tracking-wider text-muted">ORDERS</h3>
                 {detail.orders.map((o) => (
                   <div key={o.id} className="flex items-center gap-3 py-1.5">
-                    <span className="flex-1 font-semibold">{o.order_number}</span><StatusChip status={o.status} /><span className="w-20 text-right font-bold">{money(o.total)}</span>
+                    <span className="flex-1 font-semibold">{o.order_number}</span><StatusChip status={o.status} order={o} /><span className="w-20 text-right font-bold">{money(o.total)}</span>
                   </div>
                 ))}
               </section>

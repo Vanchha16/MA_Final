@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api';
-import { STEP_DONE, STEP_LABEL, cancelledByText, dateTime, money, nextStep, paymentName, paymentText } from '../lib/format';
+import { STEP_LABEL, cancelledByText, dateTime, isPickup, money, nextStep, paymentName, paymentText, stepDone, stepLabelLong } from '../lib/format';
 import { useToast } from './toast';
 import { Button, ConfirmDialog, Drawer, ErrorBox, Icon, Photo, Spinner, StatusChip } from './ui';
 
@@ -33,7 +33,7 @@ export default function OrderDrawer({ orderId, onClose, onChanged }) {
     try {
       const updated = await api.put(`/admin/orders/${orderId}/status`, { status });
       setOrder(updated);
-      toast(`${updated.order_number} ${STEP_DONE[status]} · the customer was told`);
+      toast(`${updated.order_number} ${stepDone(status, updated)} · the customer was told`);
       onChanged?.(updated);
     } catch (e) {
       toast(e.message, { error: true });
@@ -77,8 +77,8 @@ export default function OrderDrawer({ orderId, onClose, onChanged }) {
             <div className="flex gap-3">
               {canCancel && <Button variant="dangerOutline" className="flex-1" onClick={() => setAskCancel(true)}>Cancel order</Button>}
               {next && (
-                <Button className="flex-[2]" icon={next === 'shipped' ? 'local_shipping' : 'check'} loading={busy === next} onClick={() => move(next)} data-testid="drawer-next">
-                  {next === 'confirmed' ? 'Confirm order' : next === 'shipped' ? 'Mark shipped' : 'Mark delivered'}
+                <Button className="flex-[2]" icon={next === 'shipped' ? (isPickup(order) ? 'storefront' : 'local_shipping') : 'check'} loading={busy === next} onClick={() => move(next)} data-testid="drawer-next">
+                  {stepLabelLong(next, order)}
                 </Button>
               )}
             </div>
@@ -90,7 +90,7 @@ export default function OrderDrawer({ orderId, onClose, onChanged }) {
         {order && (
           <div className="flex flex-col gap-5 text-[13.5px]">
             <div className="flex items-center gap-3">
-              <StatusChip status={order.status} />
+              <StatusChip status={order.status} order={order} />
               <span className="text-muted">{dateTime(order.created_at)}</span>
               <span className="ml-auto text-xl font-extrabold text-brand">{money(order.total)}</span>
             </div>

@@ -1,3 +1,4 @@
+import 'package:ecommerce_app/models/order.dart';
 import 'package:ecommerce_app/core/theme/app_theme.dart';
 import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/screens/orders/orders_screen.dart';
@@ -45,7 +46,7 @@ void main() {
     expect(find.byKey(const Key('order_pay_1')), findsOneWidget);
     expect(_inOrder(2, find.textContaining('Packing your order')), findsOneWidget);
     expect(_inOrder(3, find.textContaining('On the way')), findsOneWidget);
-    expect(_inOrder(3, find.text('Confirmed')), findsOneWidget); // cash orders are confirmed, not paid
+    expect(_inOrder(3, find.text('Paid')), findsOneWidget);
 
     // Filled up to where each order is
     expect(_inOrder(1, find.byKey(const Key('step_done_0'))), findsOneWidget);
@@ -86,6 +87,25 @@ void main() {
     await _end(tester);
   });
 
+  testWidgets('cash and pickup orders have no Got it: the shop finishes them', (tester) async {
+    await _pump(tester, service: FakeOrderService(orders: [
+      fakeOrder(6, 'shipped', pay: PaymentMethod.cod, paid: 'unpaid'),
+      fakeOrder(7, 'shipped', delivery: DeliveryMethod.pickup),
+    ]));
+    expect(_inOrder(6, find.text('Confirmed')), findsOneWidget);
+    expect(find.byKey(const Key('order_received_6')), findsNothing);
+    expect(find.byKey(const Key('order_received_7')), findsNothing);
+    expect(_inOrder(7, find.text('Ready to pick up at our Toul Kork shop')), findsOneWidget);
+    await _end(tester);
+  });
+
+  testWidgets('a finished pickup order says Picked up', (tester) async {
+    await _pump(tester, service: FakeOrderService(orders: [fakeOrder(8, 'delivered', delivery: DeliveryMethod.pickup)]));
+    expect(_inOrder(8, find.text('Picked up')), findsOneWidget);
+    expect(_inOrder(8, find.text('Delivered')), findsNothing);
+    await _end(tester);
+  });
+
   testWidgets('order details: tracker, items, totals, and Got it', (tester) async {
     await _pump(tester);
     await tester.tap(find.byKey(const Key('order_3')));
@@ -93,14 +113,13 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     expect(find.text('Order details'), findsOneWidget);
     expect(find.byKey(const Key('details_number')), findsOneWidget);
-    expect(find.text('Pay the rider in USD or riel'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('details_received')));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Delivered · enjoy your order!'), findsOneWidget);
     expect(find.byKey(const Key('details_again')), findsOneWidget);
-    expect(find.text('Paid'), findsOneWidget);
+    expect(find.text('Paid'), findsNWidgets(2)); // the tracker and the payment card
     await _end(tester);
   });
 

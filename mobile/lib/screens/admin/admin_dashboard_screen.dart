@@ -113,7 +113,7 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
     try {
       final done = switch (e.action!) {
         ActivityAction.confirm => await widget.service.setOrderStatus(e.orderId!, 'confirmed').then((_) => l.doneConfirmed),
-        ActivityAction.ship => await widget.service.setOrderStatus(e.orderId!, 'shipped').then((_) => l.doneShipped),
+        ActivityAction.ship => await widget.service.setOrderStatus(e.orderId!, 'shipped').then((_) => e.pickup ? l.doneReady : l.doneShipped),
         ActivityAction.reply => await widget.service.reply(e.messageId!, reply!).then((_) => l.doneReplied),
         ActivityAction.restock => await widget.service.setStock(e.productId!, count!).then((_) => l.doneRestocked(count)),
         ActivityAction.refund => await widget.service.markRefunded(e.orderId!).then((_) => l.doneRefunded),
@@ -426,10 +426,10 @@ class _EventRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     var (icon, color) = _look(event.kind);
-    if (done != null && event.action == ActivityAction.ship) (icon, color) = (Icons.local_shipping_rounded, AppTheme.success);
+    if (done != null && event.action == ActivityAction.ship) (icon, color) = (event.pickup ? Icons.storefront_rounded : Icons.local_shipping_rounded, AppTheme.success);
     final label = switch (event.action) {
       ActivityAction.confirm => l.actConfirm,
-      ActivityAction.ship => l.actShip,
+      ActivityAction.ship => event.pickup ? l.actReady : l.actShip,
       ActivityAction.reply => l.actReply,
       ActivityAction.restock => l.actRestock,
       ActivityAction.refund => l.actRefund,

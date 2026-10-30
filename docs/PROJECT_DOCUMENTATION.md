@@ -10,7 +10,7 @@ E-Commerce Mobile Application - Complete Project Documentation
 
 **Course:** Mobile Application (Year 4, SU25) - Final Project\
 **Institute:** SETEC Institute\
-**Date:** 27 October 2026\
+**Date:** 30 October 2026\
 **Source code:** <https://github.com/Vanchha16/MA_Final>
 
 **Lecturer:** Ly Lay
@@ -230,7 +230,7 @@ Priority: **M** = Must (in the brief), **S** = Should (needed for a real shop), 
 | FR-O04b | For **ABA PayWay** orders the app shows PayWay's KHQR with a countdown and an **Open ABA Mobile** button (or a link to get the app); the payment is detected the same way and a receipt is printed. | C (bonus: online payment) |
 | FR-O05 | **Order history** lists the customer's orders, current ones first, with status and photos. | M |
 | FR-O06 | **Order details** show a status tracker (placed, paid, shipped, delivered), items, address, payment and totals. | M |
-| FR-O07 | The customer can **confirm an order was received**, **buy the same items again**, and **view, save or share the receipt** of a paid order. | S |
+| FR-O07 | The customer can **confirm a paid delivery was received** (the shop finishes store pickup and cash orders), **buy the same items again**, and **view, save or share the receipt** of a paid order. | S |
 | FR-O08 | The customer can **cancel an order** until it ships (pending or confirmed), with an optional reason (changed my mind, ordered by mistake, found a better price, it takes too long). The stock goes back on sale. If it was paid by KHQR or ABA PayWay, the order shows **Refund pending**, then **Refunded** once the shop has sent the money back; each step is a notification. | S |
 
 ### 2.4.5 Additional features (FR-A)
@@ -766,7 +766,7 @@ The main use cases in detail. Numbers in the flows are steps; "A" flows are alte
 1. The customer opens My Orders from Profile.
 2. The app shows orders in progress (with an animated tracker) and past orders (`GET /api/orders`).
 3. The customer opens an order; the app shows the tracker (placed, paid, shipped, delivered), the items with photos, the address, the payment and the totals.
-4. Optional (UC-17): when the order is on the way the customer taps "Got it" to confirm it was received; for a finished order they can tap "Buy again" (the items go back into the cart); for a paid order they can view, save or share the receipt.
+4. Optional (UC-17): when a paid KHQR or ABA PayWay order is on the way the customer taps "Got it" to confirm it was received (the shop finishes store pickup and cash orders, because it hands them over or takes the money); for a finished order they can tap "Buy again" (the items go back into the cart); for a paid order they can view, save or share the receipt.
 
 **Alternative flows**
 - A1 (step 2): no orders yet. Empty state with "Start shopping".
@@ -1610,7 +1610,7 @@ Errors: 401, 404, 409, 422
 
 "Got it": I have the parcel.
 
-Only for shipped orders. Cash orders count as paid.
+Only for a paid online order being delivered. 409 for store pickup and cash orders: the shop finishes those.
 
 Parameters: `order_id` (path, required).
 

@@ -462,6 +462,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stageDelivered => 'Delivered';
 
   @override
+  String get stageReady => 'Ready to pick up';
+
+  @override
+  String get stagePickedUp => 'Picked up';
+
+  @override
   String get stageCancelled => 'Cancelled';
 
   @override
@@ -521,6 +527,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actShip => 'Ship it';
 
   @override
+  String get actReady => 'Mark ready';
+
+  @override
   String get actReply => 'Reply';
 
   @override
@@ -545,6 +554,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get doneShipped => 'Shipped · customer told';
+
+  @override
+  String get doneReady => 'Ready · customer told';
 
   @override
   String get doneReplied => 'Replied';

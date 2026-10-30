@@ -32,9 +32,19 @@ export const STATUS = {
   cancelled: { label: 'Cancelled', cls: 'bg-slate-100 text-slate-500' },
 };
 
+/** Store pickup uses the same statuses, with its own words. */
+export const PICKUP_STATUS = { shipped: 'Ready', delivered: 'Picked up' };
+export const isPickup = (order) => order?.delivery_method === 'pickup';
+
 /** Button text for moving an order to [status]. */
 export const STEP_LABEL = { confirmed: 'Confirm', shipped: 'Ship', delivered: 'Delivered', cancelled: 'Cancel' };
 export const STEP_DONE = { confirmed: 'confirmed', shipped: 'marked shipped', delivered: 'marked delivered', cancelled: 'cancelled' };
+
+export const stepLabel = (step, order) => (isPickup(order) && PICKUP_STATUS[step]) || STEP_LABEL[step];
+export const stepLabelLong = (step, order) =>
+  step === 'confirmed' ? 'Confirm order' : `Mark ${(isPickup(order) ? PICKUP_STATUS[step] : STATUS[step].label).toLowerCase()}`;
+export const stepDone = (step, order) =>
+  isPickup(order) && PICKUP_STATUS[step] ? `marked ${PICKUP_STATUS[step].toLowerCase()}` : STEP_DONE[step];
 
 /** The forward step of an order (not Cancel), or null. */
 export const nextStep = (order) => (order.next_statuses || []).find((s) => s !== 'cancelled') || null;

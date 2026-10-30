@@ -140,8 +140,8 @@ class _ContactScreenState extends State<ContactScreen> {
       OrderStage.toPay => l.stageToPay,
       OrderStage.waitingConfirm => l.stageWaiting,
       OrderStage.packing => l.stagePacking,
-      OrderStage.onTheWay => l.stageOnTheWay,
-      OrderStage.delivered => l.stageDelivered,
+      OrderStage.onTheWay => o.isPickup ? l.stageReady : l.stageOnTheWay,
+      OrderStage.delivered => o.isPickup ? l.stagePickedUp : l.stageDelivered,
       OrderStage.cancelled => l.stageCancelled,
     };
   }

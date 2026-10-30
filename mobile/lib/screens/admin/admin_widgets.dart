@@ -10,19 +10,25 @@ import '../../widgets/pill_button.dart';
 const _cyan = Color(0xFF06B6D4);
 
 /// Order status -> (label, color).
-(String, Color) orderStatusLook(String status) => switch (status) {
+(String, Color) orderStatusLook(String status, {bool pickup = false}) => switch (status) {
       'pending' => ('Pending', AppTheme.amber),
       'confirmed' => ('Confirmed', _cyan),
-      'shipped' => ('Shipped', AppTheme.primaryDark),
-      'delivered' => ('Delivered', AppTheme.success),
+      'shipped' => (pickup ? 'Ready' : 'Shipped', AppTheme.primaryDark),
+      'delivered' => (pickup ? 'Picked up' : 'Delivered', AppTheme.success),
       _ => ('Cancelled', const Color(0xFF64748B)),
     };
 
 /// Short label for the list's one-tap button.
-String nextStepShort(String status) => switch (status) { 'confirmed' => 'Confirm', 'shipped' => 'Ship', 'delivered' => 'Delivered', _ => 'Cancel' };
+String nextStepShort(String status, {bool pickup = false}) =>
+    switch (status) { 'confirmed' => 'Confirm', 'shipped' => pickup ? 'Ready' : 'Ship', 'delivered' => pickup ? 'Picked up' : 'Delivered', _ => 'Cancel' };
 
 /// Label for the details page's main button.
-String nextStepLong(String status) => switch (status) { 'confirmed' => 'Mark confirmed', 'shipped' => 'Mark shipped', 'delivered' => 'Mark delivered', _ => 'Cancel order' };
+String nextStepLong(String status, {bool pickup = false}) => switch (status) {
+      'confirmed' => 'Mark confirmed',
+      'shipped' => pickup ? 'Mark ready' : 'Mark shipped',
+      'delivered' => pickup ? 'Mark picked up' : 'Mark delivered',
+      _ => 'Cancel order',
+    };
 
 Color adminCardColor(BuildContext context) {
   final scheme = Theme.of(context).colorScheme;

@@ -908,6 +908,18 @@ abstract class AppLocalizations {
   /// **'Delivered'**
   String get stageDelivered;
 
+  /// No description provided for @stageReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to pick up'**
+  String get stageReady;
+
+  /// No description provided for @stagePickedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Picked up'**
+  String get stagePickedUp;
+
   /// No description provided for @stageCancelled.
   ///
   /// In en, this message translates to:
@@ -1010,6 +1022,12 @@ abstract class AppLocalizations {
   /// **'Ship it'**
   String get actShip;
 
+  /// No description provided for @actReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark ready'**
+  String get actReady;
+
   /// No description provided for @actReply.
   ///
   /// In en, this message translates to:
@@ -1057,6 +1075,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shipped · customer told'**
   String get doneShipped;
+
+  /// No description provided for @doneReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready · customer told'**
+  String get doneReady;
 
   /// No description provided for @doneReplied.
   ///

@@ -68,7 +68,7 @@ class AdminOrdersScreenState extends State<AdminOrdersScreen> {
       // The list row has no items; keep the thumbnail
       _replace(AdminOrder(order: next.order, customerId: next.customerId, customerName: next.customerName, customerEmail: next.customerEmail, phone: next.phone, imageUrl: next.imageUrl ?? o.imageUrl, nextStatuses: next.nextStatuses));
       widget.onChanged?.call();
-      if (mounted) adminSnack(context, '${o.order.number} marked ${orderStatusLook(status).$1.toLowerCase()}. The customer was told.');
+      if (mounted) adminSnack(context, '${o.order.number} marked ${orderStatusLook(status, pickup: o.order.isPickup).$1.toLowerCase()}. The customer was told.');
     } on ApiException catch (e) {
       if (mounted) adminSnack(context, e.message);
     } finally {
@@ -140,7 +140,7 @@ class AdminOrdersScreenState extends State<AdminOrdersScreen> {
                         Text('${o.customerName} · ${o.order.itemCount} item${o.order.itemCount == 1 ? '' : 's'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5)),
                         const SizedBox(height: 5),
                         Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                          AdminChip(orderStatusLook(o.order.status).$1, orderStatusLook(o.order.status).$2),
+                          AdminChip(orderStatusLook(o.order.status, pickup: o.order.isPickup).$1, orderStatusLook(o.order.status).$2),
                           Text(_payText(o.order), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5)),
                         ]),
                       ]),
@@ -159,7 +159,7 @@ class AdminOrdersScreenState extends State<AdminOrdersScreen> {
                             shape: const StadiumBorder(),
                             textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 12.5),
                           ),
-                          child: Text(nextStepShort(o.nextStatuses.firstWhere((s) => s != 'cancelled'))),
+                          child: Text(nextStepShort(o.nextStatuses.firstWhere((s) => s != 'cancelled'), pickup: o.order.isPickup)),
                         )
                       else
                         Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
@@ -268,7 +268,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
         _o = o;
         _moved = true;
       });
-      adminSnack(context, 'Marked ${orderStatusLook(status).$1.toLowerCase()}. The customer was told.');
+      adminSnack(context, 'Marked ${orderStatusLook(status, pickup: o.order.isPickup).$1.toLowerCase()}. The customer was told.');
     } on ApiException catch (e) {
       if (mounted) adminSnack(context, e.message);
     } finally {
@@ -280,7 +280,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
   Widget build(BuildContext context) {
     final o = _o.order;
     final scheme = Theme.of(context).colorScheme;
-    final (statusText, statusColor) = orderStatusLook(o.status);
+    final (statusText, statusColor) = orderStatusLook(o.status, pickup: o.isPickup);
     final next = _o.nextStatuses.where((s) => s != 'cancelled').firstOrNull;
     final canCancel = _o.nextStatuses.contains('cancelled');
     Widget kv(String k, String v, {bool bold = false, Color? color}) => Padding(
@@ -435,8 +435,8 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
                       flex: 2,
                       child: PillButton(
                         key: const Key('admin_order_next'),
-                        label: nextStepLong(next),
-                        leadingIcon: next == 'shipped' ? Icons.local_shipping_rounded : Icons.check_rounded,
+                        label: nextStepLong(next, pickup: o.isPickup),
+                        leadingIcon: next == 'shipped' ? (o.isPickup ? Icons.storefront_rounded : Icons.local_shipping_rounded) : Icons.check_rounded,
                         loading: _busy,
                         onPressed: () => _move(next),
                       ),

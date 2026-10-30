@@ -6,6 +6,7 @@ import 'package:ecommerce_app/models/user.dart';
 import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/screens/admin/admin_more_screen.dart';
 import 'package:ecommerce_app/screens/admin/admin_orders_screen.dart';
+import 'package:ecommerce_app/screens/admin/admin_widgets.dart';
 import 'package:ecommerce_app/screens/admin/admin_payment_methods_screen.dart';
 import 'package:ecommerce_app/screens/admin/admin_products_screen.dart';
 import 'package:ecommerce_app/screens/admin/admin_staff_screen.dart';
@@ -67,6 +68,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('admin_order_2')), findsOneWidget);
     expect(find.byKey(const Key('admin_order_3')), findsNothing);
+  });
+
+  test('pickup orders are Ready and Picked up, not Shipped and Delivered', () {
+    expect(nextStepLong('shipped'), 'Mark shipped');
+    expect(nextStepLong('shipped', pickup: true), 'Mark ready');
+    expect(nextStepLong('delivered', pickup: true), 'Mark picked up');
+    expect(nextStepShort('shipped', pickup: true), 'Ready');
+    expect(orderStatusLook('shipped', pickup: true).$1, 'Ready');
+    expect(orderStatusLook('delivered', pickup: true).$1, 'Picked up');
   });
 
   testWidgets('Order details: Mark shipped, and Cancel asks first', (tester) async {

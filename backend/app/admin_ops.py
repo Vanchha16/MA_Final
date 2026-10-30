@@ -95,7 +95,7 @@ def set_order_status(order, status, reason=None):
     elif status == "delivered":
         if order.payment_method == "cod":
             order.payment_status = "paid"  # cash collected at the door
-        notify.order_event(order, "delivered")
+        notify.order_event(order, "picked_up" if order.delivery_method == "pickup" else "delivered")
     db.session.commit()
     return order
 
@@ -198,7 +198,8 @@ def activity(limit=20):
     )
     for o in orders:
         name, total = o.user.full_name, f"${float(o.total):,.2f}"
-        base = {"order_id": o.id, "order_number": o.order_number, "status": o.status, "image_url": _first_photo(o)}
+        base = {"order_id": o.id, "order_number": o.order_number, "status": o.status, "image_url": _first_photo(o),
+                "pickup": o.delivery_method == "pickup"}
         paid = next((p for p in o.payments if p.status == "paid"), None)
         if paid is not None:
             events.append({**base, "id": f"paid-{o.id}", "kind": "paid", "at": paid.paid_at, "title": "Payment received",

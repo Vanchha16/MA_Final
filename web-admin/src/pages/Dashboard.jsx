@@ -7,7 +7,7 @@ import ReplyDrawer from '../components/ReplyDrawer';
 import { useToast } from '../components/toast';
 import { Button, Card, Chip, Empty, ErrorBox, Icon, Kpi, PageTitle, Photo, SearchBox, StatusChip } from '../components/ui';
 import { useAuth } from '../auth';
-import { STEP_DONE, STEP_LABEL, greeting, money, moneyShort, nextStep, paymentName, paymentText, timeAgo } from '../lib/format';
+import { greeting, money, moneyShort, nextStep, paymentName, paymentText, stepDone, stepLabel, timeAgo } from '../lib/format';
 import { useStats } from '../stats';
 import { useTheme } from '../theme';
 
@@ -68,7 +68,7 @@ export default function Dashboard() {
     setBusy(key);
     try {
       const o = await api.put(`/admin/orders/${orderId}/status`, { status });
-      toast(`${o.order_number} ${STEP_DONE[status]} · the customer was told`);
+      toast(`${o.order_number} ${stepDone(status, o)} · the customer was told`);
       await after();
     } catch (e) {
       toast(e.message, { error: true });
@@ -176,11 +176,11 @@ export default function Dashboard() {
                         <td><Photo src={o.image_url} size={32} /></td>
                         <td className="font-bold">{money(o.total)}</td>
                         <td className="text-muted">{paymentText(o)}</td>
-                        <td><StatusChip status={o.status} /></td>
+                        <td><StatusChip status={o.status} order={o} /></td>
                         <td className="text-right" onClick={(ev) => ev.stopPropagation()}>
                           {step ? (
                             <Button small loading={busy === `row-${o.id}`} onClick={() => moveOrder(o.id, step, `row-${o.id}`)} data-testid={`order-step-${o.id}`}>
-                              {STEP_LABEL[step]}
+                              {stepLabel(step, o)}
                             </Button>
                           ) : <Chip className="bg-amber-100 text-amber-700">Waiting for {paymentName(o)}</Chip>}
                         </td>
@@ -212,7 +212,7 @@ export default function Dashboard() {
                       </div>
                       <div className="whitespace-nowrap text-[11.5px] text-muted">{timeAgo(e.at)}</div>
                       {e.action && (
-                        <Button small loading={busy === `act-${e.id}`} onClick={() => act(e)} data-testid={`event-action-${e.id}`}>{ACTION_LABEL[e.action]}</Button>
+                        <Button small loading={busy === `act-${e.id}`} onClick={() => act(e)} data-testid={`event-action-${e.id}`}>{e.action === 'ship' && e.pickup ? 'Mark ready' : ACTION_LABEL[e.action]}</Button>
                       )}
                       {!e.action && e.kind === 'message' && <Chip className="bg-green-100 text-green-700"><Icon name="check" size={13} />Answered</Chip>}
                     </div>

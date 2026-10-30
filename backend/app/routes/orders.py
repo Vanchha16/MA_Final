@@ -235,7 +235,7 @@ def place_order():
     db.session.add(order)
     db.session.flush()
     order.order_number = _order_number(order)
-    notify.order_event(order, f"placed_{payment}")
+    notify.order_event(order, "placed_cod_pickup" if payment == "cod" and delivery == "pickup" else f"placed_{payment}")
     db.session.commit()
     return success(order.to_dict(with_items=True), "Order placed", 201)
 
@@ -259,15 +259,18 @@ def list_orders():
 @bp.post("/orders/<int:order_id>/received")
 @jwt_required()
 def mark_received(order_id):
-    """"Got it": the customer has the parcel. Cash orders count as paid now."""
+    """"Got it": the customer has the parcel. Only for paid online orders being delivered:
+    the shop finishes pickup and cash orders, because it hands them over or takes the money."""
     order = Order.query.filter_by(id=order_id, user_id=_user_id()).first()
     if not order:
         return error("Order not found", 404)
     if order.status != "shipped":
         return error("Only orders on the way can be marked as received", 409)
-    order.status = "delivered"
+    if order.delivery_method == "pickup":
+        return error("The shop marks this order as picked up", 409)
     if order.payment_method == "cod":
-        order.payment_status = "paid"
+        return error("The shop finishes this order once it has the cash", 409)
+    order.status = "delivered"
     notify.order_event(order, "delivered")
     db.session.commit()
     return success(_with_my_ratings([order.to_dict(with_items=True)])[0], "Enjoy your order!")

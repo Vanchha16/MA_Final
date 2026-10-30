@@ -11,6 +11,7 @@ def _wants(user_id, kind):
 # event -> (type, title, message); {number} and {total} come from the order
 ORDER_TEXT = {
     "placed_cod": ("Order placed", "We got order {number}. Pay {total} when it arrives."),
+    "placed_cod_pickup": ("Order placed", "We got order {number}. Pay {total} at our Toul Kork shop when you pick it up."),
     "placed_khqr": ("Pay to confirm your order", "Scan the KHQR for {number} ({total}) within 15 minutes."),
     "placed_aba": ("Pay to confirm your order", "Pay {total} for {number} with ABA PayWay within 15 minutes."),
     "paid": ("Payment received", "{total} for {number} by {method}. We are packing it now."),
@@ -18,6 +19,7 @@ ORDER_TEXT = {
     "shipped": ("Your order is on the way", "Order {number} arrives tomorrow, 9:00 - 18:00."),
     "ready": ("Ready to pick up", "Order {number} is waiting for you at our Toul Kork shop."),
     "delivered": ("Delivered! Enjoy your order", "How is it? Tell other collectors about order {number}."),
+    "picked_up": ("Picked up! Enjoy your order", "How is it? Tell other collectors about order {number}."),
     "cancelled": ("Order cancelled", "Order {number} was not paid in time, so we put the items back on sale."),
     "cancelled_customer": ("Order cancelled", "You cancelled order {number}.{refund}"),
     "cancelled_shop": ("Order cancelled by the shop", "We had to cancel order {number}.{reason}{refund} Sorry about that."),
@@ -30,7 +32,7 @@ def order_event(order, key):
     if not _wants(order.user_id, "orders"):
         return
     title, text = ORDER_TEXT[key]
-    event = key.split("_")[0] if key.startswith(("placed", "cancelled")) else ("shipped" if key == "ready" else key)
+    event = key.split("_")[0] if key.startswith(("placed", "cancelled")) else {"ready": "shipped", "picked_up": "delivered"}.get(key, key)
     total = f"${float(order.total):g}"
     refund = f" We will send {total} back to you within 3 working days." if order.payment_status == "refund_pending" else ""
     reason = f" Reason: {order.cancel_reason}." if order.cancel_reason else ""

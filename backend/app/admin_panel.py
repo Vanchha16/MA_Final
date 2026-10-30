@@ -52,6 +52,11 @@ def quick_token():
 
 
 STEP_LABEL = {"confirmed": "Confirm", "shipped": "Ship", "delivered": "Delivered"}
+PICKUP_STEP_LABEL = {**STEP_LABEL, "shipped": "Ready", "delivered": "Picked up"}
+
+
+def _step_label(order, step):
+    return (PICKUP_STEP_LABEL if order.delivery_method == "pickup" else STEP_LABEL)[step]
 
 
 def _next_step(order):
@@ -80,7 +85,7 @@ class ShopIndexView(AdminIndexView):
         stats = admin_ops.stats()
         week = [{"day": datetime.fromisoformat(d["date"]).strftime("%a"), "revenue": d["revenue"]} for d in stats["week"]]
         return self.render("admin/dashboard.html", stats=stats, week=week, orders=orders, messages=messages, low=low,
-                           events=admin_ops.activity(8), next_step=_next_step, step_label=STEP_LABEL, pay_names={**admin_ops.PAY_NAMES, "cod": "Cash"},
+                           events=admin_ops.activity(8), next_step=_next_step, step_label=_step_label, pay_names={**admin_ops.PAY_NAMES, "cod": "Cash"},
                            quick=QuickForm(), greeting=_greeting(), now=datetime.now())
 
     # ---------- one-click actions (also used by the Orders and Products lists) ----------
@@ -343,7 +348,7 @@ class OrderView(SecureView):
         "total": _money,
         "status": lambda v, c, m, n: _badge(m.status, STATUS_KIND[m.status]),
         "payment_status": lambda v, c, m, n: _badge(m.payment_status, "success" if m.payment_status == "paid" else "light"),
-        "step": lambda v, c, m, n: _button_form(url_for("admin.quick_order", order_id=m.id), STEP_LABEL[step], status=step)
+        "step": lambda v, c, m, n: _button_form(url_for("admin.quick_order", order_id=m.id), _step_label(m, step), status=step)
         if (step := _next_step(m)) else "",
     }
     column_details_list = ("order_number", "user", "status", "next", "payment_method", "payment_status", "delivery_method",

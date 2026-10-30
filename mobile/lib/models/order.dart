@@ -206,6 +206,12 @@ class Order {
   bool get refundPending => paymentStatus == 'refund_pending';
   bool get refunded => paymentStatus == 'refunded';
 
+  bool get isPickup => deliveryMethod == DeliveryMethod.pickup;
+
+  /// "Got it" is only for paid online orders being delivered. The shop finishes
+  /// pickup and cash orders, because it hands them over or takes the money.
+  bool get canMarkReceived => stage == OrderStage.onTheWay && paymentMethod.online && !isPickup;
+
   OrderStage get stage => switch (status) {
         'cancelled' => OrderStage.cancelled,
         'delivered' => OrderStage.delivered,
