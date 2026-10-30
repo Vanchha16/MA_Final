@@ -52,8 +52,14 @@ class _AdminShellState extends State<AdminShell> {
     if (added == true) _changed();
   }
 
-  void _openTab(int tab) {
+  /// The list can change from the dashboard, so it is fetched again each time it opens.
+  void _select(int tab) {
     setState(() => _index = tab);
+    if (tab == AdminShell.ordersTab) _orders.currentState?.reload();
+  }
+
+  void _openTab(int tab) {
+    _select(tab);
     if (tab == AdminShell.productsTab) _products.currentState?.showLowStock();
   }
 
@@ -112,7 +118,7 @@ class _AdminShellState extends State<AdminShell> {
               _addProduct();
               return;
             }
-            setState(() => _index = i < 2 ? i : i - 1);
+            _select(i < 2 ? i : i - 1);
           },
           destinations: [
             NavigationDestination(icon: const Icon(Icons.space_dashboard_outlined), selectedIcon: const Icon(Icons.space_dashboard_rounded), label: l.navDashboard),

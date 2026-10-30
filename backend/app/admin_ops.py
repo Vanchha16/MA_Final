@@ -2,13 +2,18 @@
 so both send the same notifications and keep stock right. Callers handle AdminError."""
 from datetime import timedelta
 
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import selectinload
 
 from . import notify
 from .extensions import db
 from .models import Category, ContactMessage, Order, OrderItem, Product, Review, User
 from .utils.clock import utcnow
+
+
+# Waiting for the shop: new orders, and pickup or cash orders only staff can finish.
+TO_HANDLE = or_(Order.status.in_(["pending", "confirmed"]),
+                and_(Order.status == "shipped", or_(Order.delivery_method == "pickup", Order.payment_method == "cod")))
 
 
 class AdminError(ValueError):
@@ -176,7 +181,7 @@ def stats():
         "categories": Category.query.count(),
         "customers": User.query.filter_by(role="customer").count(),
         "orders": Order.query.count(),
-        "orders_to_handle": Order.query.filter(Order.status.in_(["pending", "confirmed"])).count(),
+        "orders_to_handle": Order.query.filter(TO_HANDLE).count(),
         "refunds_to_send": Order.query.filter_by(payment_status="refund_pending").count(),
         "revenue": float(paid.with_entities(func.coalesce(func.sum(Order.total), 0)).scalar()),
         "open_messages": ContactMessage.query.filter_by(status="open").count(),

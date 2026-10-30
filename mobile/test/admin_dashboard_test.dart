@@ -74,6 +74,15 @@ void main() {
     await _end(tester);
   });
 
+  testWidgets('the Orders tab fetches the list again each time it opens', (tester) async {
+    final s = await _pump(tester, shell: true);
+    s.orders_.clear();
+    await tester.tap(find.byKey(const Key('admin_tab_orders')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('AWS-'), findsNothing);
+    await _end(tester);
+  });
+
   testWidgets('Reply sends the answer and Restock saves the stock', (tester) async {
     final s = await _pump(tester);
     await tester.tap(find.byKey(const Key('admin_action_message-1')));

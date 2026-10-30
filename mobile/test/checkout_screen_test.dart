@@ -172,7 +172,8 @@ void main() {
     expect(service.placed.single['delivery'], DeliveryMethod.pickup);
     expect(service.placed.single['payment'], PaymentMethod.cod);
     expect(service.placed.single['note'], 'I will come at 5pm');
-    expect(find.textContaining('at the shop'), findsOneWidget);
+    expect(find.text('Cash at the shop'), findsOneWidget);
+    expect(find.textContaining('at the shop in USD or riel'), findsOneWidget);
     expect(find.byKey(const Key('placed_pay')), findsNothing);
   });
 

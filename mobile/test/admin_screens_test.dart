@@ -51,7 +51,7 @@ Future<void> _steps(WidgetTester tester) async {
 void main() {
   testWidgets('Orders: counts per status, search, and a one-tap next step', (tester) async {
     final s = await _pump(tester, (s) => AdminOrdersScreen(service: s));
-    expect(find.text('3 to handle'), findsOneWidget);
+    expect(find.text('4 to handle'), findsOneWidget);
     expect(find.text('Shipped  1'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('admin_order_next_1'))); // pending cash order -> Confirm

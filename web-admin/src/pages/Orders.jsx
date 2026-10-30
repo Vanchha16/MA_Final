@@ -4,11 +4,11 @@ import { api } from '../api';
 import OrderDrawer from '../components/OrderDrawer';
 import { useToast } from '../components/toast';
 import { Button, Card, Chip, Empty, ErrorBox, FilterChips, Icon, PageTitle, Photo, SearchBox, StatusChip } from '../components/ui';
-import { dateTime, money, nextStep, paymentName, paymentText, stepDone, stepLabel } from '../lib/format';
+import { dateTime, money, nextStep, paymentName, paymentText, stepDone, stepLabel, toHandle } from '../lib/format';
 import { useStats } from '../stats';
 
 const FILTERS = [
-  ['handle', 'To handle', (o) => ['pending', 'confirmed'].includes(o.status)],
+  ['handle', 'To handle', toHandle],
   ['pending', 'Pending', (o) => o.status === 'pending'],
   ['confirmed', 'Confirmed', (o) => o.status === 'confirmed'],
   ['shipped', 'Shipped', (o) => o.status === 'shipped'],

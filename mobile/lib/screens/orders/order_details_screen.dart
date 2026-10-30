@@ -254,7 +254,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         PaymentMethod.aba => Icons.account_balance_rounded,
                         PaymentMethod.cod => Icons.payments_rounded,
                       },
-                      title: o.paymentMethod.label,
+                      title: o.paymentMethod.labelFor(pickup: pickup),
                       body: switch ((o.paymentStatus, o.stage)) {
                         ('paid', _) => 'Paid',
                         ('refund_pending', _) => 'Paid · refund on its way',

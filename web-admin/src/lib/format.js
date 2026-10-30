@@ -36,6 +36,10 @@ export const STATUS = {
 export const PICKUP_STATUS = { shipped: 'Ready', delivered: 'Picked up' };
 export const isPickup = (order) => order?.delivery_method === 'pickup';
 
+/** Waiting for the shop: new orders, and pickup or cash orders only staff can finish. */
+export const toHandle = (o) =>
+  ['pending', 'confirmed'].includes(o.status) || (o.status === 'shipped' && (isPickup(o) || o.payment_method === 'cod'));
+
 /** Button text for moving an order to [status]. */
 export const STEP_LABEL = { confirmed: 'Confirm', shipped: 'Ship', delivered: 'Delivered', cancelled: 'Cancel' };
 export const STEP_DONE = { confirmed: 'confirmed', shipped: 'marked shipped', delivered: 'marked delivered', cancelled: 'cancelled' };

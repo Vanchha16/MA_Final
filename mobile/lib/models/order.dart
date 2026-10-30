@@ -71,6 +71,9 @@ enum PaymentMethod {
   /// Paid in the app (a QR or ABA Mobile) before the shop packs it.
   bool get online => this != cod;
 
+  /// Cash is only "on delivery" when something is delivered.
+  String labelFor({required bool pickup}) => this == cod && pickup ? 'Cash at the shop' : label;
+
   static PaymentMethod fromApi(String? value) => values.firstWhere((m) => m.apiValue == value, orElse: () => cod);
 }
 
@@ -211,6 +214,9 @@ class Order {
   /// "Got it" is only for paid online orders being delivered. The shop finishes
   /// pickup and cash orders, because it hands them over or takes the money.
   bool get canMarkReceived => stage == OrderStage.onTheWay && paymentMethod.online && !isPickup;
+
+  /// Waiting for the shop: new orders, and pickup or cash orders only staff can finish.
+  bool get needsShop => status == 'pending' || status == 'confirmed' || (status == 'shipped' && !canMarkReceived);
 
   OrderStage get stage => switch (status) {
         'cancelled' => OrderStage.cancelled,
