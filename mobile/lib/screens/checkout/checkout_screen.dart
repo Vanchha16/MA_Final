@@ -491,7 +491,7 @@ class _PaymentCard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(method.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Text(method.labelFor(pickup: pickup), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             Text(detail, style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant)),
           ]),
         ),

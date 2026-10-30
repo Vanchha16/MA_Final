@@ -88,7 +88,7 @@ class AdminOrdersScreenState extends State<AdminOrdersScreen> {
   Widget build(BuildContext context) {
     final all = _orders;
     final scheme = Theme.of(context).colorScheme;
-    final toHandle = all?.where((o) => o.order.status == 'pending' || o.order.status == 'confirmed').length ?? 0;
+    final toHandle = all?.where((o) => o.order.needsShop).length ?? 0;
     int count(String? s) => all?.where((o) => s == null || o.order.status == s).length ?? 0;
     final q = _q.trim().toLowerCase();
     final shown = [

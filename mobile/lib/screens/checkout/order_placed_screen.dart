@@ -171,7 +171,7 @@ class OrderPlacedScreen extends StatelessWidget {
                         PaymentMethod.cod => Icons.payments_outlined,
                       },
                       'Payment',
-                      order.paymentMethod.label,
+                      order.paymentMethod.labelFor(pickup: pickup),
                     ),
                     const Divider(height: 22),
                     Row(

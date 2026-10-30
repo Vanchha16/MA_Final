@@ -413,8 +413,8 @@ class _EventRow extends StatelessWidget {
   String? _statusText(AppLocalizations l) => switch (event.status) {
         'pending' => l.stageWaiting,
         'confirmed' => l.stagePacking,
-        'shipped' => l.stageOnTheWay,
-        'delivered' => l.stageDelivered,
+        'shipped' => event.pickup ? l.stageReady : l.stageOnTheWay,
+        'delivered' => event.pickup ? l.stagePickedUp : l.stageDelivered,
         'cancelled' => l.stageCancelled,
         'answered' => l.doneReplied,
         _ => null,

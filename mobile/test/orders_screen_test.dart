@@ -99,6 +99,20 @@ void main() {
     await _end(tester);
   });
 
+  test('needsShop: new orders, and pickup or cash orders on their way', () {
+    expect(fakeOrder(1, 'pending').needsShop, isTrue);
+    expect(fakeOrder(2, 'shipped').needsShop, isFalse); // the customer can tap Got it
+    expect(fakeOrder(3, 'shipped', pay: PaymentMethod.cod, paid: 'unpaid').needsShop, isTrue);
+    expect(fakeOrder(4, 'shipped', delivery: DeliveryMethod.pickup).needsShop, isTrue);
+    expect(fakeOrder(5, 'delivered', delivery: DeliveryMethod.pickup).needsShop, isFalse);
+  });
+
+  test('cash is only on delivery when something is delivered', () {
+    expect(PaymentMethod.cod.labelFor(pickup: false), 'Cash on delivery');
+    expect(PaymentMethod.cod.labelFor(pickup: true), 'Cash at the shop');
+    expect(PaymentMethod.khqr.labelFor(pickup: true), 'Bakong KHQR');
+  });
+
   testWidgets('a finished pickup order says Picked up', (tester) async {
     await _pump(tester, service: FakeOrderService(orders: [fakeOrder(8, 'delivered', delivery: DeliveryMethod.pickup)]));
     expect(_inOrder(8, find.text('Picked up')), findsOneWidget);
