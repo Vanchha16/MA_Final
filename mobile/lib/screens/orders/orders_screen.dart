@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +11,7 @@ import '../../helpers/format.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 import '../../services/payment_service.dart';
+import '../../services/realtime_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
@@ -50,10 +53,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
   int _generation = 0;
   GlobalKey<SliverAnimatedListState> _activeKey = GlobalKey(), _pastKey = GlobalKey();
 
+  StreamSubscription<OrderUpdate>? _pushed;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _pushed = RealtimeService.instance.orders.listen((_) => _load()); // paid, shipped, delivered...
+  }
+
+  @override
+  void dispose() {
+    _pushed?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {

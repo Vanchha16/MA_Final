@@ -6,6 +6,7 @@ import 'package:ecommerce_app/providers/auth_provider.dart';
 import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/screens/checkout/checkout_screen.dart';
 import 'package:ecommerce_app/screens/checkout/khqr_payment_screen.dart';
+import 'package:ecommerce_app/services/realtime_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -96,6 +97,26 @@ void main() {
     await tester.tap(find.byKey(const Key('khqr_done')));
     await tester.pumpAndSettle();
     expect(results, [true]); // the Cart forgets the promo code
+  });
+
+  testWidgets('the server pushing "paid" over the socket shows the receipt at once', (tester) async {
+    final service = FakeCheckoutService(addresses: [FakeCheckoutService.home]);
+    final payments = FakePaymentService();
+    await _pump(tester, service, payments: payments);
+    await _place(tester);
+    expect(find.byKey(const Key('khqr_card')), findsOneWidget);
+    final checks = payments.checks;
+
+    payments.state = KhqrStatus.paid;
+    RealtimeService.instance.debugOrderUpdate(const OrderUpdate(orderId: 99, status: 'confirmed', paymentStatus: 'paid'));
+    await tester.pump();
+    expect(payments.checks, checks); // someone else's order: ignored
+
+    RealtimeService.instance.debugOrderUpdate(const OrderUpdate(orderId: 7, status: 'confirmed', paymentStatus: 'paid'));
+    await tester.pump();
+    expect(payments.checks, checks + 1); // asked straight away, no waiting for the next check
+    await tester.pumpAndSettle();
+    expect(find.text('Your receipt'), findsOneWidget);
   });
 
   testWidgets('ABA PayWay is a third choice: its screen has Open ABA Mobile and prints the receipt', (tester) async {

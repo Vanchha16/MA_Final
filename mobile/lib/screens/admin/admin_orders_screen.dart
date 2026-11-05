@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -8,6 +10,7 @@ import '../../models/admin.dart';
 import '../../models/catalog.dart';
 import '../../models/order.dart';
 import '../../services/admin_service.dart';
+import '../../services/realtime_service.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
@@ -37,11 +40,19 @@ class AdminOrdersScreenState extends State<AdminOrdersScreen> {
   int _filter = 0;
   String _q = '';
   final _busy = <int>{};
+  StreamSubscription<OrderUpdate>? _pushed;
 
   @override
   void initState() {
     super.initState();
     reload();
+    _pushed = RealtimeService.instance.orders.listen((_) => reload()); // new or changed orders appear at once
+  }
+
+  @override
+  void dispose() {
+    _pushed?.cancel();
+    super.dispose();
   }
 
   Future<void> reload() async {

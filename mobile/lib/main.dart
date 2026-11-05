@@ -10,6 +10,7 @@ import 'providers/locale_provider.dart';
 import 'providers/shop_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/splash/splash_screen.dart';
+import 'services/realtime_service.dart';
 import 'widgets/theme_reveal.dart';
 
 void main() {
@@ -24,10 +25,13 @@ void main() {
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
           ChangeNotifierProvider(create: (_) => LocaleProvider()..load()),
-          // Wishlist hearts + cart badge follow the signed-in user
+          // Wishlist hearts, cart badge and the real-time socket follow the signed-in user
           ChangeNotifierProxyProvider<AuthProvider, ShopProvider>(
             create: (_) => ShopProvider(),
-            update: (_, auth, shop) => shop!..setSignedIn(auth.isLoggedIn),
+            update: (_, auth, shop) {
+              RealtimeService.instance.setSignedIn(auth.isLoggedIn);
+              return shop!..setSignedIn(auth.isLoggedIn);
+            },
           ),
         ],
         child: const ShopApp(),

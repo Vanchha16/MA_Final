@@ -521,6 +521,19 @@ TAGS = [
 ]
 
 
+REALTIME = """Changes are pushed to the app and the web admin over **Socket.IO** (Flask-SocketIO), so screens update the moment something happens instead of asking again and again.
+
+Connect to the server address (same port, path `/socket.io`) with the login token: `auth: {"token": "<JWT>"}`. A missing, expired or signed-out token is refused. Each user joins their own room; shop staff and admins also join the staff room.
+
+| Event | Who gets it | Data | When |
+|---|---|---|---|
+| `notification` | The customer | `{id, type}` | A new message for them (load it with `GET /api/notifications`) |
+| `order_updated` | The order's customer and all staff | `{order_id, order_number, status, payment_status}` | An order is placed, paid, confirmed, shipped, delivered, cancelled or refunded |
+| `admin_update` | Staff and admins | `{kind}`: `message` or `review` | A new contact message or review |
+
+The events are signals: clients load the new data with the normal REST calls. They are sent only after the change is saved in the database. Bakong KHQR has no callback, so the server checks pending online payments with the bank every 3 seconds and pushes `order_updated` as soon as one is paid."""
+
+
 def spec(server_url="/"):
     return {
         "openapi": "3.0.3",
@@ -532,7 +545,8 @@ def spec(server_url="/"):
                 "Every response has the same shape: `{success, message, data}`. Errors have `success: false`, a `message`, "
                 "and for validation errors an `errors` object saying which field is wrong.\n\n"
                 "Log in with `POST /api/auth/login`, then press **Authorize** and paste the token. "
-                "Demo accounts: `demo@shop.com` / `demo123` (customer) and `admin@shop.com` / `demo123` (admin)."
+                "Demo accounts: `demo@shop.com` / `demo123` (customer) and `admin@shop.com` / `demo123` (admin).\n\n"
+                "### Real-time updates\n\n" + REALTIME
             ),
         },
         "servers": [{"url": server_url}],
@@ -614,13 +628,14 @@ def markdown():
 
     s = spec("http://localhost:5000/")
     schemas = s["components"]["schemas"]
+    intro = s["info"]["description"].split("\n\n### Real-time updates")[0]  # shown in its own section below
     out = [
         "# Anime World Shop - API documentation",
         "",
         "> Generated from the OpenAPI spec in `backend/app/api_docs.py` by `flask --app run api-docs`. Do not edit by hand.",
         "> Interactive version: run the backend and open <http://localhost:5000/api/docs> (Swagger UI).",
         "",
-        s["info"]["description"],
+        intro,
         "",
         "Base URL: `http://localhost:5000` (Android emulator: `http://10.0.2.2:5000`). Logged-in routes need the header "
         "`Authorization: Bearer <token>`.",
@@ -632,6 +647,10 @@ def markdown():
         "| 200 / 201 | Done (201 = created) |",
         *[f"| {code} | {s['components']['responses'][name]['description']} |" for code, name in ERROR_NAMES.items()],
         "| 500 | Unexpected server error |",
+        "",
+        "## Real-time updates (Socket.IO)",
+        "",
+        REALTIME,
         "",
         "## Endpoints",
         "",

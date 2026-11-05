@@ -15,6 +15,7 @@ import '../../providers/shop_provider.dart';
 import '../../services/notification_service.dart';
 import '../../services/order_service.dart';
 import '../../services/payment_service.dart';
+import '../../services/realtime_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
 import '../../widgets/error_banner.dart';
@@ -38,8 +39,8 @@ class NotificationsScreen extends StatefulWidget {
 
   const NotificationsScreen({super.key, this.service, this.orderService, this.paymentService});
 
-  /// How often the open screen looks for new messages.
-  static const checkEvery = Duration(seconds: 20);
+  /// New messages are pushed over the socket at once; this slow check only covers a dropped connection.
+  static const checkEvery = Duration(seconds: 60);
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -59,17 +60,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   /// While "Mark all read" runs, each card waits this long times its position.
   Duration _readStagger = Duration.zero;
   Timer? _poll;
+  StreamSubscription<int>? _pushed;
 
   @override
   void initState() {
     super.initState();
     _load();
     _poll = Timer.periodic(NotificationsScreen.checkEvery, (_) => _checkNew());
+    _pushed = RealtimeService.instance.notifications.listen((_) => _checkNew());
   }
 
   @override
   void dispose() {
     _poll?.cancel();
+    _pushed?.cancel();
     super.dispose();
   }
 

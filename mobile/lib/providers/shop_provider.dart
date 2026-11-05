@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../api/api_client.dart';
 import '../models/cart.dart';
 import '../models/catalog.dart';
+import '../services/realtime_service.dart';
 import '../services/shop_service.dart';
 
 /// Wishlist hearts, the cart badge and the bell's unread count, shared by every screen.
@@ -11,7 +14,18 @@ import '../services/shop_service.dart';
 class ShopProvider extends ChangeNotifier {
   final ShopService _service;
 
-  ShopProvider({ShopService? service}) : _service = service ?? ShopService();
+  ShopProvider({ShopService? service}) : _service = service ?? ShopService() {
+    // A new message pushed over the socket: update the bell's count
+    _pushed = RealtimeService.instance.notifications.listen((_) => refreshUnread());
+  }
+
+  late final StreamSubscription<int> _pushed;
+
+  @override
+  void dispose() {
+    _pushed.cancel();
+    super.dispose();
+  }
 
   bool _signedIn = false;
   Set<int> _wishlist = {};
