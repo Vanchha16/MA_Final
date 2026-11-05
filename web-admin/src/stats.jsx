@@ -1,10 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { api } from './api';
+import { connectRealtime } from './realtime';
 
-export const POLL_MS = 20000;
+// Changes arrive over the socket at once; this slow check only covers a dropped connection.
+export const POLL_MS = 60000;
 const StatsContext = createContext({ stats: null, refresh: () => {} });
 
-/** The dashboard numbers (and the sidebar badges), refreshed every 20 s and after every action. */
+/** The dashboard numbers (and the sidebar badges), refreshed as soon as the server pushes a change
+ * (Socket.IO, see realtime.js), after every action, and every 60 s as a fallback. */
 export function StatsProvider({ children }) {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
@@ -28,9 +31,11 @@ export function StatsProvider({ children }) {
     alive.current = true;
     refresh();
     const id = setInterval(refresh, POLL_MS);
+    const disconnect = connectRealtime(refresh);
     return () => {
       alive.current = false;
       clearInterval(id);
+      disconnect();
     };
   }, [refresh]);
 

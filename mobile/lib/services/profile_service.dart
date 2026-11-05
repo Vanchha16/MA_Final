@@ -6,6 +6,7 @@ import '../api/api_end_point.dart';
 import '../api/api_client.dart';
 import '../models/profile_summary.dart';
 import '../models/user.dart';
+import 'realtime_service.dart';
 
 class ProfileService {
   final _api = ApiClient.instance;
@@ -20,7 +21,10 @@ class ProfileService {
   Future<void> changePassword(String current, String next) async {
     final data = await _api.put(ApiEndPoint.profilePassword, data: {'current_password': current, 'new_password': next});
     final token = data is Map ? data['token'] : null;
-    if (token is String) await (await SharedPreferences.getInstance()).setString(ApiClient.tokenKey, token);
+    if (token is String) {
+      await (await SharedPreferences.getInstance()).setString(ApiClient.tokenKey, token);
+      await RealtimeService.instance.reconnect(); // the socket logs in with the new token
+    }
   }
 
   /// Uploads a photo picked with image_picker (works on web and mobile).

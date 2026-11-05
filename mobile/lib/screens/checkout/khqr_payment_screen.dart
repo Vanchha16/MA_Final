@@ -9,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../helpers/format.dart';
 import '../../models/order.dart';
 import '../../services/payment_service.dart';
+import '../../services/realtime_service.dart';
 import '../../services/receipt_export.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/error_banner.dart';
@@ -56,8 +57,8 @@ class KhqrPaymentScreen extends StatefulWidget {
     }
   }
 
-  /// How often the app asks the server about the payment.
-  static const pollEvery = Duration(seconds: 3);
+  /// The server pushes the payment result over the socket; this check covers a dropped connection.
+  static const pollEvery = Duration(seconds: 10);
 
   /// Length of the "receipt prints out" animation.
   static const printDuration = Duration(milliseconds: 2200);
@@ -73,17 +74,21 @@ class _KhqrPaymentScreenState extends State<KhqrPaymentScreen> with SingleTicker
   KhqrPayment? _payment;
   String? _error;
   Timer? _poll, _tick;
+  StreamSubscription<OrderUpdate>? _pushed;
   bool _checking = false;
 
   @override
   void initState() {
     super.initState();
     _start();
+    // The server found the payment (or the time ran out): show it now
+    _pushed = RealtimeService.instance.orders.where((u) => u.orderId == _order.id).listen((_) => _check());
   }
 
   @override
   void dispose() {
     _stopTimers();
+    _pushed?.cancel();
     _print.dispose();
     super.dispose();
   }

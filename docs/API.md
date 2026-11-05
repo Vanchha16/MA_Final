@@ -26,6 +26,20 @@ Base URL: `http://localhost:5000` (Android emulator: `http://10.0.2.2:5000`). Lo
 | 502 | The payment provider refused or could not be reached |
 | 500 | Unexpected server error |
 
+## Real-time updates (Socket.IO)
+
+Changes are pushed to the app and the web admin over **Socket.IO** (Flask-SocketIO), so screens update the moment something happens instead of asking again and again.
+
+Connect to the server address (same port, path `/socket.io`) with the login token: `auth: {"token": "<JWT>"}`. A missing, expired or signed-out token is refused. Each user joins their own room; shop staff and admins also join the staff room.
+
+| Event | Who gets it | Data | When |
+|---|---|---|---|
+| `notification` | The customer | `{id, type}` | A new message for them (load it with `GET /api/notifications`) |
+| `order_updated` | The order's customer and all staff | `{order_id, order_number, status, payment_status}` | An order is placed, paid, confirmed, shipped, delivered, cancelled or refunded |
+| `admin_update` | Staff and admins | `{kind}`: `message` or `review` | A new contact message or review |
+
+The events are signals: clients load the new data with the normal REST calls. They are sent only after the change is saved in the database. Bakong KHQR has no callback, so the server checks pending online payments with the bank every 3 seconds and pushes `order_updated` as soon as one is paid.
+
 ## Endpoints
 
 ### Auth

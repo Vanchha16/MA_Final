@@ -20,6 +20,10 @@ def create_app(config_class=Config):
     cors.init_app(app)
     limiter.init_app(app)
 
+    from .realtime import socketio
+
+    socketio.init_app(app)  # real-time updates: see app/realtime.py
+
     from .routes import admin, auth, catalog, contact, notifications, orders, profile, reviews, shop
 
     app.register_blueprint(auth.bp)

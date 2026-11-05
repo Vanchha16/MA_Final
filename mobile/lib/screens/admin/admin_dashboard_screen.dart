@@ -14,6 +14,7 @@ import '../../l10n/l10n.dart';
 import '../../models/admin.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/admin_service.dart';
+import '../../services/realtime_service.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/pill_button.dart';
@@ -34,7 +35,8 @@ class AdminDashboardScreen extends StatefulWidget {
 
   const AdminDashboardScreen({super.key, required this.service, required this.onShop, this.onStats, this.onOpenTab, this.now});
 
-  static const checkEvery = Duration(seconds: 20);
+  /// Changes are pushed over the socket at once; this slow check only covers a dropped connection.
+  static const checkEvery = Duration(seconds: 60);
 
   @override
   State<AdminDashboardScreen> createState() => AdminDashboardScreenState();
@@ -45,6 +47,7 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<ActivityEvent>? _events;
   String? _error;
   Timer? _poll;
+  final _pushed = <StreamSubscription<Object>>[];
 
   /// Events seen so far; ones that appear later get a soft highlight.
   final _seen = <String>{};
@@ -60,11 +63,19 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
     timeago.setLocaleMessages('en_short', timeago.EnShortMessages()); // "2m", "1h"
     _load();
     _poll = Timer.periodic(AdminDashboardScreen.checkEvery, (_) => _load(quiet: true));
+    // An order changed or a message / review came in: load the numbers and the feed again
+    final realtime = RealtimeService.instance;
+    _pushed
+      ..add(realtime.orders.listen((_) => _load(quiet: true)))
+      ..add(realtime.adminUpdates.listen((_) => _load(quiet: true)));
   }
 
   @override
   void dispose() {
     _poll?.cancel();
+    for (final s in _pushed) {
+      s.cancel();
+    }
     super.dispose();
   }
 

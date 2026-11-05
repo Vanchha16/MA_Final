@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -9,6 +11,7 @@ import '../../helpers/format.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 import '../../services/payment_service.dart';
+import '../../services/realtime_service.dart';
 import '../../services/review_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/circle_back_button.dart';
@@ -42,10 +45,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   late final OrderService _service = widget.service ?? OrderService();
   late Order _order = widget.order;
   bool _busy = false;
+  StreamSubscription<OrderUpdate>? _pushed;
 
   @override
   void initState() {
     super.initState();
+    // The shop moved this order on: show the new step without a pull to refresh
+    _pushed = RealtimeService.instance.orders.where((u) => u.orderId == _order.id).listen((_) => _refresh(quiet: true));
     if (widget.rateFirst) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final line = _order.stage == OrderStage.delivered ? _order.lines.where((l) => l.productId != null && l.myRating == null).firstOrNull : null;
@@ -68,12 +74,18 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     }
   }
 
-  Future<void> _refresh() async {
+  @override
+  void dispose() {
+    _pushed?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refresh({bool quiet = false}) async {
     try {
       final fresh = await _service.get(_order.id);
       if (mounted) setState(() => _order = fresh);
     } on ApiException catch (e) {
-      if (mounted) AppToast.error(context, e.message);
+      if (mounted && !quiet) AppToast.error(context, e.message);
     }
   }
 

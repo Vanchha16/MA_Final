@@ -3,6 +3,7 @@ import 'package:ecommerce_app/models/shop_notification.dart';
 import 'package:ecommerce_app/providers/shop_provider.dart';
 import 'package:ecommerce_app/screens/notifications/notifications_screen.dart';
 import 'package:ecommerce_app/widgets/notification_bell.dart';
+import 'package:ecommerce_app/services/realtime_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -98,6 +99,18 @@ void main() {
     await tester.pump(const Duration(milliseconds: 800));
     expect(find.byKey(const ValueKey('notification_9')), findsOneWidget);
     expect(find.text('4 new'), findsOneWidget);
+    expect(shop.unreadNotifications, 4);
+    await _end(tester);
+  });
+
+  testWidgets('a message pushed over the socket drops in at once, without waiting for the check', (tester) async {
+    final (notes, shop) = await _pump(tester);
+    notes.items.insert(0, note(9, NotificationEvent.delivered, order: 4, minutesAgo: 0));
+    RealtimeService.instance.debugNotification(9);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(find.byKey(const ValueKey('notification_9')), findsOneWidget);
     expect(shop.unreadNotifications, 4);
     await _end(tester);
   });

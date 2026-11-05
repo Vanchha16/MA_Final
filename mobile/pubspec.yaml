@@ -64,6 +64,7 @@ dependencies:
   screenshot: ^3.0.0
   share_plus: ^13.3.1
   file_saver: ^0.4.0
+  socket_io_client: ^3.1.6
 
 dev_dependencies:
   flutter_test:
