@@ -10,7 +10,7 @@ E-Commerce Mobile Application - Complete Project Documentation
 
 **Course:** Mobile Application (Year 4, SU25) - Final Project\
 **Institute:** SETEC Institute\
-**Date:** 30 October 2026\
+**Date:** 06 November 2026\
 **Source code:** <https://github.com/Vanchha16/MA_Final>
 
 **Lecturer:** Ly Lay
@@ -62,6 +62,7 @@ talks to one Flask REST API backed by a MySQL database.
 | Mobile app (customer) | Shoppers | Flutter 3, Dart, Provider, Dio |
 | Mobile app (admin tabs) | Shop owner (admin) and staff | Flutter (same app, opened by an admin or staff account) |
 | REST API | The app and the web admin | Python Flask, SQLAlchemy, Flask-JWT-Extended, bcrypt |
+| Real-time updates | The app and the web admin | Socket.IO: Flask-SocketIO (server), socket_io_client (Flutter), socket.io-client (React) |
 | Web admin | Shop owner and staff on a computer | React 18, Vite, Tailwind CSS, Recharts (at `/dashboard`) |
 | Admin panel (fallback) | Shop owner | Flask-Admin (at `/admin`) |
 | Database | All of the above | MySQL 8 (InnoDB, 17 tables, 19 foreign keys) |
@@ -74,8 +75,9 @@ talks to one Flask REST API backed by a MySQL database.
  Flutter app (customer + admin)      React web admin (/dashboard)
                \                          /
                 \   HTTPS JSON (JWT)     /
+                 \  + Socket.IO (live)   /
                  v                       v
-            Flask REST API  (/api/...)  +  Flask-Admin (/admin)
+   Flask REST API (/api/...) + Socket.IO (/socket.io) + Flask-Admin (/admin)
                  |            |                  |
               MySQL      Bakong KHQR API     ABA PayWay API
           (ecommerce_db)
@@ -83,6 +85,13 @@ talks to one Flask REST API backed by a MySQL database.
 
 Every API response has the same shape `{success, message, data}`; errors add an `errors`
 object that says which field is wrong. Logged-in calls send `Authorization: Bearer <token>`.
+
+Changes reach the screens in real time over Socket.IO. After login the app and the web admin open one
+socket with the same token; each user joins their own room and the shop team also joins a staff room.
+When a change is saved in MySQL the server pushes a small event (`notification`, `order_updated` or
+`admin_update`) and the screen loads the new data with the normal API call. Bakong KHQR has no
+callback, so the server checks pending payments with the bank every 3 seconds and pushes the paid order.
+The events are listed in Chapter 5.
 
 ## 1.3 Demo accounts
 
@@ -1027,6 +1036,20 @@ Base URL: `http://localhost:5000` (Android emulator: `http://10.0.2.2:5000`). Lo
 | 429 | Too many tries; wait and try again |
 | 502 | The payment provider refused or could not be reached |
 | 500 | Unexpected server error |
+
+## Real-time updates (Socket.IO)
+
+Changes are pushed to the app and the web admin over **Socket.IO** (Flask-SocketIO), so screens update the moment something happens instead of asking again and again.
+
+Connect to the server address (same port, path `/socket.io`) with the login token: `auth: {"token": "<JWT>"}`. A missing, expired or signed-out token is refused. Each user joins their own room; shop staff and admins also join the staff room.
+
+| Event | Who gets it | Data | When |
+|---|---|---|---|
+| `notification` | The customer | `{id, type}` | A new message for them (load it with `GET /api/notifications`) |
+| `order_updated` | The order's customer and all staff | `{order_id, order_number, status, payment_status}` | An order is placed, paid, confirmed, shipped, delivered, cancelled or refunded |
+| `admin_update` | Staff and admins | `{kind}`: `message` or `review` | A new contact message or review |
+
+The events are signals: clients load the new data with the normal REST calls. They are sent only after the change is saved in the database. Bakong KHQR has no callback, so the server checks pending online payments with the bank every 3 seconds and pushes `order_updated` as soon as one is paid.
 
 ## Endpoints
 
@@ -2514,7 +2537,7 @@ copy .env.example .env              (then set the MySQL URL and the keys in .env
 mysql -u root -p -e "CREATE DATABASE ecommerce_db CHARACTER SET utf8mb4"
 flask --app run init-db             (creates the 17 tables, InnoDB with foreign keys)
 flask --app run seed                (categories, series, 35 products, demo accounts)
-python run.py                       (http://localhost:5000/api/health)
+python run.py                       (API + real-time socket: http://localhost:5000/api/health)
 ```
 
 The database can also be created by running `docs/database/schema.sql` in MySQL Workbench or Navicat.
@@ -2562,7 +2585,8 @@ All five bonus features in the brief are done.
 | Advanced search and filtering | Live suggestions while typing, filters by category, series, brand, price range and stock, sorting, grid / list view | Search, Product List, Filter sheet |
 
 Extra work beyond the brief: customers can cancel orders before they ship, with refund tracking for paid ones; a staff role with owner-only staff management, a React web admin,
-live activity on the admin dashboard, promo codes, notifications and contact messages.
+live activity on the admin dashboard, promo codes, notifications and contact messages, and real-time updates
+over Socket.IO (new orders, payments, order steps and messages appear on every open screen at once).
 
 
 ```{=openxml}
@@ -2575,15 +2599,17 @@ Automated tests run before every merge into `main`:
 
 | Part | Tool | Tests | What they cover |
 |---|---|---|---|
-| Backend API | pytest | 144 | Every route: login and roles, catalogue, cart, checkout, KHQR and PayWay payments, cancelling and refunds, admin and staff rules, validation, API docs up to date |
-| Mobile app | flutter_test | 196 | Every screen's main flows with fake services (login and address pop-ups, cart, checkout, payment, orders, cancel and refund, admin tabs, staff) |
-| Web admin | Vitest + Testing Library | 15 | Dashboard, order steps, refunds, staff page, theme switch |
+| Backend API | pytest | 160 | Every route: login and roles, catalogue, cart, checkout, KHQR and PayWay payments, cancelling and refunds, admin and staff rules, validation, API docs up to date; Socket.IO login, rooms and events |
+| Mobile app | flutter_test | 213 | Every screen's main flows with fake services (login and address pop-ups, cart, checkout, payment, orders, cancel and refund, admin tabs, staff); pushed socket events |
+| Web admin | Vitest + Testing Library | 19 | Dashboard, order steps, refunds, staff page, payment methods, theme switch |
 
 `flutter analyze` reports no issues. The test folders (`backend/tests`, `web-admin/src/test`) are kept on
 the `store-info` branch of the repository.
 
 The payment flows were also tried for real: a Bakong KHQR payment from a bank app was detected and the
 order marked paid, and ABA PayWay sandbox purchases return a working QR and ABA Mobile link.
+The real-time socket was tried against the running server: a bad token is refused, and a customer's new
+contact message reached the admin's open socket at once while other customers received nothing.
 
 
 ```{=openxml}
